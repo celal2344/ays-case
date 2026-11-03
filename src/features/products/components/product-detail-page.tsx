@@ -23,6 +23,8 @@ import { Gallery } from './detail/gallery'
 import { ProductBreadcrumb } from './detail/product-breadcrumb'
 import { SectionBar } from './detail/section-bar'
 import { QuantityStepper } from '@/components/quantity-stepper'
+import { RecentlyViewedStrip } from '@/features/recently-viewed/components/recently-viewed-strip'
+import { useRecordView } from '@/features/recently-viewed/hooks/use-recently-viewed'
 import { SimilarProducts } from './detail/similar-products'
 import { Specs } from './detail/specs'
 import { StickyBar } from './detail/sticky-bar'
@@ -44,6 +46,7 @@ export function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const actionsRef = useRef<HTMLDivElement>(null)
   const actionsVisible = useInView(actionsRef)
+  useRecordView(id, product !== undefined)
   const barRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const hash = useLocation({ select: (location) => location.hash })
@@ -178,6 +181,7 @@ export function ProductDetailPage() {
           <SimilarProducts productId={id} category={product.category} />
         </div>
       </div>
+      <RecentlyViewedStrip excludeId={id} />
 
       <StickyBar
         product={product}

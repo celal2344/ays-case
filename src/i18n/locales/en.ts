@@ -213,6 +213,12 @@ export const en = {
     empty: 'You have no favorites yet',
     emptyCta: 'Browse products',
   },
+  recentlyViewed: {
+    title: 'Recently viewed',
+    clear: 'Clear',
+    previous: 'Scroll left',
+    next: 'Scroll right',
+  },
   cart: {
     title: 'Your cart',
     open: 'Cart, {{n}} items',
