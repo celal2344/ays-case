@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { AdminMenu } from './admin-menu'
 import { CartButton } from './cart-button'
 import { MobileNav } from './mobile-nav'
 import { useNavItems } from './nav-items'
@@ -28,6 +29,7 @@ export function Header() {
               {t(item.labelKey)}
             </Link>
           ))}
+          <AdminMenu />
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <div className="hidden md:block">

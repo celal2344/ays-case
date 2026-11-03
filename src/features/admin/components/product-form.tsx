@@ -1,20 +1,10 @@
 import { useForm, useStore } from '@tanstack/react-form'
-import { Link, useBlocker, useRouter } from '@tanstack/react-router'
+import { Link, useRouter } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
-import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { UnsavedChangesDialog } from '@/components/unsaved-changes'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ProductImage } from '@/features/products/components/product-image'
 import { useCategories } from '@/features/products/hooks/use-categories'
 import type { Product } from '@/features/products/schemas'
+import { useUnsavedChangesGuard } from '@/lib/use-unsaved-changes-guard'
 import { errorMessageKey } from '@/lib/error-message'
 
 import { useCreateProduct, useUpdateProduct } from '../hooks/use-product-mutations'
@@ -48,7 +39,6 @@ export function ProductForm({ product }: { product?: Product }) {
   const { categories } = useCategories()
   const create = useCreateProduct()
   const update = useUpdateProduct()
-  const saved = useRef(false)
   const mutation = product ? update : create
 
   const form = useForm({
@@ -61,18 +51,14 @@ export function ProductForm({ product }: { product?: Product }) {
       } catch {
         return // the error is shown below the form
       }
-      saved.current = true
+      markSaved()
       toast.success(t(product ? 'admin.form.updated' : 'admin.form.created'))
       void router.navigate({ to: '/admin/products' })
     },
   })
 
   const dirty = useStore(form.store, (s) => s.isDirty)
-  const blocker = useBlocker({
-    shouldBlockFn: () => dirty && !saved.current,
-    enableBeforeUnload: () => dirty && !saved.current,
-    withResolver: true,
-  })
+  const { blocker, markSaved } = useUnsavedChangesGuard(dirty)
 
   const categoryItems = (categories ?? []).map((c) => ({ value: c.slug, label: c.name }))
 
@@ -264,28 +250,7 @@ export function ProductForm({ product }: { product?: Product }) {
         </div>
       </form>
 
-      <AlertDialog
-        open={blocker.status === 'blocked'}
-        onOpenChange={(open) => {
-          if (!open && blocker.status === 'blocked') blocker.reset()
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('admin.form.discard.title')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('admin.form.discard.body')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('admin.form.discard.stay')}</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={() => blocker.status === 'blocked' && blocker.proceed()}
-            >
-              {t('admin.form.discard.leave')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <UnsavedChangesDialog blocker={blocker} />
     </>
   )
 }

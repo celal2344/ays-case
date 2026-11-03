@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { useCartStore } from '@/features/cart/store'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { useReviewsStore } from '@/features/reviews/store'
+import { useUserOverlayStore } from '@/features/users/overlay-store'
 import { signInAs } from '@/test/auth'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
@@ -379,6 +380,7 @@ describe('dashboard (EX-13, EX-15)', () => {
     signInAs('emilys')
     useProductOverlayStore.getState().remove(2)
     useProductOverlayStore.getState().update(1, { price: 99 })
+    useUserOverlayStore.getState().remove(5)
     useCartStore.getState().add(16, 4, 1, 50)
     useReviewsStore.getState().add({
       productId: 4,
@@ -400,6 +402,7 @@ describe('dashboard (EX-13, EX-15)', () => {
       patched: {},
       deleted: [],
     })
+    expect(useUserOverlayStore.getState().deleted).toEqual([])
     expect(useCartStore.getState().byUser).toEqual({})
     expect(useReviewsStore.getState().byProduct).toEqual({})
     const cards = screen.getAllByText('Products').map((el) => el.closest('[data-slot="card"]'))

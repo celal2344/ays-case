@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { PackageX, Pencil, Plus, RotateCcw, TriangleAlert, Package } from 'lucide-react'
+import { Package, PackageX, Pencil, Plus, RotateCcw, TriangleAlert, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -21,6 +21,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCatalog } from '@/features/products/hooks/use-catalog'
 import { LOW_STOCK_THRESHOLD } from '@/features/products/pricing'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
+import { useUserOverlayStore } from '@/features/users/overlay-store'
+import { useUsers } from '@/features/users/hooks/use-users'
 
 import { resetDemoData } from '../reset'
 
@@ -42,17 +44,33 @@ function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: n
 
 export function DashboardPage() {
   const { t } = useTranslation()
-  const { products, isPending, isError, refetch } = useCatalog()
+  const catalog = useCatalog()
+  const userList = useUsers()
+  const { products } = catalog
+  const isError = catalog.isError || userList.isError
+  const isPending = catalog.isPending || userList.isPending
   const created = useProductOverlayStore((s) => s.created)
   const patched = useProductOverlayStore((s) => s.patched)
   const deleted = useProductOverlayStore((s) => s.deleted)
+  const userChanges = useUserOverlayStore(
+    (s) => Object.keys(s.created).length + Object.keys(s.patched).length + s.deleted.length,
+  )
 
-  if (isError) return <ErrorState onRetry={() => void refetch()} />
+  if (isError)
+    return (
+      <ErrorState
+        onRetry={() => {
+          void catalog.refetch()
+          void userList.refetch()
+        }}
+      />
+    )
   if (isPending || !products) return <PageSkeleton />
 
   const lowStock = products.filter((p) => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD).length
   const outOfStock = products.filter((p) => p.stock <= 0).length
-  const localChanges = Object.keys(created).length + Object.keys(patched).length + deleted.length
+  const localChanges =
+    Object.keys(created).length + Object.keys(patched).length + deleted.length + userChanges
 
   const reset = () => {
     resetDemoData()
@@ -63,7 +81,11 @@ export function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">{t('admin.title')}</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Link to="/admin/users" className={buttonVariants({ variant: 'outline' })}>
+            <Users className="size-4" />
+            {t('admin.dashboard.manageUsers')}
+          </Link>
           <Link to="/admin/products" className={buttonVariants({ variant: 'outline' })}>
             <Package className="size-4" />
             {t('admin.dashboard.manageProducts')}
@@ -75,11 +97,16 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Stat
           icon={<Package className="size-4" />}
           label={t('admin.dashboard.total')}
           value={products.length}
+        />
+        <Stat
+          icon={<Users className="size-4" />}
+          label={t('admin.dashboard.users')}
+          value={userList.users?.length ?? 0}
         />
         <Stat
           icon={<TriangleAlert className="size-4" />}

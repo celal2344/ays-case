@@ -9,9 +9,13 @@ import { useDebouncedValue } from '@/lib/use-debounced-value'
 export function SearchBox({
   value,
   onCommit,
+  placeholder,
+  label,
 }: {
   value: string
   onCommit: (value: string) => void
+  placeholder?: string
+  label?: string
 }) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState(value)
@@ -44,8 +48,8 @@ export function SearchBox({
         type="search"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        placeholder={t('products.search.placeholder')}
-        aria-label={t('products.search.label')}
+        placeholder={placeholder ?? t('products.search.placeholder')}
+        aria-label={label ?? t('products.search.label')}
         className="pl-8"
       />
     </div>

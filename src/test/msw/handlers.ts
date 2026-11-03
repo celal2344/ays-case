@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw'
 
 import type { User } from '@/features/auth/schemas'
 
+import { fixtureUserList } from '../fixtures/users'
 import { fixtureCategories, fixtureDetail, fixtureProducts } from '../fixtures/products'
 
 const BASE = 'https://dummyjson.com'
@@ -124,4 +125,34 @@ export const productHandlers = [
   ),
 ]
 
-export const handlers = [...authHandlers, ...productHandlers]
+export const userHandlers = [
+  // DummyJSON accepts user writes but persists nothing; echo like it does
+  http.post(`${BASE}/users/add`, async ({ request }) =>
+    HttpResponse.json({ id: fixtureUserList.length + 1, ...((await request.json()) as object) }),
+  ),
+  http.put(`${BASE}/users/:id`, async ({ params, request }) =>
+    Number(params.id) <= fixtureUserList.length
+      ? HttpResponse.json({ id: Number(params.id), ...((await request.json()) as object) })
+      : HttpResponse.json(
+          { message: `User with id '${String(params.id)}' not found` },
+          { status: 404 },
+        ),
+  ),
+  http.delete(`${BASE}/users/:id`, ({ params }) =>
+    Number(params.id) <= fixtureUserList.length
+      ? HttpResponse.json({
+          id: Number(params.id),
+          isDeleted: true,
+          deletedOn: new Date().toISOString(),
+        })
+      : HttpResponse.json(
+          { message: `User with id '${String(params.id)}' not found` },
+          { status: 404 },
+        ),
+  ),
+  http.get(`${BASE}/users`, () =>
+    HttpResponse.json({ users: fixtureUserList, total: fixtureUserList.length, skip: 0, limit: 0 }),
+  ),
+]
+
+export const handlers = [...authHandlers, ...productHandlers, ...userHandlers]

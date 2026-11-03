@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
+import { resolveSessionUser } from '@/features/users/session'
+import { AppError } from '@/lib/http-error'
 import { queryClient } from '@/lib/query-client'
 import { storageKey } from '@/lib/storage'
 
@@ -42,8 +44,11 @@ export const useAuthStore = create<AuthState>()(
         set({ status: 'restoring' })
         const attempt = getMe()
           .then(
-            (user) => {
-              set({ user, status: 'authenticated' })
+            (fetched) => {
+              // the admin overlay can change or remove this account (see users/session.ts)
+              const user = resolveSessionUser(fetched)
+              if (user) set({ user, status: 'authenticated' })
+              else get().logout()
             },
             () => {
               get().logout()
@@ -60,7 +65,10 @@ export const useAuthStore = create<AuthState>()(
         const { accessToken, refreshToken } = await loginRequest(username, password)
         set({ accessToken, refreshToken })
         try {
-          const user = await getMe()
+          const user = resolveSessionUser(await getMe())
+          if (!user) {
+            throw new AppError('unauthorized', 'This account was removed by an administrator.')
+          }
           set({ user, status: 'authenticated' })
           return user
         } catch (error) {
