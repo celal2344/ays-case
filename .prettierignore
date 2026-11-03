@@ -1,0 +1,10 @@
+dist
+pnpm-lock.yaml
+src/routeTree.gen.ts
+src/components/ui
+docs
+dummyjson.json
+playwright-report
+test-results
+AGENTS.md
+README.md
