@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import i18next from '@/i18n'
 
-import { usePreferencesStore } from './store'
+import { usePreferencesStore } from '../store'
 
 describe('preferences store', () => {
   it('persists language and shop view under the versioned key', () => {

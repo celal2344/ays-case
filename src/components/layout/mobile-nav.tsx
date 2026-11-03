@@ -6,11 +6,12 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
-import { NAV_ITEMS } from './nav-items'
+import { useNavItems } from './nav-items'
 import { PreferencesControls } from './preferences-controls'
 
 export function MobileNav() {
   const { t } = useTranslation()
+  const navItems = useNavItems()
   const [open, setOpen] = useState(false)
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -26,7 +27,7 @@ export function MobileNav() {
           <SheetTitle>{t('app.name')}</SheetTitle>
         </SheetHeader>
         <nav aria-label={t('nav.main')} className="flex flex-col gap-1 px-4">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.to}
               to={item.to}

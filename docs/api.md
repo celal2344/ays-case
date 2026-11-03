@@ -45,7 +45,7 @@ http.interceptors.request.use((config) => {
 let refreshing: Promise<string | null> | null = null; // single-flight, like StokMate client.ts
 http.interceptors.response.use(undefined, async (error) => {
   const original = error.config;
-  if (error.response?.status !== 401 || original._retried || original.url?.includes("/auth/")) {
+  if (error.response?.status !== 401 || original._retried || /\/auth\/(login|refresh)/.test(original.url ?? "")) {
     throw toAppError(error);
   }
   original._retried = true;
