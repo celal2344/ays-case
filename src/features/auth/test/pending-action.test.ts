@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { consumePendingAction, setPendingAction } from './pending-action'
+import { consumePendingAction, setPendingAction } from '../pending-action'
 
 describe('pending action', () => {
   it('is consumed exactly once', () => {

@@ -3,9 +3,9 @@
 ## Layers
 | Layer | Tool | What | Where |
 |---|---|---|---|
-| Unit | Vitest | Pure functions: `applyOverlay`, filter/sort/paginate pipeline, cart totals, quantity clamp, search param schema, storage migrations | `src/**/*.test.ts` |
-| Store | Vitest | Zustand stores: overlay create/update/remove/reset, cart add/merge/clamp/remove-everywhere, auth login/logout/bootstrap | `src/features/*/store.test.ts` |
-| Integration | Vitest + RTL + MSW | Pages with mocked DummyJSON: login, shop list filters, add to cart, admin create/edit/delete, checkout | `src/**/*.test.tsx` |
+| Unit | Vitest | Pure functions: `applyOverlay`, filter/sort/paginate pipeline, cart totals, quantity clamp, search param schema, storage migrations | `src/<area>/test/*.test.ts` |
+| Store | Vitest | Zustand stores: overlay create/update/remove/reset, cart add/merge/clamp/remove-everywhere, auth login/logout/bootstrap | `src/features/<feature>/test/store.test.ts` |
+| Integration | Vitest + RTL + MSW | Pages with mocked DummyJSON: login, shop list filters, add to cart, admin create/edit/delete, checkout | `src/<area>/test/*.test.tsx` |
 | E2E | Playwright (Chromium, + mobile viewport) | Full flows against the dev server, DummyJSON mocked with `page.route` for stability | `e2e/*.spec.ts` |
 
 MSW handlers in `src/test/msw/handlers.ts` mirror [api.md](api.md) with fixtures from a trimmed real response (`src/test/fixtures/products.json`, 20 items). Tests never hit the real network (`onUnhandledRequest: "error"`).
@@ -51,3 +51,6 @@ Lines ≥ 80% on `src/features/**` and `src/lib/**` (report only, not a CI gate 
 - [ ] Reset demo data restores original catalog
 - [ ] Lighthouse: Performance ≥ 90, Accessibility ≥ 95 on `/products`
 - [ ] No console errors/warnings
+
+## Test location
+Tests live in a dedicated `test/` folder next to the code they cover, never beside the source file: `src/features/<feature>/test/`, `src/lib/test/`, `src/components/<group>/test/`, `src/preferences/test/`. Shared helpers (MSW handlers and server, `renderApp`, setup) stay in `src/test/`. Tests import the unit under test with `../`.

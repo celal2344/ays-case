@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { renderApp } from '@/test/render'
 
-import { useAuthStore } from './store'
+import { useAuthStore } from '../store'
 
 const pathname = (router: { state: { location: { pathname: string } } }) =>
   router.state.location.pathname

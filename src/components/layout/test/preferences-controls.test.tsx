@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import { usePreferencesStore } from '@/preferences/store'
 
-import { PreferencesControls } from './preferences-controls'
+import { PreferencesControls } from '../preferences-controls'
 
 describe('PreferencesControls', () => {
   it('switches the language and persists it', async () => {

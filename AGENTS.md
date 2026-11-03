@@ -28,3 +28,6 @@ One PR per gate from `gate/gN-name`. When the gate is green, open the PR and **s
 
 ## Commits
 Conventional commits (`feat(cart): …`). Small, one topic each.
+
+## Tests
+- Tests go in a `test/` folder inside the feature (or lib/component group) they cover, e.g. `src/features/cart/test/store.test.ts`; shared helpers live in `src/test/`. See `docs/testing.md`.

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { fixtureUsers, toPublicUser } from '@/test/msw/handlers'
 import { server } from '@/test/msw/server'
 
-import { selectIsAdmin, useAuthStore } from './store'
+import { selectIsAdmin, useAuthStore } from '../store'
 
 const state = () => useAuthStore.getState()
 

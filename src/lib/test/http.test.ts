@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { useAuthStore } from '@/features/auth/store'
 import { server } from '@/test/msw/server'
 
-import { http } from './http'
-import { AppError } from './http-error'
+import { http } from '../http'
+import { AppError } from '../http-error'
 
 describe('http client', () => {
   it('sends the bearer token', async () => {

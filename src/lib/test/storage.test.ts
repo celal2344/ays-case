@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { readJson, storageKey, writeJson } from './storage'
+import { readJson, storageKey, writeJson } from '../storage'
 
 describe('storage', () => {
   it('prefixes keys with the app name and version', () => {

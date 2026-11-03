@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatDate, formatPrice } from './format'
+import { formatDate, formatPrice } from '../format'
 
 describe('format', () => {
   it('formats prices per language', () => {
