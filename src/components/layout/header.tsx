@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 
 import { AdminMenu } from './admin-menu'
 import { CartButton } from './cart-button'
+import { CategoryStrip } from './category-strip'
+import { HeaderSearch } from './header-search'
 import { MobileNav } from './mobile-nav'
 import { useNavItems } from './nav-items'
 import { PreferencesControls } from './preferences-controls'
@@ -12,12 +14,20 @@ export function Header() {
   const { t } = useTranslation()
   const navItems = useNavItems()
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
+    <header className="sticky top-0 z-40 border-b bg-card">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2">
         <MobileNav />
-        <Link to="/" className="text-base font-semibold">
-          {t('app.name')}
+        <Link to="/" className="flex shrink-0 items-center gap-2 text-lg font-bold">
+          <span
+            aria-hidden="true"
+            className="flex size-8 items-center justify-center rounded-lg bg-brand text-base text-neutral-900"
+          >
+            a
+          </span>
+          <span className="sr-only sm:not-sr-only">{t('app.name')}</span>
         </Link>
+        {/* one search box: its own row on phones, the wide centre of the bar from md up */}
+        <HeaderSearch className="order-last basis-full sm:max-w-none md:order-none md:basis-auto" />
         <nav aria-label={t('nav.main')} className="hidden items-center gap-1 md:flex">
           {navItems.map((item) => (
             <Link
@@ -31,13 +41,16 @@ export function Header() {
           ))}
           <AdminMenu />
         </nav>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2 md:ml-0">
           <div className="hidden md:block">
             <PreferencesControls />
           </div>
           <CartButton />
           <UserMenu />
         </div>
+      </div>
+      <div className="border-t">
+        <CategoryStrip />
       </div>
     </header>
   )

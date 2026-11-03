@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import type { Product } from '../schemas'
 import { ProductCard } from './product-card'
 
-const GRID = 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+const GRID = 'grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
 
 export function ProductGrid({ products }: { products: Product[] }) {
   return (

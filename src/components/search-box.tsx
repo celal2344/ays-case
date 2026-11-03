@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Input } from '@/components/ui/input'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
+import { cn } from '@/lib/utils'
 
 /** Search input that reports its value 300 ms after typing pauses, and follows external changes (URL, Clear filters). */
 export function SearchBox({
@@ -11,11 +12,13 @@ export function SearchBox({
   onCommit,
   placeholder,
   label,
+  className,
 }: {
   value: string
   onCommit: (value: string) => void
   placeholder?: string
   label?: string
+  className?: string
 }) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState(value)
@@ -39,7 +42,7 @@ export function SearchBox({
   }, [value])
 
   return (
-    <div className="relative min-w-0 flex-1 sm:max-w-xs">
+    <div className={cn('relative min-w-0 flex-1 sm:max-w-xs', className)}>
       <Search
         className="pointer-events-none absolute top-2 left-2.5 size-4 text-muted-foreground"
         aria-hidden="true"

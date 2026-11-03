@@ -3,7 +3,11 @@ import { useState } from 'react'
 
 import { cn } from '@/lib/utils'
 
-/** Lazy image with a placeholder when the URL is empty or fails (admin-entered URLs can be wrong). */
+/**
+ * Lazy image with a skeleton while it loads and a placeholder when the URL is empty or fails
+ * (admin-entered URLs can be wrong). The panel stays white in dark mode so transparent PNGs and
+ * product shots on white remain readable.
+ */
 export function ProductImage({
   src,
   alt,
@@ -16,22 +20,30 @@ export function ProductImage({
   eager?: boolean
 }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
   const broken = !src || failedSrc === src
+  const loading = !broken && loadedSrc !== src
   return (
-    <div className={cn('aspect-square overflow-hidden bg-muted', className)}>
+    <div className={cn('relative aspect-square overflow-hidden bg-white', className)}>
       {broken ? (
-        <div className="flex size-full items-center justify-center text-muted-foreground">
+        <div className="flex size-full items-center justify-center bg-muted text-muted-foreground">
           <ImageOff className="size-8" aria-hidden="true" />
         </div>
       ) : (
-        <img
-          src={src}
-          alt={alt}
-          loading={eager ? 'eager' : 'lazy'}
-          decoding="async"
-          onError={() => setFailedSrc(src)}
-          className="size-full object-cover"
-        />
+        <>
+          {loading ? (
+            <div className="absolute inset-0 animate-pulse bg-muted" aria-hidden="true" />
+          ) : null}
+          <img
+            src={src}
+            alt={alt}
+            loading={eager ? 'eager' : 'lazy'}
+            decoding="async"
+            onLoad={() => setLoadedSrc(src)}
+            onError={() => setFailedSrc(src)}
+            className="size-full object-contain"
+          />
+        </>
       )}
     </div>
   )

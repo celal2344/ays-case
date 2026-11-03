@@ -16,6 +16,7 @@ import { errorMessageKey } from '@/lib/error-message'
 
 import { CheckoutError, usePlaceOrder } from '../hooks/use-place-order'
 import { emptyShipping, shippingSchema, type Shipping } from '../schemas'
+import { CheckoutSteps } from './checkout-steps'
 import { TotalsList } from './order-totals'
 
 const FIELDS: { name: keyof Shipping; autoComplete: string; type?: string }[] = [
@@ -63,6 +64,7 @@ export function CheckoutPage() {
 
   return (
     <div className="space-y-4">
+      <CheckoutSteps current={2} />
       <h1 className="text-2xl font-semibold">{t('checkout.title')}</h1>
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <form

@@ -11,7 +11,36 @@ export function normalizeSearch(search: ProductSearch): ProductSearch {
     order: sort && search.order === 'desc' ? 'desc' : undefined,
     page: search.page && search.page > 1 ? search.page : undefined,
     view: search.view,
+    minPrice: search.minPrice,
+    maxPrice: search.maxPrice,
+    brand: search.brand || undefined,
+    rating: search.rating,
   }
+}
+
+/** The filters shown as removable chips: everything except search text, sort, view and paging. */
+export type FilterKey = 'q' | 'category' | 'price' | 'brand' | 'rating'
+
+export function activeFilters(search: ProductSearch): FilterKey[] {
+  const keys: FilterKey[] = []
+  if (search.q?.trim()) keys.push('q')
+  if (search.category) keys.push('category')
+  if (search.minPrice !== undefined || search.maxPrice !== undefined) keys.push('price')
+  if (search.brand) keys.push('brand')
+  if (search.rating) keys.push('rating')
+  return keys
+}
+
+/** The search that removes one filter (or all of them when no key is given). */
+export function withoutFilter(key?: FilterKey): Partial<ProductSearch> {
+  const all: Record<FilterKey, Partial<ProductSearch>> = {
+    q: { q: undefined },
+    category: { category: undefined },
+    price: { minPrice: undefined, maxPrice: undefined },
+    brand: { brand: undefined },
+    rating: { rating: undefined },
+  }
+  return key ? all[key] : Object.assign({}, ...Object.values(all))
 }
 
 /** Any change to q / category / sort resets paging; a page change keeps everything else. */

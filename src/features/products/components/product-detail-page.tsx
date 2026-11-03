@@ -14,6 +14,7 @@ import type { Review } from '../schemas'
 import { useAddToCart, useBuyNow } from '@/features/cart/hooks/use-add-to-cart'
 import { useInView } from '../hooks/use-in-view'
 import { useProduct } from '../hooks/use-product'
+import { DeliveryInfo } from './detail/delivery-info'
 import { Gallery } from './detail/gallery'
 import { ProductBreadcrumb } from './detail/product-breadcrumb'
 import { QuantityStepper } from '@/components/quantity-stepper'
@@ -83,9 +84,9 @@ export function ProductDetailPage() {
             </span>
           </button>
 
-          <div className="space-y-2 rounded-lg border p-4">
+          <div className="space-y-3 rounded-lg border bg-card p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <ProductPrice product={product} className="text-2xl" />
+              <ProductPrice product={product} large />
               <DiscountBadge product={product} />
               <StockBadge stock={product.stock} />
             </div>
@@ -95,29 +96,40 @@ export function ProductDetailPage() {
                 max={Math.max(1, product.stock)}
                 onChange={setQuantity}
               />
-              <Button size="lg" disabled={outOfStock} onClick={() => buyNow(product, quantity)}>
-                <Zap className="size-4" />
-                {t('products.buyNow')}
+              <Button size="lg" disabled={outOfStock} onClick={() => addToCart(product, quantity)}>
+                <ShoppingCart className="size-4" />
+                {t('products.addToCart')}
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 disabled={outOfStock}
-                onClick={() => addToCart(product, quantity)}
+                onClick={() => buyNow(product, quantity)}
               >
-                <ShoppingCart className="size-4" />
-                {t('products.addToCart')}
+                <Zap className="size-4" />
+                {t('products.buyNow')}
               </Button>
             </div>
           </div>
+          <DeliveryInfo product={product} />
         </div>
       </div>
 
       <Tabs id="product-tabs" value={tab} onValueChange={(value) => setTab(value as DetailTab)}>
         <TabsList>
-          <TabsTrigger value="info">{t('products.tabs.info')}</TabsTrigger>
-          <TabsTrigger value="description">{t('products.tabs.description')}</TabsTrigger>
-          <TabsTrigger value="reviews">
+          <TabsTrigger value="info" className="text-muted-foreground data-active:text-foreground">
+            {t('products.tabs.info')}
+          </TabsTrigger>
+          <TabsTrigger
+            value="description"
+            className="text-muted-foreground data-active:text-foreground"
+          >
+            {t('products.tabs.description')}
+          </TabsTrigger>
+          <TabsTrigger
+            value="reviews"
+            className="text-muted-foreground data-active:text-foreground"
+          >
             {t('products.tabs.reviews', { n: summary.count })}
           </TabsTrigger>
         </TabsList>

@@ -20,6 +20,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Money } from '@/components/money'
 import { ProductImage } from '@/features/products/components/product-image'
 
+import { CheckoutSteps } from '@/features/orders/components/checkout-steps'
 import { useCartView } from '../hooks/use-cart-view'
 import type { CartItem, CartTotals } from '../selectors'
 
@@ -161,6 +162,7 @@ export function CartPage() {
 
   return (
     <div className="space-y-4 pb-28 lg:pb-0">
+      <CheckoutSteps current={1} />
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">{t('cart.title')}</h1>
         <AlertDialog>

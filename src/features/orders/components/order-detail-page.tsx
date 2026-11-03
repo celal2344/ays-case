@@ -11,6 +11,7 @@ import { formatDate } from '@/lib/format'
 import { selectLanguage, usePreferencesStore } from '@/preferences/store'
 
 import { useOrder } from '../hooks/use-orders'
+import { CheckoutSteps } from './checkout-steps'
 import { TotalsList } from './order-totals'
 
 const route = getRouteApi('/_auth/orders/$orderId')
@@ -27,12 +28,13 @@ export function OrderDetailPage() {
 
   return (
     <div className="space-y-4">
+      {placed ? <CheckoutSteps current={3} /> : null}
       {placed ? (
         <div
           role="status"
-          className="flex items-start gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-4"
+          className="flex items-start gap-3 rounded-lg border border-success/40 bg-success/10 p-4"
         >
-          <CircleCheck className="mt-0.5 size-5 shrink-0 text-emerald-600" aria-hidden="true" />
+          <CircleCheck className="mt-0.5 size-5 shrink-0 text-success" aria-hidden="true" />
           <div>
             <p className="font-medium">{t('orders.placed.title')}</p>
             <p className="text-sm text-muted-foreground">{t('orders.placed.body')}</p>
