@@ -112,3 +112,20 @@ test('the search suggestions open a product without leaving the page while typin
   await expect(page).toHaveURL(/\/products\/2$/)
   await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
 })
+
+test('recently viewed is a compact row on the product page and absent from the shop list', async ({
+  page,
+}) => {
+  await signIn(page, 'user')
+  await page.goto('/products/1')
+  await expect(page.getByRole('heading', { name: 'beauty item 01' })).toBeVisible()
+  await page.goto('/products/2')
+  await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
+  await page.goto('/products/3')
+  const strip = page.getByRole('region', { name: 'Recently viewed' })
+  await expect(strip.getByRole('link').first()).toContainText('groceries item 02')
+  expect((await strip.getByRole('link').first().boundingBox())!.height).toBeLessThanOrEqual(210)
+  await page.goto('/products')
+  await expect(page.getByRole('heading', { name: 'Products' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Recently viewed' })).toHaveCount(0)
+})

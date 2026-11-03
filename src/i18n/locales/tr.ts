@@ -215,6 +215,12 @@ export const tr = {
     searchFor: '“{{text}}” için ara',
     noProducts: '“{{text}}” için ürün bulunamadı',
   },
+  recentlyViewed: {
+    title: 'Son gezdiklerin',
+    clear: 'Temizle',
+    previous: 'Sola kaydır',
+    next: 'Sağa kaydır',
+  },
   cart: {
     title: 'Sepetin',
     open: 'Sepet, {{n}} ürün',

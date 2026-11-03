@@ -213,6 +213,12 @@ export const en = {
     searchFor: 'Search for “{{text}}”',
     noProducts: 'No products found for “{{text}}”',
   },
+  recentlyViewed: {
+    title: 'Recently viewed',
+    clear: 'Clear',
+    previous: 'Scroll left',
+    next: 'Scroll right',
+  },
   cart: {
     title: 'Your cart',
     open: 'Cart, {{n}} items',
