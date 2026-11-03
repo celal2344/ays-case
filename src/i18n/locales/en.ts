@@ -154,7 +154,6 @@ export const en = {
     unavailable: 'This product is out of stock. Remove it to continue.',
     remove: 'Remove {{title}}',
     checkout: 'Checkout',
-    checkoutSoon: 'Checkout arrives in a later release.',
     clear: {
       action: 'Clear cart',
       title: 'Clear your cart?',
@@ -170,7 +169,36 @@ export const en = {
       total: 'Total',
     },
   },
-  orders: { title: 'Orders' },
+  orders: {
+    title: 'Orders',
+    empty: 'You have not placed any orders yet',
+    number: 'Order #{{id}}',
+    items: '{{n}} items',
+    line: 'Qty {{n}}',
+    back: 'All orders',
+    placed: {
+      title: 'Thank you, your order is placed!',
+      body: 'It is saved in your order history. Nothing is shipped: this is a demo shop.',
+    },
+  },
+  checkout: {
+    title: 'Checkout',
+    shipping: 'Shipping details',
+    summary: 'Your order',
+    quantity: 'Qty {{n}}',
+    place: 'Place order',
+    backToCart: 'Back to cart',
+    fields: { fullName: 'Full name', address: 'Address', city: 'City', phone: 'Phone' },
+    errors: {
+      fullName: 'Enter your full name (2–80 characters).',
+      address: 'Enter your address (5–200 characters).',
+      city: 'Enter your city.',
+      phone: 'Enter a valid phone number.',
+      empty: 'Your cart is empty.',
+      stock: 'Some items are no longer available in the quantity you chose. Review your cart.',
+      stockTitle: 'Not enough stock for {{title}}. Review your cart.',
+    },
+  },
   admin: {
     title: 'Admin',
     nav: { dashboard: 'Dashboard', products: 'Products', users: 'Users' },
@@ -222,6 +250,7 @@ export const en = {
       },
     },
     dashboard: {
+      orders: 'Orders',
       manageProducts: 'Manage products',
       manageUsers: 'Manage users',
       users: 'Users',

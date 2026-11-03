@@ -67,3 +67,6 @@ class AppError extends Error {
 }
 ```
 UI maps `kind` → i18n message. DummyJSON error bodies are `{ message }`; we show it for 400 (e.g. "Invalid credentials") and a generic message otherwise.
+
+## `POST /carts/add` (observed, G6)
+Simulated like every DummyJSON write. Answer: `{ id: 209, products: [...], total, discountedTotal, userId, totalProducts, totalQuantity }`; the id is always 209. Product ids it does not know (our local ids ≥ 100000) are **silently dropped** from `products` rather than rejected, and a body with only unknown ids still succeeds with an empty list. The app therefore sends remote ids only, skips the call when there are none, and keeps just the echoed `id` as `remoteCartId`; totals always come from our own merged prices.

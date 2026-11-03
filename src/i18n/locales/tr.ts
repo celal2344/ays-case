@@ -156,7 +156,6 @@ export const tr = {
     unavailable: 'Bu ürün tükendi. Devam etmek için kaldır.',
     remove: '{{title}} ürününü kaldır',
     checkout: 'Ödemeye geç',
-    checkoutSoon: 'Ödeme sonraki sürümlerde geliyor.',
     clear: {
       action: 'Sepeti boşalt',
       title: 'Sepet boşaltılsın mı?',
@@ -172,7 +171,36 @@ export const tr = {
       total: 'Toplam',
     },
   },
-  orders: { title: 'Siparişler' },
+  orders: {
+    title: 'Siparişler',
+    empty: 'Henüz sipariş vermediniz',
+    number: 'Sipariş #{{id}}',
+    items: '{{n}} ürün',
+    line: 'Adet {{n}}',
+    back: 'Tüm siparişler',
+    placed: {
+      title: 'Teşekkürler, siparişiniz alındı!',
+      body: 'Sipariş geçmişinize kaydedildi. Hiçbir şey gönderilmez: bu bir demo mağazadır.',
+    },
+  },
+  checkout: {
+    title: 'Ödeme',
+    shipping: 'Teslimat bilgileri',
+    summary: 'Siparişiniz',
+    quantity: 'Adet {{n}}',
+    place: 'Siparişi ver',
+    backToCart: 'Sepete dön',
+    fields: { fullName: 'Ad soyad', address: 'Adres', city: 'Şehir', phone: 'Telefon' },
+    errors: {
+      fullName: 'Ad soyadınızı girin (2–80 karakter).',
+      address: 'Adresinizi girin (5–200 karakter).',
+      city: 'Şehrinizi girin.',
+      phone: 'Geçerli bir telefon numarası girin.',
+      empty: 'Sepetiniz boş.',
+      stock: 'Bazı ürünler seçtiğiniz adette artık mevcut değil. Sepetinizi gözden geçirin.',
+      stockTitle: '{{title}} için yeterli stok yok. Sepetinizi gözden geçirin.',
+    },
+  },
   admin: {
     title: 'Yönetim',
     nav: { dashboard: 'Panel', products: 'Ürünler', users: 'Kullanıcılar' },
@@ -224,6 +252,7 @@ export const tr = {
       },
     },
     dashboard: {
+      orders: 'Siparişler',
       manageProducts: 'Ürünleri yönet',
       manageUsers: 'Kullanıcıları yönet',
       users: 'Kullanıcılar',

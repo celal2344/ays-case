@@ -15,9 +15,11 @@ import { Route as ForbiddenRouteImport } from './routes/forbidden'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthAdminRouteImport } from './routes/_auth/_admin'
 import { Route as AuthCartRouteImport } from './routes/_auth/cart'
+import { Route as AuthCheckoutRouteImport } from './routes/_auth/checkout'
 import { Route as ProductsIndexRouteImport } from './routes/products/index'
 import { Route as ProductsProductIdRouteImport } from './routes/products/$productId'
 import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
+import { Route as AuthOrdersOrderIdRouteImport } from './routes/_auth/orders/$orderId'
 import { Route as AuthAdminAdminIndexRouteImport } from './routes/_auth/_admin/admin/index'
 import { Route as AuthAdminAdminProductsIndexRouteImport } from './routes/_auth/_admin/admin/products/index'
 import { Route as AuthAdminAdminProductsNewRouteImport } from './routes/_auth/_admin/admin/products/new'
@@ -54,6 +56,11 @@ const AuthCartRoute = AuthCartRouteImport.update({
   path: '/cart',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthCheckoutRoute = AuthCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => AuthRoute,
+} as any)
 const ProductsIndexRoute = ProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
@@ -67,6 +74,11 @@ const ProductsProductIdRoute = ProductsProductIdRouteImport.update({
 const AuthOrdersIndexRoute = AuthOrdersIndexRouteImport.update({
   id: '/orders/',
   path: '/orders/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthOrdersOrderIdRoute = AuthOrdersOrderIdRouteImport.update({
+  id: '/orders/$orderId',
+  path: '/orders/$orderId',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthAdminAdminIndexRoute = AuthAdminAdminIndexRouteImport.update({
@@ -115,8 +127,10 @@ export interface FileRoutesByFullPath {
   '/forbidden': typeof ForbiddenRoute
   '/login': typeof LoginRoute
   '/cart': typeof AuthCartRoute
+  '/checkout': typeof AuthCheckoutRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/': typeof ProductsIndexRoute
+  '/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/orders/': typeof AuthOrdersIndexRoute
   '/admin/': typeof AuthAdminAdminIndexRoute
   '/admin/products/new': typeof AuthAdminAdminProductsNewRoute
@@ -131,8 +145,10 @@ export interface FileRoutesByTo {
   '/forbidden': typeof ForbiddenRoute
   '/login': typeof LoginRoute
   '/cart': typeof AuthCartRoute
+  '/checkout': typeof AuthCheckoutRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products': typeof ProductsIndexRoute
+  '/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/orders': typeof AuthOrdersIndexRoute
   '/admin': typeof AuthAdminAdminIndexRoute
   '/admin/products/new': typeof AuthAdminAdminProductsNewRoute
@@ -150,8 +166,10 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_auth/_admin': typeof AuthAdminRouteWithChildren
   '/_auth/cart': typeof AuthCartRoute
+  '/_auth/checkout': typeof AuthCheckoutRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/': typeof ProductsIndexRoute
+  '/_auth/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/_auth/orders/': typeof AuthOrdersIndexRoute
   '/_auth/_admin/admin/': typeof AuthAdminAdminIndexRoute
   '/_auth/_admin/admin/products/new': typeof AuthAdminAdminProductsNewRoute
@@ -168,8 +186,10 @@ export interface FileRouteTypes {
     | '/forbidden'
     | '/login'
     | '/cart'
+    | '/checkout'
     | '/products/$productId'
     | '/products/'
+    | '/orders/$orderId'
     | '/orders/'
     | '/admin/'
     | '/admin/products/new'
@@ -184,8 +204,10 @@ export interface FileRouteTypes {
     | '/forbidden'
     | '/login'
     | '/cart'
+    | '/checkout'
     | '/products/$productId'
     | '/products'
+    | '/orders/$orderId'
     | '/orders'
     | '/admin'
     | '/admin/products/new'
@@ -202,8 +224,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/_auth/_admin'
     | '/_auth/cart'
+    | '/_auth/checkout'
     | '/products/$productId'
     | '/products/'
+    | '/_auth/orders/$orderId'
     | '/_auth/orders/'
     | '/_auth/_admin/admin/'
     | '/_auth/_admin/admin/products/new'
@@ -267,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCartRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/checkout': {
+      id: '/_auth/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof AuthCheckoutRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/products/': {
       id: '/products/'
       path: '/products'
@@ -286,6 +317,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders/'
       preLoaderRoute: typeof AuthOrdersIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/orders/$orderId': {
+      id: '/_auth/orders/$orderId'
+      path: '/orders/$orderId'
+      fullPath: '/orders/$orderId'
+      preLoaderRoute: typeof AuthOrdersOrderIdRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/_admin/admin/': {
@@ -368,12 +406,16 @@ const AuthAdminRouteWithChildren = AuthAdminRoute._addFileChildren(
 interface AuthRouteChildren {
   AuthAdminRoute: typeof AuthAdminRouteWithChildren
   AuthCartRoute: typeof AuthCartRoute
+  AuthCheckoutRoute: typeof AuthCheckoutRoute
+  AuthOrdersOrderIdRoute: typeof AuthOrdersOrderIdRoute
   AuthOrdersIndexRoute: typeof AuthOrdersIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthAdminRoute: AuthAdminRouteWithChildren,
   AuthCartRoute: AuthCartRoute,
+  AuthCheckoutRoute: AuthCheckoutRoute,
+  AuthOrdersOrderIdRoute: AuthOrdersOrderIdRoute,
   AuthOrdersIndexRoute: AuthOrdersIndexRoute,
 }
 

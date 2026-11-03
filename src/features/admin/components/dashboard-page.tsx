@@ -1,5 +1,14 @@
 import { Link } from '@tanstack/react-router'
-import { Package, PackageX, Pencil, Plus, RotateCcw, TriangleAlert, Users } from 'lucide-react'
+import {
+  Package,
+  PackageX,
+  Pencil,
+  Plus,
+  Receipt,
+  RotateCcw,
+  TriangleAlert,
+  Users,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -21,6 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCatalog } from '@/features/products/hooks/use-catalog'
 import { LOW_STOCK_THRESHOLD } from '@/features/products/pricing'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
+import { useOrdersStore } from '@/features/orders/store'
 import { useUserOverlayStore } from '@/features/users/overlay-store'
 import { useUsers } from '@/features/users/hooks/use-users'
 
@@ -52,6 +62,7 @@ export function DashboardPage() {
   const created = useProductOverlayStore((s) => s.created)
   const patched = useProductOverlayStore((s) => s.patched)
   const deleted = useProductOverlayStore((s) => s.deleted)
+  const orderCount = useOrdersStore((s) => s.orders.length)
   const userChanges = useUserOverlayStore(
     (s) => Object.keys(s.created).length + Object.keys(s.patched).length + s.deleted.length,
   )
@@ -117,6 +128,11 @@ export function DashboardPage() {
           icon={<PackageX className="size-4" />}
           label={t('admin.dashboard.out')}
           value={outOfStock}
+        />
+        <Stat
+          icon={<Receipt className="size-4" />}
+          label={t('admin.dashboard.orders')}
+          value={orderCount}
         />
         <Stat
           icon={<Pencil className="size-4" />}
