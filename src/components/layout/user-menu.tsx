@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,9 +24,9 @@ export function UserMenu() {
 
   if (!user) {
     return (
-      <Button variant="outline" render={<Link to="/login" />}>
+      <Link to="/login" className={buttonVariants({ variant: 'outline' })}>
         {t('nav.login')}
-      </Button>
+      </Link>
     )
   }
 

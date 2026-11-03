@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatPrice } from '@/lib/format'
 import { ProductImage } from '@/features/products/components/product-image'
@@ -151,10 +151,10 @@ export function CartPage() {
       <div className="space-y-4">
         <h1 className="text-2xl font-semibold">{t('cart.title')}</h1>
         <EmptyState title={t('cart.empty')}>
-          <Button render={<Link to="/products" />}>
+          <Link to="/products" className={buttonVariants({})}>
             <ShoppingBag className="size-4" />
             {t('cart.emptyCta')}
-          </Button>
+          </Link>
         </EmptyState>
       </div>
     )

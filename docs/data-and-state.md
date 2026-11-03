@@ -66,7 +66,7 @@ Detail page: `useProduct(id)` → local product if `isLocal(id)`; else `useQuery
 | Action | Network | Store | Query cache |
 |---|---|---|---|
 | Create | `POST /products/add` (validates shape, gets echo) | `create()` with local id | none needed (overlay re-merges) |
-| Update remote | `PUT /products/{id}` | `update(id, patch)` | `setQueryData(detail(id))` merge |
+| Update remote | `PUT /products/{id}` | `update(id, patch)` | none: `useProduct` applies the patch on read |
 | Update local | none (would 404) | `update(id, patch)` | — |
 | Delete remote | `DELETE /products/{id}` | `remove(id)` | `removeQueries(detail(id))` |
 | Delete local | none | `remove(id)` (also drops from `created`) | — |

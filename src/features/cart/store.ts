@@ -19,6 +19,8 @@ interface CartState {
   remove: (userId: number, productId: number) => void
   clear: (userId: number) => void
   removeProductEverywhere: (productId: number) => void
+  /** Every user's cart (Reset demo data). */
+  reset: () => void
 }
 
 const clampQuantity = (quantity: number, stock: number) =>
@@ -63,6 +65,8 @@ export const useCartStore = create<CartState>()(
         })),
 
       clear: (userId) => set((s) => ({ byUser: { ...s.byUser, [userId]: [] } })),
+
+      reset: () => set({ byUser: {} }),
 
       removeProductEverywhere: (productId) =>
         set((s) => ({
