@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { AdminMenu } from './admin-menu'
 import { CartButton } from './cart-button'
+import { FavoritesButton } from './favorites-button'
 import { HeaderSearch } from './header-search'
 import { MegaMenu } from './mega-menu'
 import { MobileNav } from './mobile-nav'
@@ -45,6 +46,7 @@ export function Header() {
           <div className="hidden md:block">
             <PreferencesControls />
           </div>
+          <FavoritesButton />
           <CartButton />
           <UserMenu />
         </div>

@@ -12,6 +12,7 @@ import { ReviewsTab } from '@/features/reviews/components/reviews-tab'
 
 import type { Review } from '../schemas'
 import { useAddToCart, useBuyNow } from '@/features/cart/hooks/use-add-to-cart'
+import { FavoriteButton } from '@/features/favorites/components/favorite-button'
 import { useInView } from '../hooks/use-in-view'
 import { useProduct } from '../hooks/use-product'
 import { DeliveryInfo } from './detail/delivery-info'
@@ -67,7 +68,10 @@ export function ProductDetailPage() {
             {product.brand ? (
               <p className="text-sm text-muted-foreground">{product.brand}</p>
             ) : null}
-            <h1 className="text-2xl font-semibold">{product.title}</h1>
+            <div className="flex items-start justify-between gap-2">
+              <h1 className="text-2xl font-semibold">{product.title}</h1>
+              <FavoriteButton productId={product.id} title={product.title} overlay />
+            </div>
           </div>
 
           <button

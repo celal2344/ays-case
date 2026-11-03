@@ -1,4 +1,5 @@
 import { useCartStore } from '@/features/cart/store'
+import { useFavoritesStore } from '@/features/favorites/store'
 import { useOrdersStore } from '@/features/orders/store'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { useReviewsStore } from '@/features/reviews/store'
@@ -13,5 +14,6 @@ export function resetDemoData() {
   useUserOverlayStore.getState().reset()
   useReviewsStore.getState().reset()
   useCartStore.getState().reset()
+  useFavoritesStore.getState().reset()
   useOrdersStore.getState().reset()
 }

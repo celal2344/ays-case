@@ -16,6 +16,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthAdminRouteImport } from './routes/_auth/_admin'
 import { Route as AuthCartRouteImport } from './routes/_auth/cart'
 import { Route as AuthCheckoutRouteImport } from './routes/_auth/checkout'
+import { Route as AuthFavoritesRouteImport } from './routes/_auth/favorites'
 import { Route as ProductsIndexRouteImport } from './routes/products/index'
 import { Route as ProductsProductIdRouteImport } from './routes/products/$productId'
 import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
@@ -59,6 +60,11 @@ const AuthCartRoute = AuthCartRouteImport.update({
 const AuthCheckoutRoute = AuthCheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthFavoritesRoute = AuthFavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
   getParentRoute: () => AuthRoute,
 } as any)
 const ProductsIndexRoute = ProductsIndexRouteImport.update({
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/cart': typeof AuthCartRoute
   '/checkout': typeof AuthCheckoutRoute
+  '/favorites': typeof AuthFavoritesRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/': typeof ProductsIndexRoute
   '/orders/$orderId': typeof AuthOrdersOrderIdRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/cart': typeof AuthCartRoute
   '/checkout': typeof AuthCheckoutRoute
+  '/favorites': typeof AuthFavoritesRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products': typeof ProductsIndexRoute
   '/orders/$orderId': typeof AuthOrdersOrderIdRoute
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/_auth/_admin': typeof AuthAdminRouteWithChildren
   '/_auth/cart': typeof AuthCartRoute
   '/_auth/checkout': typeof AuthCheckoutRoute
+  '/_auth/favorites': typeof AuthFavoritesRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/': typeof ProductsIndexRoute
   '/_auth/orders/$orderId': typeof AuthOrdersOrderIdRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/cart'
     | '/checkout'
+    | '/favorites'
     | '/products/$productId'
     | '/products/'
     | '/orders/$orderId'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/cart'
     | '/checkout'
+    | '/favorites'
     | '/products/$productId'
     | '/products'
     | '/orders/$orderId'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/_auth/_admin'
     | '/_auth/cart'
     | '/_auth/checkout'
+    | '/_auth/favorites'
     | '/products/$productId'
     | '/products/'
     | '/_auth/orders/$orderId'
@@ -296,6 +308,13 @@ declare module '@tanstack/react-router' {
       path: '/checkout'
       fullPath: '/checkout'
       preLoaderRoute: typeof AuthCheckoutRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/favorites': {
+      id: '/_auth/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof AuthFavoritesRouteImport
       parentRoute: typeof AuthRoute
     }
     '/products/': {
@@ -407,6 +426,7 @@ interface AuthRouteChildren {
   AuthAdminRoute: typeof AuthAdminRouteWithChildren
   AuthCartRoute: typeof AuthCartRoute
   AuthCheckoutRoute: typeof AuthCheckoutRoute
+  AuthFavoritesRoute: typeof AuthFavoritesRoute
   AuthOrdersOrderIdRoute: typeof AuthOrdersOrderIdRoute
   AuthOrdersIndexRoute: typeof AuthOrdersIndexRoute
 }
@@ -415,6 +435,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthAdminRoute: AuthAdminRouteWithChildren,
   AuthCartRoute: AuthCartRoute,
   AuthCheckoutRoute: AuthCheckoutRoute,
+  AuthFavoritesRoute: AuthFavoritesRoute,
   AuthOrdersOrderIdRoute: AuthOrdersOrderIdRoute,
   AuthOrdersIndexRoute: AuthOrdersIndexRoute,
 }

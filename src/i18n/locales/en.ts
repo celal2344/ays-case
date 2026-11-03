@@ -196,6 +196,17 @@ export const en = {
       updated: 'Your review was updated.',
     },
   },
+  favorites: {
+    title: 'Favorites',
+    open: 'Favorites, {{n}} items',
+    add: 'Add {{title}} to favorites',
+    remove: 'Remove {{title}} from favorites',
+    added: 'Added to favorites.',
+    removed: 'Removed from favorites.',
+    signIn: 'Sign in to save favorites.',
+    empty: 'You have no favorites yet',
+    emptyCta: 'Browse products',
+  },
   cart: {
     title: 'Your cart',
     open: 'Cart, {{n}} items',

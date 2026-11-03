@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { useCartStore } from '@/features/cart/store'
+import { useFavoritesStore } from '@/features/favorites/store'
 import { createProduct, deleteProduct, updateProduct } from '@/features/products/api'
 import {
   isLocal,
@@ -57,6 +58,7 @@ export function useDeleteProduct() {
       }
       useProductOverlayStore.getState().remove(id)
       useCartStore.getState().removeProductEverywhere(id)
+      useFavoritesStore.getState().removeProductEverywhere(id)
       useReviewsStore.getState().removeProduct(id)
       queryClient.removeQueries({ queryKey: productKeys.detail(id) })
     },

@@ -198,6 +198,17 @@ export const tr = {
       updated: 'Yorumun güncellendi.',
     },
   },
+  favorites: {
+    title: 'Favoriler',
+    open: 'Favoriler, {{n}} ürün',
+    add: '{{title}} ürününü favorilere ekle',
+    remove: '{{title}} ürününü favorilerden çıkar',
+    added: 'Favorilere eklendi.',
+    removed: 'Favorilerden çıkarıldı.',
+    signIn: 'Favori kaydetmek için giriş yapın.',
+    empty: 'Henüz favoriniz yok',
+    emptyCta: 'Ürünlere göz at',
+  },
   cart: {
     title: 'Sepetin',
     open: 'Sepet, {{n}} ürün',
