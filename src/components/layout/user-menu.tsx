@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { LogOut } from 'lucide-react'
+import { LogOut, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -38,9 +38,14 @@ export function UserMenu() {
       >
         <Avatar className="size-7">
           <AvatarImage src={user.image} alt="" />
-          <AvatarFallback>{user.firstName.slice(0, 1)}</AvatarFallback>
+          <AvatarFallback>
+            <User className="size-4" aria-hidden="true" />
+          </AvatarFallback>
         </Avatar>
-        <span className="hidden max-w-32 truncate sm:inline">{user.firstName}</span>
+        {/* the button is named with the full name; the visible first name is part of it (WCAG 2.5.3) */}
+        <span aria-hidden="true" className="hidden max-w-32 truncate sm:inline">
+          {user.firstName}
+        </span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48">
         <DropdownMenuGroup>

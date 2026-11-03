@@ -18,7 +18,9 @@ export function ProductCard({ product }: { product: Product }) {
         to="/products/$productId"
         params={{ productId: String(product.id) }}
         className="relative block"
-        aria-label={product.title}
+        // the title link below names this card for assistive tech; this one only repeats it
+        aria-hidden="true"
+        tabIndex={-1}
       >
         <ProductImage src={product.thumbnail} alt="" />
         <div className="absolute top-2 left-2 flex flex-col items-start gap-1">

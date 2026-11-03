@@ -39,4 +39,9 @@ export default defineConfig([
     files: ['**/*.test.{ts,tsx}', 'src/test/**', 'e2e/**'],
     rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
   },
+  {
+    // Playwright fixtures are called `use`, which is not a React hook
+    files: ['e2e/**'],
+    rules: { 'react-hooks/rules-of-hooks': 'off' },
+  },
 ])
