@@ -1,7 +1,11 @@
 import type { en } from './en'
 
 export const tr = {
-  app: { name: 'ays-case' },
+  app: {
+    name: 'ays-case',
+    title: 'ays-case · Online mağaza',
+    description: 'Demo bir online mağaza: ürünlere göz atın, sepet doldurun ve satın alın.',
+  },
   nav: {
     home: 'Ana sayfa',
     products: 'Ürünler',

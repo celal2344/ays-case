@@ -13,9 +13,14 @@ void i18next.use(initReactI18next).init({
   interpolation: { escapeValue: false },
 })
 
-function applyLanguage(language: string) {
-  document.documentElement.lang = language
+/** Keeps <html lang>, the page title and the meta description in step with the UI language. */
+export function applyLanguage(language: string) {
   if (i18next.language !== language) void i18next.changeLanguage(language)
+  document.documentElement.lang = language
+  document.title = i18next.t('app.title', { lng: language })
+  document
+    .querySelector('meta[name="description"]')
+    ?.setAttribute('content', i18next.t('app.description', { lng: language }))
 }
 
 applyLanguage(usePreferencesStore.getState().language)
