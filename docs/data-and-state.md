@@ -8,11 +8,14 @@ DummyJSON accepts add/update/delete but **persists nothing** (see [api.md](api.m
 | Remote catalog (all products, list fields) | TanStack Query `productKeys.catalog()` | no (memory, `staleTime: Infinity` per session) | — |
 | Product detail (images, reviews) | TanStack Query `productKeys.detail(id)` | no | — |
 | Categories | TanStack Query `productKeys.categories()` | no | — |
-| Admin changes (created / patched / deleted) | `useProductOverlayStore` (Zustand) | yes | `dummyshop:v1:product-overlay` |
-| Tokens + current user | `useAuthStore` | tokens + user yes, status no | `dummyshop:v1:auth` |
-| Cart | `useCartStore` | yes, per user | `dummyshop:v1:cart` |
-| Orders | `useOrdersStore` | yes, per user | `dummyshop:v1:orders` |
-| Theme, language, shop view (grid/table) | `usePreferencesStore` | yes | `dummyshop:v1:prefs` |
+| Admin changes (created / patched / deleted) | `useProductOverlayStore` (Zustand) | yes | `ays-case:v1:product-overlay` |
+| Admin user changes (created / patched / deleted) | `useUserOverlayStore` (Zustand) | yes | `ays-case:v1:user-overlay` |
+| Reviews written in the app | `useReviewsStore` (Zustand) | yes | `ays-case:v1:reviews` |
+| Remote users (admin list) | TanStack Query `userKeys.list()` | no | — |
+| Tokens + current user | `useAuthStore` | tokens + user yes, status no | `ays-case:v1:auth` |
+| Cart | `useCartStore` | yes, per user | `ays-case:v1:cart` |
+| Orders | `useOrdersStore` | yes, per user | `ays-case:v1:orders` |
+| Theme, language, shop view (grid/table) | `usePreferencesStore` | yes | `ays-case:v1:prefs` |
 | List filters (q, category, sort, order, page) | URL search params (TanStack Router) | in URL | — |
 | Form drafts, dialogs | component state | no | — |
 
@@ -78,6 +81,36 @@ List fields: `id,title,description,category,price,discountPercentage,rating,stoc
 
 Filtering pipeline (pure, unit-tested): `applyOverlay → filterByQuery(q) → filterByCategory → sortBy → paginate`. Search matches title, brand, category, tags (case-insensitive, Turkish-safe with `toLocaleLowerCase("tr")` only when lang = tr).
 
+## User overlay
+Same pattern as products, for the admin Users panel (USER-1..5). DummyJSON's `POST/PUT/DELETE /users` are simulated and `role` is accepted but never persisted, so every admin change is also written locally.
+```ts
+// features/users/overlay-store.ts
+interface UserOverlayState {
+  created: Record<number, User>;
+  patched: Record<number, Partial<Omit<User, "id">>>;
+  deleted: number[];
+  nextLocalId: number;            // starts at 100_000
+  create(input: UserInput): User;
+  update(id: number, patch: UserPatch): void;
+  remove(id: number): void;
+  reset(): void;
+}
+// features/users/catalog.ts — pure, unit-tested
+export function applyUserOverlay(remote: User[], o: UserOverlaySnapshot): User[];
+```
+- `useUsers()` = `useQuery(GET /users?limit=0)` + overlay → `useMemo(applyUserOverlay)`; search / role filter / pagination run client-side like the catalog.
+- On login (and bootstrap) the overlay patch for the user's id is applied on top of `/auth/me`, so an admin's role edit affects that user on this browser. The auth store keeps the merged user.
+- Guardrails (in the mutation hooks, tested): cannot delete or demote yourself; cannot delete or demote the last admin (counted over the merged list).
+- Deleting a user also calls `cart.clear(userId)`; orders remain.
+- Usernames are unique case-insensitively across the merged list.
+
+## Reviews
+- Seeded reviews come from `GET /products/{id}` (`reviews[]`: `rating, comment, date, reviewerName, reviewerEmail`). DummyJSON's `/comments` endpoints belong to posts and are not used.
+- `useReviewsStore`: `byProduct: Record<number, LocalReview[]>` with `LocalReview { id, productId, userId, authorName, rating, comment, createdAt }`; actions `add`, `update`, `remove`, `removeProduct`, `reset`. One review per user per product.
+- `features/reviews/summary.ts` (pure): `mergeReviews(seeded, local)`, `summarize(reviews) → { average, count, histogram }`, `sortReviews`.
+- Verified buyer: author has an order containing the product (selector over the orders store).
+- Deleting a product also calls `reviews.removeProduct(id)`. Reset demo data clears this store.
+
 ## Auth store
 ```ts
 interface AuthState {
@@ -142,8 +175,9 @@ export const productKeys = {
   categories: () => [...productKeys.all, "categories"] as const,
 };
 export const authKeys = { me: () => ["auth", "me"] as const };
+export const userKeys = { all: ["users"] as const, list: () => [...userKeys.all, "list"] as const };
 ```
 Factory pattern copied from StokMate `packages/domain/src/query-keys.ts`.
 
 ## Reset demo data (EX-15)
-Admin dashboard button → `overlay.reset()`, `orders.reset()`, all carts cleared → confirm dialog first.
+Admin dashboard button → `overlay.reset()`, `userOverlay.reset()`, `reviews.reset()`, `orders.reset()`, all carts cleared → confirm dialog first.

@@ -15,7 +15,11 @@ Base URL: `https://dummyjson.com` (env `VITE_API_BASE_URL`, so MSW / a mock can 
 | Products | `POST /products/add` | Admin create | **Simulated**, returns id = total+1 |
 | Products | `PUT /products/{id}` | Admin update | **Simulated**, returns merged object |
 | Products | `DELETE /products/{id}` | Admin delete | **Simulated**, returns object with `isDeleted`, `deletedOn` |
+| Users | `GET /users?limit=0` | Admin users list | ~208 users, filtered/sorted client-side |
+| Users | `POST /users/add`, `PUT /users/{id}`, `DELETE /users/{id}` | Admin user CRUD | **Simulated**, nothing persists; `role` is accepted in `UserInput` but not persisted (see `dummyjson.json` OpenAPI). Skipped for local ids |
 | Carts | `POST /carts/add` `{ userId, products: [{ id, quantity }] }` | Checkout | **Simulated**, returns computed totals + id |
+
+Reviews are not a separate endpoint: they are the `reviews[]` array inside `GET /products/{id}`. `/comments` is for posts and is not used.
 
 Not used (on purpose): `GET /products/search` and `/products/category/{slug}` — search/filter run client-side over the merged catalog ([ADR-0004](decisions/0004-client-side-catalog.md)).
 
@@ -23,7 +27,7 @@ Not used (on purpose): `GET /products/search` and `/products/category/{slug}` �
 1. **Nothing persists.** Every write must also go to the overlay store ([data-and-state.md](data-and-state.md)).
 2. **Add returns a colliding id.** Assign local ids ≥ 100000.
 3. **Update/delete on a local id** would hit a product that doesn't exist on the server → skip the network call for `isLocal(id)`.
-4. **Login has no role.** Always follow with `/auth/me`.
+4. **Login has no role.** (`moderator` exists as a role value but has no special behaviour in the app.) Always follow with `/auth/me`.
 5. **Cookies.** Login/refresh also set cookies; we use Bearer headers only and do **not** set `withCredentials` (avoid CORS/cookie confusion).
 6. **Tokens default to 60 min.** Send `expiresInMins: 60`; the refresh interceptor handles expiry. Test it by logging in with `expiresInMins: 1` in a dev flag.
 7. **Images** are on `cdn.dummyjson.com`; admin-created products use a user-entered URL with a placeholder fallback (`onError`).

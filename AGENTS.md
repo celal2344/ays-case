@@ -1,4 +1,4 @@
-# Agent rules — dummy-shop
+# Agent rules — ays-case
 
 ## Read first
 1. `docs/implementation-plan.md` — work only on the gate you were given.
@@ -22,6 +22,9 @@
 pnpm lint && pnpm typecheck && pnpm test && pnpm check:translations
 ```
 All green. Then write a handoff summary: done, files changed, decisions, open items.
+
+## Delivery
+One PR per gate from `gate/gN-name`. When the gate is green, open the PR and **stop**; wait for the owner's approval before merging or starting the next gate.
 
 ## Commits
 Conventional commits (`feat(cart): …`). Small, one topic each.

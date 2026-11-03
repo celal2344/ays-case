@@ -8,7 +8,7 @@ flowchart TB
     UI["Pages + components<br/>(routes/, features/*/components)"]
     HOOKS["Feature hooks<br/>useProducts, useCart, useAuth"]
     Q["TanStack Query<br/>remote cache (read)"]
-    Z["Zustand stores<br/>auth · cart · orders · productOverlay · preferences"]
+    Z["Zustand stores<br/>auth · cart · orders · productOverlay · userOverlay · reviews · preferences"]
     API["features/*/api<br/>typed functions"]
     HTTP["lib/http.ts<br/>axios instance + interceptors"]
     DJ["DummyJSON"]
@@ -31,7 +31,7 @@ Rules:
 
 ## Folder structure
 ```text
-dummy-shop/
+ays-case/
 ├── .github/workflows/ci.yml
 ├── docs/                         # this doc set
 ├── e2e/                          # Playwright specs
@@ -56,13 +56,18 @@ dummy-shop/
 │   │   ├── _auth/_admin/admin/index.tsx
 │   │   ├── _auth/_admin/admin/products/index.tsx
 │   │   ├── _auth/_admin/admin/products/new.tsx
-│   │   └── _auth/_admin/admin/products/$productId.edit.tsx
+│   │   ├── _auth/_admin/admin/products/$productId.edit.tsx
+│   │   ├── _auth/_admin/admin/users/index.tsx
+│   │   ├── _auth/_admin/admin/users/new.tsx
+│   │   └── _auth/_admin/admin/users/$userId.edit.tsx
 │   ├── features/
 │   │   ├── auth/      { api.ts, store.ts, schemas.ts, components/, hooks/ }
 │   │   ├── products/  { api.ts, overlay-store.ts, schemas.ts, query-keys.ts, catalog.ts, components/, hooks/ }
 │   │   ├── cart/      { store.ts, selectors.ts, components/ }
 │   │   ├── orders/    { api.ts, store.ts, components/ }
-│   │   └── admin/     { components/ }  # table, product form, stats
+│   │   ├── users/     { api.ts, overlay-store.ts, schemas.ts, catalog.ts, query-keys.ts, components/, hooks/ }
+│   │   ├── reviews/   { store.ts, schemas.ts, summary.ts, components/ }
+│   │   └── admin/     { components/ }  # shared admin table, product form, stats
 │   ├── components/
 │   │   ├── ui/                   # shadcn generated
 │   │   ├── layout/               # AppShell, Header, MobileNav, UserMenu

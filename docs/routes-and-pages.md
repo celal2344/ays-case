@@ -15,8 +15,13 @@
 | `/admin/products` | admin | Product table | `q, category, sort, order, page` |
 | `/admin/products/new` | admin | Create form | |
 | `/admin/products/$productId/edit` | admin | Edit form | |
+| `/admin/users` | admin | User table | `q, role, page` |
+| `/admin/users/new` | admin | Create user form | |
+| `/admin/users/$userId/edit` | admin | Edit user form | |
 | `/forbidden` | public | 403 ("Admins only" + back link) | |
-| `*` | — | 404 | |
+| `*` | — | 404 (global `defaultNotFoundComponent`) | |
+
+Global fallbacks live on the router: `defaultNotFoundComponent` (404) and `defaultErrorComponent` (unexpected render/loader error with Retry), both rendered inside `AppShell`. `redirect` is used as given (not validated); this is listed under README known limitations.
 
 Guards (TanStack Router `beforeLoad`, pattern from StokMate `_authenticated.tsx`):
 ```ts
@@ -36,7 +41,7 @@ Public browsing is allowed so the shop is visible before login; "Add to cart" wh
 Search params validated with Zod in `validateSearch` (`page` coerced, `sort ∈ {price,rating,title}`, defaults stripped from the URL).
 
 ## Layout
-- **Header:** logo, nav (Products, Orders, Admin if admin), search (on `/products`), cart icon with count badge, theme toggle, language toggle, user menu (name, avatar, role badge, Logout) or Login button.
+- **Header:** logo, nav (Products, Orders, Admin menu with Products / Users if admin), cart icon with count badge, theme toggle, language toggle, user menu (name, avatar, role badge, Logout) or Login button.
 - **Mobile (< md):** nav + toggles move into a `Sheet`; cart icon stays visible.
 - **Content:** `max-w-7xl mx-auto px-4`.
 
@@ -51,8 +56,16 @@ Username + password, "Fill admin" / "Fill user" buttons, submit with spinner, er
 - Pagination: 12 per page, "Showing 13–24 of 194".
 - States: skeleton grid; error with Retry; empty ("No products match" + Clear filters).
 
-### Product detail
-Gallery (main image + thumbnails), title, brand, category, rating + review count, price/discount, stock, quantity stepper + Add to cart, description, specs (dimensions, weight, warranty, shipping, return policy), reviews list. Local products show only the fields they have. Deleted / missing → 404.
+### Product detail (Trendyol-style, shadcn neutral theme)
+Layout only; no third-party branding. Desktop is two columns, mobile stacks.
+- Breadcrumb: Home › category › title.
+- Left: gallery with thumbnail strip, click-to-zoom dialog.
+- Right: brand + title, rating + review count (links to reviews tab), price box (price, struck old price, discount badge), stock / "only N left", key attributes grid (brand, category, warranty, shipping, return policy, dimensions, weight), quantity stepper, **Buy now** (primary) and **Add to cart**.
+- Below: **Similar products** carousel; tabs **Product info** (specs), **Description**, **Reviews**.
+- Reviews tab: rating summary (average + 5→1 histogram), sort select, review cards (avatar initials, name, date, stars, text, "verified buyer" badge), write-review form for logged-in users (login prompt otherwise), edit/delete own, admin delete any.
+- Sticky add-to-cart bar once the main buttons leave the viewport (bottom bar on mobile).
+- Not built: seller box, coupons, Q&A, photo reviews, favorites.
+Local products show only the fields they have. Deleted / missing → 404.
 
 ### Cart
 Line list (thumb, title link, unit price, stepper, line total, remove), clear cart, summary card (subtotal, discount, total, "Checkout" button). Empty state with link to shop. Sticky summary on mobile bottom.
@@ -69,7 +82,17 @@ Stat cards: total products (merged), low stock (≤ 5), out of stock, orders (al
 ### Admin product table
 TanStack Table: thumbnail, title, category, brand, price, stock, rating, actions (Edit, Delete). Column sort, search, category filter, pagination 20. "New product" button. Delete → `AlertDialog` → toast with result. Mobile: horizontal scroll inside the card.
 
-### Admin create / edit
+### Admin users
+TanStack Table: avatar, name, username, email, role badge, actions (Edit, Delete); search, role filter, pagination 20; "New user" button. Delete disabled on your own row and on the last admin. Same form pattern as products:
+| Field | Rule |
+|---|---|
+| username | required, 3–30, unique (case-insensitive) |
+| password | required on create (≥ 6), optional on edit |
+| firstName / lastName | required, 1–50 |
+| email | valid email |
+| role | `admin` | `user` | `moderator` (select; moderator has no special behaviour) |
+
+### Admin create / edit (products)
 TanStack Form + Zod:
 | Field | Rule |
 |---|---|
