@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { GROUP_IDS } from './category-groups'
+
 // Derived by hand from dummyjson.json (Product, ProductList, Category). The spec has no `required`
 // lists, so the fields the app depends on are required here; `brand` really is missing on some items.
 
@@ -65,6 +67,7 @@ export const productSearchSchema = z.object({
   view: z.enum(['grid', 'table']).optional().catch(undefined),
   minPrice: z.coerce.number().min(0).optional().catch(undefined),
   maxPrice: z.coerce.number().min(0).optional().catch(undefined),
+  group: z.enum(GROUP_IDS).optional().catch(undefined),
   brand: z.string().optional().catch(undefined),
   /** Minimum rating (stars), 1 to 4. */
   rating: z.coerce.number().int().min(1).max(4).optional().catch(undefined),

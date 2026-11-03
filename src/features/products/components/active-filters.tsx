@@ -34,6 +34,10 @@ export function ActiveFilters({
         const name = categories.find((c) => c.slug === slug)?.name ?? categoryLabel(slug)
         return t('products.filters.chip.category', { name })
       }
+      case 'group':
+        return t('products.filters.chip.group', {
+          name: t(`nav.groups.${search.group ?? 'other'}`),
+        })
       case 'price':
         if (search.minPrice !== undefined && search.maxPrice !== undefined) {
           return t('products.filters.chip.priceBetween', {

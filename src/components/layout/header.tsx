@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 
 import { AdminMenu } from './admin-menu'
 import { CartButton } from './cart-button'
-import { CategoryStrip } from './category-strip'
 import { HeaderSearch } from './header-search'
+import { MegaMenu } from './mega-menu'
 import { MobileNav } from './mobile-nav'
 import { useNavItems } from './nav-items'
 import { PreferencesControls } from './preferences-controls'
@@ -49,8 +49,10 @@ export function Header() {
           <UserMenu />
         </div>
       </div>
-      <div className="border-t">
-        <CategoryStrip />
+      <div className="hidden border-t lg:block">
+        <div className="mx-auto max-w-7xl px-2">
+          <MegaMenu />
+        </div>
       </div>
     </header>
   )
