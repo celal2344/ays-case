@@ -6,7 +6,7 @@
 Need protected + role-protected routes, URL-synced list filters, data prefetch.
 
 ## Decision
-TanStack Router with file routes, typed + Zod-validated search params, `beforeLoad` guards, loaders using `queryClient.ensureQueryData`.
+TanStack Router with file routes, typed + Zod-validated search params, `beforeLoad` guards, loaders using `queryClient.query`.
 
 ## Consequences
 - Type-safe links and search params; same pattern as StokMate.

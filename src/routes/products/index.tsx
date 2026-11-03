@@ -9,8 +9,8 @@ export const Route = createFileRoute('/products/')({
   validateSearch: productSearchSchema,
   loader: ({ context }) =>
     Promise.all([
-      context.queryClient.ensureQueryData(catalogQueryOptions),
-      context.queryClient.ensureQueryData(categoriesQueryOptions),
+      context.queryClient.query(catalogQueryOptions),
+      context.queryClient.query(categoriesQueryOptions),
     ]),
   pendingComponent: ProductGridSkeleton,
   component: ProductsPage,

@@ -7,7 +7,7 @@ import { userSearchSchema } from '@/features/users/schemas'
 
 export const Route = createFileRoute('/_auth/_admin/admin/users/')({
   validateSearch: userSearchSchema,
-  loader: ({ context }) => context.queryClient.ensureQueryData(usersQueryOptions),
+  loader: ({ context }) => context.queryClient.query(usersQueryOptions),
   pendingComponent: PageSkeleton,
   component: UsersPage,
 })

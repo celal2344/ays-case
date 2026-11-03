@@ -8,8 +8,8 @@ import { usersQueryOptions } from '@/features/users/queries'
 export const Route = createFileRoute('/_auth/_admin/admin/')({
   loader: ({ context }) =>
     Promise.all([
-      context.queryClient.ensureQueryData(catalogQueryOptions),
-      context.queryClient.ensureQueryData(usersQueryOptions),
+      context.queryClient.query(catalogQueryOptions),
+      context.queryClient.query(usersQueryOptions),
     ]),
   pendingComponent: PageSkeleton,
   component: DashboardPage,

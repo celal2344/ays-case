@@ -47,7 +47,7 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 - Path alias `@/` → `src/`.
 
 ## React
-- Routes are thin: validate search, prefetch in `loader` (`queryClient.ensureQueryData`), render a page component from `features/`.
+- Routes are thin: validate search, prefetch in `loader` (`queryClient.query`), render a page component from `features/`.
 - Zustand selectors always (`useCartStore(selectCount)`), never the whole store, to avoid re-renders. `useShallow` for object selectors.
 - Derived data via `useMemo` over pure functions in `*.ts` files (testable without React).
 - No `useEffect` for data fetching or derived state.

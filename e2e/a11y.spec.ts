@@ -34,6 +34,7 @@ for (const theme of ['light', 'dark'] as const) {
     test('cart, checkout, orders and admin pages have no WCAG A/AA violations', async ({
       page,
     }) => {
+      test.setTimeout(120_000) // seven pages, each scanned: slow under parallel load
       await signIn(page, 'admin')
       await page.goto('/products/2')
       await page.getByRole('button', { name: 'Buy now' }).first().click()

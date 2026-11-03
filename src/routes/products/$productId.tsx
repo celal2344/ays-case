@@ -11,9 +11,7 @@ export const Route = createFileRoute('/products/$productId')({
     if (!Number.isInteger(id) || id < 1) throw notFound()
     // A failed fetch (e.g. 404) is rendered by the page itself, so the loader never blocks on it.
     if (!isLocal(id)) {
-      await context.queryClient
-        .ensureQueryData(productDetailQueryOptions(id))
-        .catch(() => undefined)
+      await context.queryClient.query(productDetailQueryOptions(id)).catch(() => undefined)
     }
   },
   pendingComponent: PageSkeleton,

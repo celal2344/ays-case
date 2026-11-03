@@ -11,5 +11,5 @@ export const userKeys = {
 export const usersQueryOptions = queryOptions({
   queryKey: userKeys.list(),
   queryFn: getUsers,
-  staleTime: Infinity,
+  staleTime: 'static',
 })
