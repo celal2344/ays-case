@@ -1,0 +1,27 @@
+# Agent rules — dummy-shop
+
+## Read first
+1. `docs/implementation-plan.md` — work only on the gate you were given.
+2. `docs/conventions.md`, `docs/data-and-state.md`, `docs/api.md`.
+3. Relevant ADRs in `docs/decisions/`.
+
+## Hard rules
+- Components never import `lib/http` or `features/*/api` directly → use feature hooks.
+- Never read product data from Query without the overlay merge (`useCatalog` / `useProduct`).
+- No network call for local product ids (`isLocal(id)`).
+- Zustand: always select slices; persisted stores have `version` + `migrate`; keys from `lib/storage.ts`.
+- All user-facing text through i18n; add keys to **both** `en.ts` and `tr.ts`.
+- Zod-parse every API response at the `api.ts` boundary.
+- Exact dependency versions; no new dependency without saying why in the handoff.
+- No `any`, no `console.log`, no commented-out code, no TODOs left in a finished gate.
+- Don't edit `docs/` unless the gate says so. If the docs are wrong or block you, stop and report.
+- Don't edit `src/components/ui/*` (shadcn) except via the shadcn CLI.
+
+## Before handing off
+```bash
+pnpm lint && pnpm typecheck && pnpm test && pnpm check:translations
+```
+All green. Then write a handoff summary: done, files changed, decisions, open items.
+
+## Commits
+Conventional commits (`feat(cart): …`). Small, one topic each.
