@@ -17,6 +17,7 @@ test('search, category, sort and paging are reflected in the URL and the list', 
   await expect(page.getByText('Showing 1–1 of 1')).toBeVisible()
 
   await page.getByRole('combobox', { name: 'Search products' }).fill('')
+  await page.keyboard.press('Escape') // on phones the open search is a full-screen layer
   await page.getByRole('combobox', { name: 'Sort by' }).click()
   await page.getByRole('option', { name: 'Price: high to low' }).click()
   await expect(page).toHaveURL(/sort=price/)
@@ -128,4 +129,28 @@ test('recently viewed is a compact row on the product page and absent from the s
   await page.goto('/products')
   await expect(page.getByRole('heading', { name: 'Products' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Recently viewed' })).toHaveCount(0)
+})
+
+test('the empty search box shows recently viewed and recent searches, and a chip runs the search', async ({
+  page,
+}) => {
+  await signIn(page, 'user')
+  await page.goto('/products/2')
+  await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
+  const box = page.getByRole('combobox', { name: 'Search products' })
+  await box.fill('item 07')
+  await box.press('Enter')
+  await expect(page).toHaveURL(/q=item(\+|%20)07/)
+  await box.fill('')
+  await box.click()
+  await expect(page.getByRole('heading', { name: 'Recently viewed' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Best deals' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'groceries item 02' }).first()).toBeVisible()
+  await page.getByRole('button', { name: 'item 07', exact: true }).click()
+  await expect(page).toHaveURL(/q=item(\+|%20)07/)
+  await expect(page.getByRole('heading', { name: 'Best deals' })).toHaveCount(0)
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  )
+  expect(overflow).toBeLessThanOrEqual(0)
 })

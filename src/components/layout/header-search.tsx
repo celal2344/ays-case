@@ -1,5 +1,5 @@
 import { useNavigate, useRouterState } from '@tanstack/react-router'
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -12,6 +12,7 @@ import {
   ComboboxLabel,
   ComboboxList,
 } from '@/components/ui/combobox'
+import { Button } from '@/components/ui/button'
 import { InputGroupAddon } from '@/components/ui/input-group'
 import { normalize } from '@/features/products/catalog'
 import { useCatalog } from '@/features/products/hooks/use-catalog'
@@ -24,6 +25,8 @@ import {
   MIN_SUGGESTION_CHARS,
   type Suggestions,
 } from '@/features/products/suggestions'
+import { FocusPanel } from '@/features/search/components/focus-panel'
+import { useSearchStore } from '@/features/search/store'
 import { formatPrice, type Language } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { cn } from '@/lib/utils'
@@ -73,10 +76,15 @@ export function HeaderSearch({ className }: { className?: string }) {
     latest.current = current
   })
 
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
   const [draft, setDraft] = useState(urlQuery)
-  const [open, setOpen] = useState(false)
+  // open for the page it was opened on, so any route change closes it
+  const [openOn, setOpenOn] = useState<string | null>(null)
+  const open = openOn === pathname
+  const setOpen = useCallback((value: boolean) => setOpenOn(value ? pathname : null), [pathname])
   const inputRef = useRef<HTMLInputElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const highlighted = useRef<Option | undefined>(undefined)
 
   const search = useCallback(
@@ -94,8 +102,16 @@ export function HeaderSearch({ className }: { className?: string }) {
     [navigate],
   )
 
-  // draft → URL (live filtering on /products only); URL → draft when it changed from elsewhere
   const committed = useRef(urlQuery)
+
+  /** A committed search (Enter, the "Search for" row, a chip): remembered unless it came from a suggestion. */
+  const run = (value: string, remember: boolean) => {
+    if (remember) useSearchStore.getState().record(value)
+    search(value, onProducts)
+    finish()
+  }
+
+  // draft → URL (live filtering on /products only); URL → draft when it changed from elsewhere
   const debouncedDraft = useDebouncedValue(draft, 300)
   useEffect(() => {
     if (onProducts && debouncedDraft !== committed.current) {
@@ -152,7 +168,7 @@ export function HeaderSearch({ className }: { className?: string }) {
     }
     document.addEventListener('pointerdown', close)
     return () => document.removeEventListener('pointerdown', close)
-  }, [])
+  }, [setOpen])
 
   const finish = () => {
     setOpen(false)
@@ -161,8 +177,7 @@ export function HeaderSearch({ className }: { className?: string }) {
 
   const choose = (option: Option) => {
     if (option.kind === 'search') {
-      search(option.text, onProducts)
-      setOpen(false)
+      run(option.text, true)
       return
     }
     setDraft('')
@@ -179,11 +194,20 @@ export function HeaderSearch({ className }: { className?: string }) {
   }
 
   const noMatches = enough && suggestions.products.length === 0
+  const showPanel = open && !draft.trim()
+  const showList = open && enough
+  const layerOpen = showPanel || showList
 
   return (
     <div
       ref={wrapperRef}
-      className={cn('relative min-w-0 flex-1 sm:max-w-xs', className)}
+      className={cn(
+        'relative min-w-0 flex-1 sm:max-w-xs',
+        // phones: the open search is a full-screen layer with the box on top
+        layerOpen &&
+          'max-md:fixed max-md:inset-0 max-md:z-50 max-md:overflow-y-auto max-md:bg-background max-md:p-3 max-md:sm:max-w-none',
+        className,
+      )}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false)
       }}
@@ -194,11 +218,19 @@ export function HeaderSearch({ className }: { className?: string }) {
         value={null}
         inputValue={draft}
         inline
-        open={open && enough}
-        onOpenChange={setOpen}
+        open={showList}
+        onOpenChange={(next) => {
+          // opening is ours (focus, click, typing, ArrowDown); the combobox may only close it
+          if (!next) setOpen(false)
+        }}
         onInputValueChange={(value, details) => {
           // picking an item or pressing Escape would replace the box content; the typed text stays instead
-          if (details.reason === 'item-press' || details.reason === 'input-clear') return
+          if (
+            details.reason === 'item-press' ||
+            details.reason === 'input-clear' ||
+            details.reason === 'escape-key'
+          )
+            return
           setDraft(value)
           setOpen(true)
         }}
@@ -211,87 +243,125 @@ export function HeaderSearch({ className }: { className?: string }) {
         itemToStringValue={(option) => option.key}
         isItemEqualToValue={(a, b) => a.key === b.key}
       >
-        <ComboboxInput
-          ref={inputRef}
-          aria-label={t('products.search.label')}
-          placeholder={t('products.search.headerPlaceholder')}
-          showTrigger={false}
-          showClear={draft.length > 0}
-          className="w-full"
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') setOpen(false)
-            if (event.key === 'ArrowDown') setOpen(true)
-            if (event.key === 'Enter' && !highlighted.current && draft.trim()) {
-              event.preventDefault()
-              search(draft, onProducts)
-              setOpen(false)
-            }
-          }}
-        >
-          <InputGroupAddon align="inline-start">
-            <Search aria-hidden="true" />
-          </InputGroupAddon>
-        </ComboboxInput>
-        {open && enough ? (
-          <div className="absolute top-full right-0 left-0 z-50 mt-1.5 min-w-72 overflow-hidden rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10">
-            <ComboboxList>
-              {(group: OptionGroup) => (
-                <ComboboxGroup key={group.value} items={group.items}>
-                  {group.value === 'search' ? (
-                    noMatches ? (
-                      <ComboboxLabel>{t('search.noProducts', { text })}</ComboboxLabel>
-                    ) : null
-                  ) : (
-                    <ComboboxLabel>{t(`search.${group.value}`)}</ComboboxLabel>
-                  )}
-                  <ComboboxCollection>
-                    {(option: Option) => (
-                      <ComboboxItem key={option.key} value={option} className="py-1.5 pr-2">
-                        {option.kind === 'product' ? (
-                          <>
-                            <img
-                              src={option.product.thumbnail}
-                              alt=""
-                              loading="lazy"
-                              className="size-9 shrink-0 rounded-md bg-muted object-cover"
-                            />
-                            <span className="min-w-0">
-                              <span className="block truncate">
-                                <Highlight
-                                  text={option.product.title}
-                                  query={text}
-                                  language={language}
-                                />
-                              </span>
-                              <span className="block truncate text-xs text-muted-foreground">
-                                {option.product.brand ? `${option.product.brand} · ` : ''}
-                                {formatPrice(salePriceCents(option.product) / 100, language)}
-                              </span>
-                            </span>
-                          </>
-                        ) : option.kind === 'category' ? (
-                          <>
-                            <span className="min-w-0 truncate">{option.category.name}</span>
-                            <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-                              {option.category.count}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <Search className="size-4 text-muted-foreground" aria-hidden="true" />
-                            <span className="min-w-0 truncate">
-                              {t('search.searchFor', { text: option.text })}
-                            </span>
-                          </>
-                        )}
-                      </ComboboxItem>
-                    )}
-                  </ComboboxCollection>
-                </ComboboxGroup>
-              )}
-            </ComboboxList>
+        <div className="flex items-center gap-2">
+          <ComboboxInput
+            ref={inputRef}
+            aria-label={t('products.search.label')}
+            placeholder={t('products.search.headerPlaceholder')}
+            showTrigger={false}
+            showClear={draft.length > 0}
+            className="w-full flex-1"
+            onFocus={() => setOpen(true)}
+            onClick={() => setOpen(true)}
+            onKeyDownCapture={(event) => {
+              // base-ui handles Escape on an unmounted popup itself, so this has to run first
+              if (event.key === 'Escape') setOpen(false)
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowDown') {
+                setOpen(true)
+                if (!draft.trim()) {
+                  event.preventDefault()
+                  panelRef.current?.querySelector<HTMLElement>('a, button')?.focus()
+                }
+              }
+              if (event.key === 'Enter' && !highlighted.current && draft.trim()) {
+                event.preventDefault()
+                run(draft, true)
+              }
+            }}
+          >
+            <InputGroupAddon align="inline-start">
+              <Search aria-hidden="true" />
+            </InputGroupAddon>
+          </ComboboxInput>
+          {layerOpen ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              aria-label={t('search.close')}
+              onClick={finish}
+            >
+              <X aria-hidden="true" />
+            </Button>
+          ) : null}
+        </div>
+        <p className="sr-only" aria-live="polite">
+          {showList
+            ? t('search.count', { n: suggestions.products.length + suggestions.categories.length })
+            : ''}
+        </p>
+        {showPanel ? (
+          <div
+            ref={panelRef}
+            className="absolute top-full right-0 left-0 z-50 mt-1.5 min-w-72 overflow-y-auto rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 max-md:static max-md:mt-3 max-md:shadow-none max-md:ring-0 md:max-h-[min(70vh,520px)]"
+          >
+            <FocusPanel onSearch={run} onNavigate={finish} />
           </div>
         ) : null}
+        {/* always mounted (hidden when closed) so the input's aria-controls has a target */}
+        <div
+          hidden={!showList}
+          className="absolute top-full right-0 left-0 z-50 mt-1.5 min-w-72 overflow-hidden rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 max-md:static max-md:mt-3 max-md:shadow-none max-md:ring-0"
+        >
+          <ComboboxList>
+            {(group: OptionGroup) => (
+              <ComboboxGroup key={group.value} items={group.items}>
+                {group.value === 'search' ? (
+                  noMatches ? (
+                    <ComboboxLabel>{t('search.noProducts', { text })}</ComboboxLabel>
+                  ) : null
+                ) : (
+                  <ComboboxLabel>{t(`search.${group.value}`)}</ComboboxLabel>
+                )}
+                <ComboboxCollection>
+                  {(option: Option) => (
+                    <ComboboxItem key={option.key} value={option} className="py-1.5 pr-2">
+                      {option.kind === 'product' ? (
+                        <>
+                          <img
+                            src={option.product.thumbnail}
+                            alt=""
+                            loading="lazy"
+                            className="size-9 shrink-0 rounded-md bg-muted object-cover"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate">
+                              <Highlight
+                                text={option.product.title}
+                                query={text}
+                                language={language}
+                              />
+                            </span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {option.product.brand ? `${option.product.brand} · ` : ''}
+                              {formatPrice(salePriceCents(option.product) / 100, language)}
+                            </span>
+                          </span>
+                        </>
+                      ) : option.kind === 'category' ? (
+                        <>
+                          <span className="min-w-0 truncate">{option.category.name}</span>
+                          <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+                            {option.category.count}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Search className="size-4 text-muted-foreground" aria-hidden="true" />
+                          <span className="min-w-0 truncate">
+                            {t('search.searchFor', { text: option.text })}
+                          </span>
+                        </>
+                      )}
+                    </ComboboxItem>
+                  )}
+                </ComboboxCollection>
+              </ComboboxGroup>
+            )}
+          </ComboboxList>
+        </div>
       </Combobox>
     </div>
   )

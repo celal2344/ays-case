@@ -38,6 +38,13 @@ for (const theme of ['light', 'dark'] as const) {
       expect(await violations(page)).toEqual([])
     })
 
+    test('the open search focus panel has no WCAG A/AA violations', async ({ page }) => {
+      await page.goto('/products')
+      await page.getByRole('combobox', { name: 'Search products' }).click()
+      await expect(page.getByRole('heading', { name: 'Best deals' })).toBeVisible()
+      expect(await violations(page)).toEqual([])
+    })
+
     test('cart, checkout, orders and admin pages have no WCAG A/AA violations', async ({
       page,
     }) => {

@@ -208,6 +208,13 @@ export const en = {
     emptyCta: 'Browse products',
   },
   search: {
+    recent: 'Recent searches',
+    clearRecent: 'Clear',
+    removeRecent: 'Remove “{{text}}” from recent searches',
+    suggested: 'Suggested searches',
+    deals: 'Best deals',
+    close: 'Close search',
+    count: '{{n}} suggestions',
     products: 'Products',
     categories: 'Categories',
     searchFor: 'Search for “{{text}}”',

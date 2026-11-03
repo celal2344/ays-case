@@ -210,6 +210,13 @@ export const tr = {
     emptyCta: 'Ürünlere göz at',
   },
   search: {
+    recent: 'Son aramalar',
+    clearRecent: 'Temizle',
+    removeRecent: '“{{text}}” aramasını sil',
+    suggested: 'Önerilen aramalar',
+    deals: 'En iyi fırsatlar',
+    close: 'Aramayı kapat',
+    count: '{{n}} öneri',
     products: 'Ürünler',
     categories: 'Kategoriler',
     searchFor: '“{{text}}” için ara',
