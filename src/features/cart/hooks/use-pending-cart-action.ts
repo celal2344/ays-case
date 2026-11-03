@@ -18,12 +18,12 @@ import { useCartStore } from '../store'
 export function usePendingCartAction() {
   const { t } = useTranslation()
   const user = useAuthStore(selectUser)
-  const pending = user ? hasPendingAction() : false
+  const pending = user ? hasPendingAction('add-to-cart') : false
   const { data } = useQuery({ ...catalogQueryOptions, enabled: pending })
 
   useEffect(() => {
     if (!user || !data) return
-    const action = consumePendingAction()
+    const action = consumePendingAction('add-to-cart')
     if (!action) return
     const { created, patched, deleted } = useProductOverlayStore.getState()
     const product = applyOverlay(data, { created, patched, deleted }).find(

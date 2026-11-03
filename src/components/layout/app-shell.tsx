@@ -2,12 +2,14 @@ import { Outlet } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
 import { usePendingCartAction } from '@/features/cart/hooks/use-pending-cart-action'
+import { usePendingFavoriteAction } from '@/features/favorites/hooks/use-pending-favorite-action'
 import { Toaster } from '@/components/ui/sonner'
 
 import { Header } from './header'
 
 export function AppShell({ children }: { children?: ReactNode }) {
   usePendingCartAction()
+  usePendingFavoriteAction()
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground">
       <Header />

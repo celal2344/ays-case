@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 
 import { CartControls } from '@/features/cart/components/cart-controls'
+import { FavoriteButton } from '@/features/favorites/components/favorite-button'
 import { qualifiesForFreeShipping } from '../pricing'
 import type { Product } from '../schemas'
 import { DiscountBadge, StockBadge } from './product-badges'
@@ -15,20 +16,28 @@ export function ProductCard({ product }: { product: Product }) {
   const { t } = useTranslation()
   return (
     <Card className="h-full gap-0 overflow-hidden p-0 transition-shadow hover:shadow-md">
-      <Link
-        to="/products/$productId"
-        params={{ productId: String(product.id) }}
-        className="relative block"
-        // the title link below names this card for assistive tech; this one only repeats it
-        aria-hidden="true"
-        tabIndex={-1}
-      >
-        <ProductImage src={product.thumbnail} alt="" />
-        <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
-          <DiscountBadge product={product} />
-          <StockBadge stock={product.stock} />
-        </div>
-      </Link>
+      <div className="relative">
+        <Link
+          to="/products/$productId"
+          params={{ productId: String(product.id) }}
+          className="block"
+          // the title link below names this card for assistive tech; this one only repeats it
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          <ProductImage src={product.thumbnail} alt="" />
+          <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
+            <DiscountBadge product={product} />
+            <StockBadge stock={product.stock} />
+          </div>
+        </Link>
+        <FavoriteButton
+          productId={product.id}
+          title={product.title}
+          overlay
+          className="absolute top-2 right-2"
+        />
+      </div>
       <CardContent className="flex flex-1 flex-col gap-1 p-3">
         {product.brand ? (
           <p className="truncate text-xs text-muted-foreground">{product.brand}</p>

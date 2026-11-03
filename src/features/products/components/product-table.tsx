@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table'
 
 import { useAddToCart } from '@/features/cart/hooks/use-add-to-cart'
+import { FavoriteButton } from '@/features/favorites/components/favorite-button'
 import type { Product } from '../schemas'
 import { DiscountBadge, StockBadge } from './product-badges'
 import { ProductImage } from './product-image'
@@ -34,7 +35,7 @@ export function ProductTable({ products }: { products: Product[] }) {
             <TableHead>{t('products.table.price')}</TableHead>
             <TableHead>{t('products.table.rating')}</TableHead>
             <TableHead>{t('products.table.stock')}</TableHead>
-            <TableHead className="w-12">
+            <TableHead className="w-24">
               <span className="sr-only">{t('products.table.actions')}</span>
             </TableHead>
           </TableRow>
@@ -68,7 +69,8 @@ export function ProductTable({ products }: { products: Product[] }) {
               <TableCell>
                 {product.stock > 5 ? product.stock : <StockBadge stock={product.stock} />}
               </TableCell>
-              <TableCell>
+              <TableCell className="flex items-center gap-1">
+                <FavoriteButton productId={product.id} title={product.title} />
                 <Button
                   size="icon-sm"
                   variant="outline"

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { selectIsAuthenticated, useAuthStore } from '@/features/auth/store'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
 import { CategoryAccordion } from './category-accordion'
@@ -13,6 +14,7 @@ import { PreferencesControls } from './preferences-controls'
 export function MobileNav() {
   const { t } = useTranslation()
   const navItems = useNavItems()
+  const isAuthenticated = useAuthStore(selectIsAuthenticated)
   const adminItems = useAdminNavItems()
   const [open, setOpen] = useState(false)
   return (
@@ -40,6 +42,16 @@ export function MobileNav() {
               {t(item.labelKey)}
             </Link>
           ))}
+          {isAuthenticated ? (
+            <Link
+              to="/favorites"
+              onClick={() => setOpen(false)}
+              className="rounded-md px-2 py-2 text-sm font-medium hover:bg-accent"
+              activeProps={{ className: 'bg-accent' }}
+            >
+              {t('favorites.title')}
+            </Link>
+          ) : null}
           {adminItems ? (
             <>
               <p className="mt-3 px-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">

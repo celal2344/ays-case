@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { LogOut, User } from 'lucide-react'
+import { Heart, LogOut, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -57,6 +57,10 @@ export function UserMenu() {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem render={<Link to="/favorites" />}>
+          <Heart className="size-4" />
+          {t('favorites.title')}
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={logout}>
           <LogOut className="size-4" />
           {t('userMenu.logout')}

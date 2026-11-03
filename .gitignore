@@ -49,3 +49,6 @@ Desktop.ini
 *.tmp
 .cache
 .eslintcache
+
+# TanStack router plugin scratch files
+.tanstack
