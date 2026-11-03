@@ -1,5 +1,9 @@
 export const en = {
-  app: { name: 'ays-case' },
+  app: {
+    name: 'ays-case',
+    title: 'ays-case · Online shop',
+    description: 'A demo online shop: browse products, fill a cart and check out.',
+  },
   nav: {
     home: 'Home',
     products: 'Products',
