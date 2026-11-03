@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { CartButton } from './cart-button'
 import { MobileNav } from './mobile-nav'
 import { useNavItems } from './nav-items'
 import { PreferencesControls } from './preferences-controls'
@@ -32,6 +33,7 @@ export function Header() {
           <div className="hidden md:block">
             <PreferencesControls />
           </div>
+          <CartButton />
           <UserMenu />
         </div>
       </div>

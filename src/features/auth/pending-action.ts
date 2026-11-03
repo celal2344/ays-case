@@ -31,3 +31,12 @@ export function consumePendingAction(): PendingAction | null {
     return null
   }
 }
+
+/** Peeks without consuming. */
+export function hasPendingAction(): boolean {
+  try {
+    return sessionStorage.getItem(KEY) !== null
+  } catch {
+    return false
+  }
+}
