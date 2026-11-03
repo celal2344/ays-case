@@ -62,3 +62,9 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 - Conventional commits: `feat(cart): quantity stepper`, `fix(auth): refresh loop`, `docs:`, `test:`, `chore:`.
 - One gate = one PR (or a small set of commits on main if working solo); every gate ends green on lint, typecheck, test.
 - Never commit `.env*` except `.env.example`.
+
+## Tooling notes (from G0)
+- **TypeScript is pinned to 6.x**: `typescript-eslint` does not support TS 7 yet, and ESLint is required by the lint setup. Revisit when it does.
+- **shadcn style is `base-nova` (Base UI primitives)**, the current `shadcn init` default, not New York / Radix. `components/ui` is generated and excluded from lint and Prettier.
+- **`cn()` is `clsx` + `tailwind-merge`** in `lib/utils.ts`; the generated components import it from `@/lib/utils`.
+- `components/ui/sonner.tsx` still imports `next-themes`; G1 replaces it with the `preferences` store.
