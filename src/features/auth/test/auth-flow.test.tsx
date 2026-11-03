@@ -49,7 +49,7 @@ describe('auth flow (AUTH-1..7)', () => {
   it('AUTH-6: a persisted session survives a reload, and /login sends the user away', async () => {
     signInAs('user')
     const { router } = await renderApp('/login')
-    expect(pathname(router)).toBe('/')
+    expect(pathname(router)).toBe('/products')
     expect(useAuthStore.getState().user?.username).toBe('averyp')
   })
 

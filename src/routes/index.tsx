@@ -1,11 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useTranslation } from 'react-i18next'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({
-  component: Home,
+  beforeLoad: () => {
+    throw redirect({ to: '/products', replace: true })
+  },
 })
-
-function Home() {
-  const { t } = useTranslation()
-  return <h1 className="text-2xl font-semibold">{t('app.name')}</h1>
-}

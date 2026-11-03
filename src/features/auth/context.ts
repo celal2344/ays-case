@@ -8,5 +8,5 @@ export const authContext = {
 
 export type AuthContext = typeof authContext
 
-/** Where users land after login when there is no `?redirect=`. Becomes `/products` in G3. */
-export const DEFAULT_LANDING = '/'
+/** Where users land after login when there is no `?redirect=`. */
+export const DEFAULT_LANDING = '/products'

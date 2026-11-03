@@ -36,7 +36,7 @@ interface ProductOverlayState {
   create(input: ProductInput, remoteEcho?: Product): Product;
   update(id: number, patch: ProductPatch): void;
   remove(id: number): void;
-  decrementStock(lines: { id: number; quantity: number }[]): void;
+  decrementStock(lines: { id: number; quantity: number; stock: number }[]): void; // stock = current merged stock
   reset(): void;
 }
 ```

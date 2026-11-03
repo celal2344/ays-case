@@ -7,10 +7,14 @@ import { createAppRouter } from '@/router'
 
 /** Renders the real route tree at `route` with a memory history. */
 export async function renderApp(route: string) {
-  const router = createAppRouter({ history: createMemoryHistory({ initialEntries: [route] }) })
+  const queryClient = createQueryClient() // one client for loaders and components
+  const router = createAppRouter({
+    history: createMemoryHistory({ initialEntries: [route] }),
+    context: { queryClient },
+  })
   await router.load()
   const utils = render(
-    <QueryClientProvider client={createQueryClient()}>
+    <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>,
   )
