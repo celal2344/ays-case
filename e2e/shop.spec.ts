@@ -101,17 +101,45 @@ test('the category menu reaches any category in two interactions', async ({ page
   await expect(page.getByText('10 results')).toBeVisible()
 })
 
-test('the sticky buy bar sits flush under the header on desktop', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'the bar is a bottom bar on phones')
+test('the section bar sticks flush under the header and carries the buy block on desktop', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'phones get a bottom bar instead')
   await signIn(page, 'user')
   await page.goto('/products/2')
   await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2))
-  const bar = page.getByRole('region', { name: 'Quick add to cart' })
-  await expect(bar).toBeVisible()
+  const nav = page.getByRole('navigation', { name: 'Product sections' })
+  const bar = nav.locator('..')
+  await expect(bar.getByRole('button', { name: 'Add to cart' })).toBeVisible()
   const header = await page.locator('header').first().boundingBox()
   const box = await bar.boundingBox()
   expect(Math.abs(box!.y - (header!.y + header!.height))).toBeLessThanOrEqual(1)
+})
+
+test('a section tab scrolls to its section, sets the hash, and a reload keeps the place', async ({
+  page,
+}) => {
+  await signIn(page, 'user')
+  await page.goto('/products/2')
+  await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
+  const nav = page.getByRole('navigation', { name: 'Product sections' })
+  await nav.getByRole('link', { name: /^Reviews/ }).click()
+  await expect(page).toHaveURL(/#reviews$/)
+  const heading = page.getByRole('heading', { level: 2, name: /^Reviews/ })
+  await expect(heading).toBeInViewport()
+  await expect(nav.getByRole('link', { name: /^Reviews/ })).toHaveAttribute(
+    'aria-current',
+    'location',
+  )
+  const barBottom = (await nav.locator('..').boundingBox())!
+  expect((await heading.boundingBox())!.y).toBeGreaterThanOrEqual(
+    barBottom.y + barBottom.height - 1,
+  )
+
+  await page.reload()
+  await expect(page.getByRole('heading', { level: 2, name: /^Reviews/ })).toBeInViewport()
 })
 
 test('the gallery lightbox opens on the current image and moves to the next', async ({ page }) => {

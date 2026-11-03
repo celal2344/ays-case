@@ -1,13 +1,12 @@
-import { ShoppingCart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
-
 import type { Product } from '../../schemas'
-import { ProductImage } from '../product-image'
-import { ProductPrice } from '../product-price'
+import { CompactBuy } from './compact-buy'
 
-/** Appears once the main buttons scroll out of view: under the header on desktop, at the bottom on mobile. */
+/**
+ * Phone only: a bottom bar that appears once the main buttons scroll out of view. From md up the same
+ * compact buy block lives at the end of the sticky section bar instead.
+ */
 export function StickyBar({
   product,
   visible,
@@ -23,19 +22,9 @@ export function StickyBar({
     <div
       role="region"
       aria-label={t('products.sticky')}
-      className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 shadow-lg backdrop-blur md:top-(--header-h) md:bottom-auto md:border-t-0 md:border-b"
+      className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 shadow-lg backdrop-blur md:hidden"
     >
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2">
-        <ProductImage src={product.thumbnail} alt="" className="size-10 shrink-0 rounded-md" />
-        <p className="hidden min-w-0 flex-1 truncate text-sm font-medium sm:block">
-          {product.title}
-        </p>
-        <ProductPrice product={product} className="ml-auto sm:ml-0" />
-        <Button size="sm" disabled={product.stock <= 0} onClick={onAdd}>
-          <ShoppingCart className="size-4" />
-          {t('products.addToCart')}
-        </Button>
-      </div>
+      <CompactBuy product={product} onAdd={onAdd} className="mx-auto max-w-7xl px-4 py-2" />
     </div>
   )
 }

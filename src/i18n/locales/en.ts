@@ -78,6 +78,7 @@ export const en = {
       thumbnails: 'Product images',
       show: 'Show image {{index}}',
     },
+    sections: 'Product sections',
     tabs: { info: 'Details', description: 'Description', reviews: 'Reviews ({{n}})' },
     specs: {
       brand: 'Brand',
