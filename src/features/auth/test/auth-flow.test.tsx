@@ -72,7 +72,7 @@ describe('auth flow (AUTH-1..7)', () => {
     const { router } = await renderApp('/admin')
     expect(pathname(router)).toBe('/admin')
     expect(screen.getByRole('heading', { name: 'Admin' })).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: 'Admin' }).length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: /Admin/ })).toBeInTheDocument()
   })
 
   it('AUTH-5: logout clears the session and returns to /login', async () => {

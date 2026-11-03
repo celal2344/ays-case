@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest'
 import '@/i18n'
 import { useAuthStore } from '@/features/auth/store'
 import { useCartStore } from '@/features/cart/store'
+import { useUserOverlayStore } from '@/features/users/overlay-store'
 import { useReviewsStore } from '@/features/reviews/store'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { usePreferencesStore } from '@/preferences/store'
@@ -47,6 +48,7 @@ beforeEach(() => {
   useAuthStore.setState({ accessToken: null, refreshToken: null, user: null, status: 'idle' })
   useProductOverlayStore.getState().reset()
   useReviewsStore.getState().reset()
+  useUserOverlayStore.getState().reset()
   useCartStore.setState({ byUser: {} })
 })
 

@@ -67,7 +67,7 @@ Source: `Frontend_Case.pdf` (case brief, Turkish). Each requirement has an ID us
 | ID | Requirement | Acceptance criteria |
 |---|---|---|
 | USER-1 | Admin lists users | `/admin/users`: table (avatar, name, username, email, role) with search, role filter, pagination 20; data from `GET /users` merged with the user overlay |
-| USER-2 | Admin adds user | Form (username, password, first/last name, email, role). `POST /users/add` (simulated) then stored in the user overlay with a local id ≥ 100000 |
+| USER-2 | Admin adds user | Form (username, first/last name, email, role; no password: sign-in always uses DummyJSON accounts, so users created here cannot sign in). `POST /users/add` (simulated) then stored in the user overlay with a local id ≥ 100000 |
 | USER-3 | Admin edits user | `PUT /users/{id}` (simulated; skipped for local ids), patch stored in the overlay. DummyJSON accepts `role` but does not persist it, so role edits live only in the overlay |
 | USER-4 | Admin deletes user | Confirm dialog; hidden everywhere; the user's cart is dropped, past orders stay as history |
 | USER-5 | Guardrails | Cannot delete or demote yourself; cannot remove or demote the last admin; the overlay patch is applied on top of `/auth/me` on login so edits take effect on this browser |
