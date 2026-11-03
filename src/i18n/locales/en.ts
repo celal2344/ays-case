@@ -68,11 +68,17 @@ export const en = {
     similar: 'Similar products',
     sticky: 'Quick add to cart',
     gallery: {
+      carousel: 'Product images, swipe to change',
+      previous: 'Previous image',
+      next: 'Next image',
+      close: 'Close',
+      counter: '{{current}} / {{total}}',
       zoom: 'Zoom image',
       zoomed: 'Enlarged product image',
       thumbnails: 'Product images',
       show: 'Show image {{index}}',
     },
+    sections: 'Product sections',
     tabs: { info: 'Details', description: 'Description', reviews: 'Reviews ({{n}})' },
     specs: {
       brand: 'Brand',

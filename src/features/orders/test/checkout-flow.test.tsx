@@ -224,8 +224,6 @@ describe('orders (EX-6)', () => {
       comment: 'Loved it',
     })
     await renderApp('/products/2')
-    const tab = await screen.findByRole('tab', { name: /Reviews/ })
-    await userEvent.click(tab)
     await screen.findByText('Loved it')
     expect(screen.getByText('Verified buyer')).toBeInTheDocument()
   })

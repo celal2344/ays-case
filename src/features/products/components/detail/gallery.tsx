@@ -1,62 +1,48 @@
-import { ZoomIn } from 'lucide-react'
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
-import { cn } from '@/lib/utils'
+import { useMediaQuery } from '@/lib/use-media-query'
 
-import { ProductImage } from '../product-image'
+import { GalleryCarousel } from './gallery-carousel'
+import { GalleryLightbox } from './gallery-lightbox'
+import { GalleryMain } from './gallery-main'
+import { GalleryThumbs } from './gallery-thumbs'
 
-/** Main image with a thumbnail strip; clicking the main image opens a zoom dialog. */
+/**
+ * Product images. Desktop: hover-zoom main image with a thumbnail column. Phone: swipeable carousel
+ * with thumbnails below. Both open the same lightbox. One image (or none): no thumbnails or arrows.
+ */
 export function Gallery({ images, title }: { images: string[]; title: string }) {
-  const { t } = useTranslation()
+  const desktop = useMediaQuery('(min-width: 768px)')
   const [selected, setSelected] = useState(0)
-  const [zoomed, setZoomed] = useState(false)
-  const current = images[Math.min(selected, images.length - 1)] ?? ''
+  const [open, setOpen] = useState(false)
+  const index = Math.min(selected, Math.max(images.length - 1, 0))
 
   return (
     <div className="flex flex-col gap-3 md:flex-row-reverse">
-      <button
-        type="button"
-        onClick={() => setZoomed(true)}
-        aria-label={t('products.gallery.zoom')}
-        className="group relative block flex-1 cursor-zoom-in overflow-hidden rounded-lg border outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-      >
-        <ProductImage src={current} alt={title} eager className="w-full" />
-        <ZoomIn className="absolute right-2 bottom-2 size-5 rounded bg-background/80 p-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
-      </button>
+      {desktop ? (
+        <GalleryMain src={images[index] ?? ''} title={title} onOpen={() => setOpen(true)} />
+      ) : (
+        <GalleryCarousel
+          images={images}
+          title={title}
+          index={index}
+          onIndexChange={setSelected}
+          onOpen={() => setOpen(true)}
+        />
+      )}
 
       {images.length > 1 ? (
-        <ul
-          className="flex gap-2 overflow-x-auto md:flex-col"
-          aria-label={t('products.gallery.thumbnails')}
-        >
-          {images.map((src, index) => (
-            <li key={src + index} className="shrink-0">
-              <button
-                type="button"
-                aria-label={t('products.gallery.show', { index: index + 1 })}
-                aria-current={index === selected}
-                onClick={() => setSelected(index)}
-                className={cn(
-                  'block overflow-hidden rounded-md border-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-                  index === selected ? 'border-primary' : 'border-transparent',
-                )}
-              >
-                <ProductImage src={src} alt="" className="size-16" />
-              </button>
-            </li>
-          ))}
-        </ul>
+        <GalleryThumbs images={images} index={index} onSelect={setSelected} hoverSelect={desktop} />
       ) : null}
 
-      <Dialog open={zoomed} onOpenChange={setZoomed}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogTitle className="sr-only">{title}</DialogTitle>
-          <DialogDescription className="sr-only">{t('products.gallery.zoomed')}</DialogDescription>
-          <ProductImage src={current} alt={title} eager className="w-full rounded-md" />
-        </DialogContent>
-      </Dialog>
+      <GalleryLightbox
+        images={images}
+        title={title}
+        index={index}
+        onIndexChange={setSelected}
+        open={open}
+        onOpenChange={setOpen}
+      />
     </div>
   )
 }

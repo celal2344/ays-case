@@ -1,7 +1,7 @@
 import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
 
 import { signInAs } from '@/test/auth'
 import { fixtureDetail } from '@/test/fixtures/products'
@@ -24,6 +24,18 @@ describe('product page (PDP-1..6)', () => {
   })
 
   it('PDP-2: thumbnails swap the main image and the main image opens a zoom dialog', async () => {
+    // jsdom matches no media query, which is the phone layout; this test is about the desktop one
+    const originalMatchMedia = window.matchMedia
+    window.matchMedia = (query: string) =>
+      ({
+        matches: query.includes('min-width'),
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }) as unknown as MediaQueryList
+    onTestFinished(() => {
+      window.matchMedia = originalMatchMedia
+    })
     server.use(
       http.get('https://dummyjson.com/products/2', () =>
         HttpResponse.json({
@@ -48,7 +60,7 @@ describe('product page (PDP-1..6)', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Zoom image' }))
     const dialog = await screen.findByRole('dialog')
-    expect(within(dialog).getByRole('img', { name: 'groceries item 02' })).toHaveAttribute(
+    expect(within(dialog).getByRole('img', { name: 'groceries item 02 (3/3)' })).toHaveAttribute(
       'src',
       'https://img.test/c.webp',
     )
@@ -135,7 +147,7 @@ describe('product page (PDP-1..6)', () => {
   it('shows only the specs a product has (local products have none of the remote-only ones)', async () => {
     await renderApp('/products/2')
     await screen.findByRole('heading', { name: 'groceries item 02' })
-    const specs = screen.getByRole('tabpanel')
+    const specs = screen.getByRole('region', { name: 'Details' })
     expect(within(specs).getByText('Brand')).toBeInTheDocument()
     expect(within(specs).queryByText('Warranty')).not.toBeInTheDocument()
   })
