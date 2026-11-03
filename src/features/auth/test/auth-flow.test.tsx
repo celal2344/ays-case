@@ -32,6 +32,12 @@ describe('auth flow (AUTH-1..7)', () => {
     expect(useAuthStore.getState().user?.role).toBe('admin')
   })
 
+  it('a malformed ?redirect= is ignored instead of crashing the page', async () => {
+    const { router } = await renderApp('/login?redirect=123')
+    expect(pathname(router)).toBe('/login')
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+  })
+
   it('AUTH-1: shows the DummyJSON error for invalid credentials', async () => {
     await renderApp('/login')
     await userEvent.type(screen.getByLabelText('Username'), 'emilys')
