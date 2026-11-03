@@ -72,7 +72,7 @@ describe('shop list (PROD-1, PROD-6, EX-1..4, EX-12)', () => {
   it('EX-1: typing in the search box updates ?q after the debounce and resets the page', async () => {
     const { router } = await renderApp('/products?page=2')
     await screen.findByText('Showing 13–24 of 30')
-    await userEvent.type(screen.getByRole('searchbox', { name: 'Search products' }), 'item 05')
+    await userEvent.type(screen.getByRole('combobox', { name: 'Search products' }), 'item 05')
     await waitFor(() => expect(search(router)).toEqual({ q: 'item 05' }))
     expect(await screen.findByText('Showing 1–1 of 1')).toBeInTheDocument()
   })
@@ -83,7 +83,7 @@ describe('shop list (PROD-1, PROD-6, EX-1..4, EX-12)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
     expect(await screen.findByText('Showing 1–12 of 30')).toBeInTheDocument()
     expect(search(router)).toEqual({})
-    expect(screen.getByRole('searchbox')).toHaveValue('')
+    expect(screen.getByRole('combobox', { name: 'Search products' })).toHaveValue('')
   })
 
   it('EX-12: ?view=table renders a table; the choice is saved as a preference', async () => {

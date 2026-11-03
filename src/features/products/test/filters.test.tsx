@@ -126,13 +126,13 @@ describe('filters on the shop list', () => {
 })
 
 describe('header search and category strip', () => {
-  it('searching from another page opens the list with the query', async () => {
+  it('searching from another page waits for Enter, then opens the list with the query', async () => {
     signInAs('averyp')
     const { router } = await renderApp('/orders')
-    await userEvent.type(
-      await screen.findByRole('searchbox', { name: 'Search products' }),
-      'item 07',
-    )
+    const box = await screen.findByRole('combobox', { name: 'Search products' })
+    await userEvent.type(box, 'item 07')
+    expect(router.state.location.pathname).toBe('/orders')
+    await userEvent.keyboard('{Enter}')
     await waitFor(() => expect(router.state.location.pathname).toBe('/products'))
     expect(search(router)).toEqual({ q: 'item 07' })
     expect(await screen.findByText('1 result')).toBeInTheDocument()
@@ -141,7 +141,7 @@ describe('header search and category strip', () => {
   it('on the list, the header search keeps the other filters', async () => {
     const { router } = await renderApp('/products?category=beauty')
     await userEvent.type(
-      await screen.findByRole('searchbox', { name: 'Search products' }),
+      await screen.findByRole('combobox', { name: 'Search products' }),
       'item 04',
     )
     await waitFor(() => expect(search(router)).toEqual({ category: 'beauty', q: 'item 04' }))

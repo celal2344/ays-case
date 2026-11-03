@@ -27,7 +27,7 @@ export function applyOverlay(remote: Product[], overlay: OverlaySnapshot): Produ
   return [...local, ...merged]
 }
 
-function normalize(value: string, language: Language) {
+export function normalize(value: string, language: Language) {
   // Turkish-safe lowercasing only when the UI language is Turkish (dotted/dotless i).
   return language === 'tr' ? value.toLocaleLowerCase('tr') : value.toLowerCase()
 }

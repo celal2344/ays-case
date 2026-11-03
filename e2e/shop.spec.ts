@@ -11,12 +11,12 @@ test('search, category, sort and paging are reflected in the URL and the list', 
   await expect(page).toHaveURL(/page=2/)
   await expect(page.getByText('Showing 13–24 of 30')).toBeVisible()
 
-  await page.getByRole('searchbox', { name: 'Search products' }).fill('item 07')
+  await page.getByRole('combobox', { name: 'Search products' }).fill('item 07')
   await expect(page).toHaveURL(/q=item(\+|%20)07/)
   await expect(page.getByRole('link', { name: 'beauty item 07' }).first()).toBeVisible()
   await expect(page.getByText('Showing 1–1 of 1')).toBeVisible()
 
-  await page.getByRole('searchbox', { name: 'Search products' }).fill('')
+  await page.getByRole('combobox', { name: 'Search products' }).fill('')
   await page.getByRole('combobox', { name: 'Sort by' }).click()
   await page.getByRole('option', { name: 'Price: high to low' }).click()
   await expect(page).toHaveURL(/sort=price/)
@@ -99,4 +99,16 @@ test('the category menu reaches any category in two interactions', async ({ page
   }
   await expect(page).toHaveURL(/category=groceries/)
   await expect(page.getByText('10 results')).toBeVisible()
+})
+
+test('the search suggestions open a product without leaving the page while typing', async ({
+  page,
+}) => {
+  await signIn(page, 'user')
+  await page.goto('/orders')
+  await page.getByRole('combobox', { name: 'Search products' }).fill('groceries item 02')
+  await expect(page).toHaveURL(/\/orders$/)
+  await page.getByRole('option', { name: /^groceries item 02/ }).click()
+  await expect(page).toHaveURL(/\/products\/2$/)
+  await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
 })

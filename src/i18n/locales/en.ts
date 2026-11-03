@@ -207,6 +207,12 @@ export const en = {
     empty: 'You have no favorites yet',
     emptyCta: 'Browse products',
   },
+  search: {
+    products: 'Products',
+    categories: 'Categories',
+    searchFor: 'Search for “{{text}}”',
+    noProducts: 'No products found for “{{text}}”',
+  },
   cart: {
     title: 'Your cart',
     open: 'Cart, {{n}} items',

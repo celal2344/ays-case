@@ -209,6 +209,12 @@ export const tr = {
     empty: 'Henüz favoriniz yok',
     emptyCta: 'Ürünlere göz at',
   },
+  search: {
+    products: 'Ürünler',
+    categories: 'Kategoriler',
+    searchFor: '“{{text}}” için ara',
+    noProducts: '“{{text}}” için ürün bulunamadı',
+  },
   cart: {
     title: 'Sepetin',
     open: 'Sepet, {{n}} ürün',

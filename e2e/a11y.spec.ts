@@ -31,6 +31,13 @@ for (const theme of ['light', 'dark'] as const) {
       })
     }
 
+    test('the open search suggestions have no WCAG A/AA violations', async ({ page }) => {
+      await page.goto('/products')
+      await page.getByRole('combobox', { name: 'Search products' }).fill('item 0')
+      await expect(page.getByRole('listbox')).toBeVisible()
+      expect(await violations(page)).toEqual([])
+    })
+
     test('cart, checkout, orders and admin pages have no WCAG A/AA violations', async ({
       page,
     }) => {
