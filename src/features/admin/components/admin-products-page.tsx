@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/feedback/feedback'
-import { PaginationBar } from '@/components/pagination-bar'
+import { PaginationBar, RESULTS_ID } from '@/components/pagination-bar'
 import { SearchBox } from '@/components/search-box'
 import {
   AlertDialog,
@@ -266,7 +266,7 @@ export function AdminProductsPage() {
 
   return (
     <DeleteRequest.Provider value={setToDelete}>
-      <div className="space-y-4">
+      <div id={RESULTS_ID} tabIndex={-1} className="scroll-mt-36 space-y-4 outline-none">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold">{t('admin.products.title')}</h1>
           <Link to="/admin/products/new" className={buttonVariants({})}>

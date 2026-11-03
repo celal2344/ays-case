@@ -14,15 +14,15 @@ const search = (router: { state: { location: { search: unknown } } }) =>
 const cardTitles = () =>
   screen
     .getAllByRole('listitem')
-    .filter((li) => !li.closest('[aria-label="Active filters"]'))
+    .filter((li) => !li.closest('nav, [aria-label="Active filters"]'))
     .map((li) => li.textContent ?? '')
 
 describe('shop list (PROD-1, PROD-6, EX-1..4, EX-12)', () => {
   it('PROD-6: shows the first 12 of 30 as cards with the range', async () => {
     await renderApp('/products')
     expect(await screen.findByText('Showing 1–12 of 30')).toBeInTheDocument()
-    expect(screen.getAllByRole('listitem')).toHaveLength(12)
-    expect(screen.getByText('Page 1 of 3')).toBeInTheDocument()
+    expect(screen.getAllByRole('listitem').filter((li) => !li.closest('nav'))).toHaveLength(12)
+    expect(screen.getByText('1 / 3')).toBeInTheDocument() // the compact pager label
   })
 
   it('/ redirects to /products', async () => {

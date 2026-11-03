@@ -100,6 +100,10 @@ export const en = {
     },
     pagination: {
       label: 'Pagination',
+      compact: '{{page}} / {{pageCount}}',
+      goToPage: 'Page {{page}}',
+      goTo: 'Go to page',
+      go: 'Go',
       previous: 'Previous',
       next: 'Next',
       page: 'Page {{page}} of {{pageCount}}',

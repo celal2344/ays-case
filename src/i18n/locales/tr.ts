@@ -102,6 +102,10 @@ export const tr = {
     },
     pagination: {
       label: 'Sayfalama',
+      compact: '{{page}} / {{pageCount}}',
+      goToPage: 'Sayfa {{page}}',
+      goTo: 'Sayfaya git',
+      go: 'Git',
       previous: 'Önceki',
       next: 'Sonraki',
       page: 'Sayfa {{page}} / {{pageCount}}',
