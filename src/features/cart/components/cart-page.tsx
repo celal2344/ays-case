@@ -199,7 +199,7 @@ export function CartPage() {
         </ul>
 
         <div className="hidden lg:block">
-          <div className="sticky top-20">
+          <div className="sticky top-[calc(var(--header-h)+1rem)]">
             <Summary
               totals={cart.totals}
               count={cart.count}

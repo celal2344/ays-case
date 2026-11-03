@@ -107,7 +107,7 @@ export function CheckoutPage() {
         </form>
 
         <div>
-          <Card className="lg:sticky lg:top-20">
+          <Card className="lg:sticky lg:top-[calc(var(--header-h)+1rem)]">
             <CardHeader>
               <CardTitle>{t('checkout.summary')}</CardTitle>
             </CardHeader>

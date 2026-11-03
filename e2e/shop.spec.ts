@@ -117,3 +117,59 @@ test('recently viewed is a compact row on the product page and absent from the s
   await expect(page.getByRole('heading', { name: 'Products' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Recently viewed' })).toHaveCount(0)
 })
+
+test('the section bar sticks flush under the header and carries the buy block on desktop', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'phones get a bottom bar instead')
+  await signIn(page, 'user')
+  await page.goto('/products/2')
+  await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2))
+  const nav = page.getByRole('navigation', { name: 'Product sections' })
+  const bar = nav.locator('..')
+  await expect(bar.getByRole('button', { name: 'Add to cart' })).toBeVisible()
+  const header = await page.locator('header').first().boundingBox()
+  const box = await bar.boundingBox()
+  expect(Math.abs(box!.y - (header!.y + header!.height))).toBeLessThanOrEqual(1)
+})
+
+test('a section tab scrolls to its section, sets the hash, and a reload keeps the place', async ({
+  page,
+}) => {
+  await signIn(page, 'user')
+  await page.goto('/products/2')
+  await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
+  const nav = page.getByRole('navigation', { name: 'Product sections' })
+  await nav.getByRole('link', { name: /^Reviews/ }).click()
+  await expect(page).toHaveURL(/#reviews$/)
+  const heading = page.getByRole('heading', { level: 2, name: /^Reviews/ })
+  await expect(heading).toBeInViewport()
+  await expect(nav.getByRole('link', { name: /^Reviews/ })).toHaveAttribute(
+    'aria-current',
+    'location',
+  )
+  const barBottom = (await nav.locator('..').boundingBox())!
+  expect((await heading.boundingBox())!.y).toBeGreaterThanOrEqual(
+    barBottom.y + barBottom.height - 1,
+  )
+
+  await page.reload()
+  await expect(page.getByRole('heading', { level: 2, name: /^Reviews/ })).toBeInViewport()
+})
+
+test('the gallery lightbox opens on the current image and moves to the next', async ({ page }) => {
+  await signIn(page, 'user')
+  await page.goto('/products/2')
+  await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
+  await page.getByRole('button', { name: 'Zoom image' }).first().click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText('1 / 3')).toBeVisible()
+  await dialog.getByRole('button', { name: 'Next image' }).click()
+  await expect(dialog.getByText('2 / 3')).toBeVisible()
+  await page.keyboard.press('ArrowRight')
+  await expect(dialog.getByText('3 / 3')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+})

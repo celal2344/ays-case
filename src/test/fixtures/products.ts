@@ -28,7 +28,9 @@ export function fixtureDetail(id: number): ProductDetail | undefined {
   if (!product) return undefined
   return {
     ...product,
-    images: [`https://cdn.dummyjson.com/product-images/${product.category}/${id}/1.webp`],
+    images: [1, 2, 3].map(
+      (n) => `https://cdn.dummyjson.com/product-images/${product.category}/${id}/${n}.webp`,
+    ),
     reviews: [
       {
         rating: 5,

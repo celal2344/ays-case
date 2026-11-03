@@ -9,7 +9,7 @@ import { useReviewsStore } from '../store'
 
 async function openReviews(route = '/products/2') {
   const utils = await renderApp(route)
-  await userEvent.click(await screen.findByRole('tab', { name: /Reviews/ }))
+  await screen.findByRole('heading', { level: 2, name: /Reviews/ })
   return utils
 }
 
@@ -37,7 +37,7 @@ describe('reviews (REV-1..5)', () => {
 
   it('REV-3: a logged-out visitor gets a sign-in prompt instead of the form', async () => {
     await openReviews()
-    const panel = within(await screen.findByRole('tabpanel'))
+    const panel = within(await screen.findByRole('region', { name: /Reviews/ }))
     expect(await panel.findByRole('link', { name: 'Sign in' })).toHaveAttribute(
       'href',
       expect.stringContaining('/login?redirect='),

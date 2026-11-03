@@ -70,11 +70,17 @@ export const tr = {
     similar: 'Benzer ürünler',
     sticky: 'Hızlı sepete ekle',
     gallery: {
+      carousel: 'Ürün görselleri, değiştirmek için kaydırın',
+      previous: 'Önceki görsel',
+      next: 'Sonraki görsel',
+      close: 'Kapat',
+      counter: '{{current}} / {{total}}',
       zoom: 'Görseli büyüt',
       zoomed: 'Büyütülmüş ürün görseli',
       thumbnails: 'Ürün görselleri',
       show: '{{index}}. görseli göster',
     },
+    sections: 'Ürün bölümleri',
     tabs: { info: 'Detaylar', description: 'Açıklama', reviews: 'Yorumlar ({{n}})' },
     specs: {
       brand: 'Marka',

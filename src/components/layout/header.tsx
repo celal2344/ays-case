@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AdminMenu } from './admin-menu'
@@ -9,13 +10,16 @@ import { MegaMenu } from './mega-menu'
 import { MobileNav } from './mobile-nav'
 import { useNavItems } from './nav-items'
 import { PreferencesControls } from './preferences-controls'
+import { useHeaderHeight } from './use-header-height'
 import { UserMenu } from './user-menu'
 
 export function Header() {
   const { t } = useTranslation()
   const navItems = useNavItems()
+  const ref = useRef<HTMLElement>(null)
+  useHeaderHeight(ref)
   return (
-    <header className="sticky top-0 z-40 border-b bg-card">
+    <header ref={ref} className="sticky top-0 z-40 border-b bg-card">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2">
         <MobileNav />
         <Link to="/" className="flex shrink-0 items-center gap-2 text-lg font-bold">

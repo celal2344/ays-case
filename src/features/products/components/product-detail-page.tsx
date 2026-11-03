@@ -1,23 +1,27 @@
-import { getRouteApi } from '@tanstack/react-router'
+import { getRouteApi, useLocation, useNavigate } from '@tanstack/react-router'
 import { ShoppingCart, Zap } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ErrorState, NotFound, PageSkeleton } from '@/components/feedback/feedback'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useProductReviews } from '@/features/reviews/hooks/use-product-reviews'
 import { RatingStars } from '@/features/reviews/components/rating-stars'
 import { ReviewsTab } from '@/features/reviews/components/reviews-tab'
+import { useMediaQuery } from '@/lib/use-media-query'
 
 import type { Review } from '../schemas'
 import { useAddToCart, useBuyNow } from '@/features/cart/hooks/use-add-to-cart'
 import { FavoriteButton } from '@/features/favorites/components/favorite-button'
+import { useCatalog } from '../hooks/use-catalog'
 import { useInView } from '../hooks/use-in-view'
 import { useProduct } from '../hooks/use-product'
+import { useScrollSpy } from '../hooks/use-scroll-spy'
 import { DeliveryInfo } from './detail/delivery-info'
+import { DetailSection, SECTION_SCROLL_MARGIN } from './detail/detail-section'
 import { Gallery } from './detail/gallery'
 import { ProductBreadcrumb } from './detail/product-breadcrumb'
+import { SectionBar } from './detail/section-bar'
 import { QuantityStepper } from '@/components/quantity-stepper'
 import { RecentlyViewedStrip } from '@/features/recently-viewed/components/recently-viewed-strip'
 import { useRecordView } from '@/features/recently-viewed/hooks/use-recently-viewed'
@@ -31,8 +35,6 @@ const NO_REVIEWS: Review[] = []
 
 const route = getRouteApi('/products/$productId')
 
-type DetailTab = 'info' | 'description' | 'reviews'
-
 export function ProductDetailPage() {
   const { t } = useTranslation()
   const { productId } = route.useParams()
@@ -42,11 +44,33 @@ export function ProductDetailPage() {
   const buyNow = useBuyNow()
 
   const [quantity, setQuantity] = useState(1)
-  const [tab, setTab] = useState<DetailTab>('info')
   const actionsRef = useRef<HTMLDivElement>(null)
   const actionsVisible = useInView(actionsRef)
   useRecordView(id, product !== undefined)
+  const barRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+  const hash = useLocation({ select: (location) => location.hash })
+  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
+  const { products: catalog } = useCatalog()
   const { summary } = useProductReviews(id, product?.reviews ?? NO_REVIEWS, 'newest')
+
+  const hasSimilar =
+    product !== undefined &&
+    (catalog ?? []).some((p) => p.category === product.category && p.id !== id)
+  const sectionIds = product
+    ? ['details', 'description', 'reviews', ...(hasSimilar ? ['similar'] : [])]
+    : []
+  const [activeSection, setActiveSection] = useScrollSpy(sectionIds, barRef)
+
+  // opening the page with #reviews (or similar) lands on that section once the product has rendered
+  const ready = product !== undefined
+  useEffect(() => {
+    if (ready && hash) {
+      document.getElementById(hash)?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' })
+    }
+    // only when the page becomes ready or the hash changes, not when motion preferences flip
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, hash])
 
   if (notFound) return <NotFound />
   if (isPending) return <PageSkeleton />
@@ -54,10 +78,22 @@ export function ProductDetailPage() {
 
   const outOfStock = product.stock <= 0
   const images = product.images.length > 0 ? product.images : [product.thumbnail]
-  const showReviews = () => {
-    setTab('reviews')
-    document.getElementById('product-tabs')?.scrollIntoView({ behavior: 'smooth' })
+  const goToSection = (section: string) => {
+    setActiveSection(section)
+    void navigate({
+      hash: section,
+      replace: true,
+      resetScroll: false,
+      hashScrollIntoView: { behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' },
+    })
+    document.getElementById(`${section}-heading`)?.focus({ preventScroll: true })
   }
+  const sections = [
+    { id: 'details', label: t('products.tabs.info') },
+    { id: 'description', label: t('products.tabs.description') },
+    { id: 'reviews', label: t('products.tabs.reviews', { n: summary.count }) },
+    ...(hasSimilar ? [{ id: 'similar', label: t('products.similar') }] : []),
+  ]
 
   return (
     <div className="space-y-8 pb-16 md:pb-0">
@@ -79,7 +115,7 @@ export function ProductDetailPage() {
 
           <button
             type="button"
-            onClick={showReviews}
+            onClick={() => goToSection('reviews')}
             className="flex items-center gap-2 text-sm hover:underline"
           >
             <RatingStars rating={summary.count > 0 ? summary.average : product.rating} />
@@ -122,36 +158,29 @@ export function ProductDetailPage() {
         </div>
       </div>
 
-      <Tabs id="product-tabs" value={tab} onValueChange={(value) => setTab(value as DetailTab)}>
-        <TabsList>
-          <TabsTrigger value="info" className="text-muted-foreground data-active:text-foreground">
-            {t('products.tabs.info')}
-          </TabsTrigger>
-          <TabsTrigger
-            value="description"
-            className="text-muted-foreground data-active:text-foreground"
-          >
-            {t('products.tabs.description')}
-          </TabsTrigger>
-          <TabsTrigger
-            value="reviews"
-            className="text-muted-foreground data-active:text-foreground"
-          >
-            {t('products.tabs.reviews', { n: summary.count })}
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="info" className="pt-4">
+      <div className="space-y-4">
+        <SectionBar
+          barRef={barRef}
+          sections={sections}
+          active={activeSection}
+          onSelect={goToSection}
+          product={product}
+          showBuy={!actionsVisible}
+          onAdd={() => addToCart(product, quantity)}
+        />
+        <DetailSection id="details" title={t('products.tabs.info')}>
           <Specs product={product} />
-        </TabsContent>
-        <TabsContent value="description" className="pt-4">
+        </DetailSection>
+        <DetailSection id="description" title={t('products.tabs.description')}>
           <p className="max-w-3xl text-muted-foreground">{product.description}</p>
-        </TabsContent>
-        <TabsContent value="reviews" className="pt-4">
+        </DetailSection>
+        <DetailSection id="reviews" title={t('products.tabs.reviews', { n: summary.count })}>
           <ReviewsTab productId={id} seeded={product.reviews} />
-        </TabsContent>
-      </Tabs>
-
-      <SimilarProducts productId={id} category={product.category} />
+        </DetailSection>
+        <div id="similar" className={SECTION_SCROLL_MARGIN}>
+          <SimilarProducts productId={id} category={product.category} />
+        </div>
+      </div>
       <RecentlyViewedStrip excludeId={id} />
 
       <StickyBar
