@@ -23,7 +23,7 @@ test('search, category, sort and paging are reflected in the URL and the list', 
   await expect(page.getByRole('link', { name: 'smartphones item 30' }).first()).toBeVisible()
 })
 
-test('the pager jumps to any page: by number and with go-to-page', async ({ page }) => {
+test('the pager jumps to any page: by number and with go-to-page', async ({ page, isMobile }) => {
   await page.goto('/products')
   await expect(page.getByText('Showing 1–12 of 30')).toBeVisible()
 
@@ -33,9 +33,13 @@ test('the pager jumps to any page: by number and with go-to-page', async ({ page
   await expect(page.getByText('Showing 25–30 of 30')).toBeVisible()
   await expect(page.locator('#results')).toBeFocused()
 
-  await page.getByRole('button', { name: 'Page 1' }).click()
-  await expect(page).not.toHaveURL(/page=/)
-  await expect(page.getByText('Showing 1–12 of 30')).toBeVisible()
+  // the numbered buttons are desktop only; phones show "3 / 3" with Previous and Next
+  if (isMobile) await page.getByRole('button', { name: 'Previous' }).click()
+  else await page.getByRole('button', { name: 'Page 1' }).click()
+  await expect(page).toHaveURL(isMobile ? /page=2/ : /^(?!.*page=)/)
+  await expect(
+    page.getByText(isMobile ? 'Showing 13–24 of 30' : 'Showing 1–12 of 30'),
+  ).toBeVisible()
 
   await page.goBack()
   await expect(page).toHaveURL(/page=3/)

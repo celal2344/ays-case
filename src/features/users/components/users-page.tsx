@@ -219,7 +219,7 @@ export function UsersPage() {
 
   return (
     <Actions.Provider value={actions}>
-      <div id={RESULTS_ID} tabIndex={-1} className="scroll-mt-20 space-y-4 outline-none">
+      <div id={RESULTS_ID} tabIndex={-1} className="scroll-mt-36 space-y-4 outline-none">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold">{t('admin.users.title')}</h1>
           <Link to="/admin/users/new" className={buttonVariants()}>
