@@ -13,7 +13,7 @@ export function RatingStars({ rating, className }: { rating: number; className?:
           key={star}
           className={cn(
             'size-4',
-            star <= filled ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40',
+            star <= filled ? 'fill-star text-star' : 'text-muted-foreground/40',
           )}
         />
       ))}
@@ -63,7 +63,7 @@ export function StarInput({
           <Star
             className={cn(
               'size-6',
-              star <= shown ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40',
+              star <= shown ? 'fill-star text-star' : 'text-muted-foreground/40',
             )}
           />
         </button>

@@ -63,5 +63,10 @@ export const productSearchSchema = z.object({
   order: z.enum(['asc', 'desc']).optional().catch(undefined),
   page: z.coerce.number().int().min(2).optional().catch(undefined),
   view: z.enum(['grid', 'table']).optional().catch(undefined),
+  minPrice: z.coerce.number().min(0).optional().catch(undefined),
+  maxPrice: z.coerce.number().min(0).optional().catch(undefined),
+  brand: z.string().optional().catch(undefined),
+  /** Minimum rating (stars), 1 to 4. */
+  rating: z.coerce.number().int().min(1).max(4).optional().catch(undefined),
 })
 export type ProductSearch = z.infer<typeof productSearchSchema>

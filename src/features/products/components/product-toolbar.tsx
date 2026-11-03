@@ -1,8 +1,7 @@
-import { LayoutGrid, Rows3 } from 'lucide-react'
-import { useCallback } from 'react'
+import { LayoutGrid, Rows3, SlidersHorizontal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { SearchBox } from '@/components/search-box'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -10,62 +9,72 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 import type { Category, ProductSearch } from '../schemas'
-import { fromSortOption, SORT_OPTIONS, toSortOption, type SortOption } from '../search-state'
+import {
+  activeFilters,
+  fromSortOption,
+  SORT_OPTIONS,
+  toSortOption,
+  type SortOption,
+} from '../search-state'
+import { FilterPanel } from './filter-panel'
 
-const ALL = 'all'
-
+/** Result count, sort, view toggle and (below lg) the button that opens the filters sheet. */
 export function ProductToolbar({
   search,
   view,
+  total,
   categories,
+  brands,
   onChange,
 }: {
   search: ProductSearch
   view: 'grid' | 'table'
+  total: number | undefined
   categories: Category[]
+  brands: string[]
   onChange: (change: Partial<ProductSearch>) => void
 }) {
   const { t } = useTranslation()
-  const commitQuery = useCallback((q: string) => onChange({ q }), [onChange])
-
-  const categoryItems = [
-    { value: ALL, label: t('products.category.all') },
-    ...categories.map((c) => ({ value: c.slug, label: c.name })),
-  ]
   const sortItems = SORT_OPTIONS.map((value) => ({ value, label: t(`products.sort.${value}`) }))
+  const filterCount = activeFilters(search).length
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <SearchBox value={search.q ?? ''} onCommit={commitQuery} />
+      <Sheet>
+        <SheetTrigger render={<Button variant="outline" className="lg:hidden" />}>
+          <SlidersHorizontal className="size-4" aria-hidden="true" />
+          {t('products.filters.open')}
+          {filterCount > 0 ? ` (${filterCount})` : ''}
+        </SheetTrigger>
+        <SheetContent side="left" className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{t('products.filters.title')}</SheetTitle>
+          </SheetHeader>
+          <div className="px-4 pb-6">
+            <FilterPanel
+              search={search}
+              categories={categories}
+              brands={brands}
+              onChange={onChange}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
-      <Select
-        items={categoryItems}
-        value={search.category ?? ALL}
-        onValueChange={(value) =>
-          onChange({ category: value === ALL ? undefined : (value ?? undefined) })
-        }
-      >
-        <SelectTrigger aria-label={t('products.category.label')} className="w-44">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {categoryItems.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <p className="text-sm text-muted-foreground" aria-live="polite">
+        {total === undefined ? '' : t('products.filters.results', { count: total })}
+      </p>
 
       <Select
         items={sortItems}
         value={toSortOption(search.sort, search.order)}
         onValueChange={(value) => onChange(fromSortOption((value ?? 'default') as SortOption))}
       >
-        <SelectTrigger aria-label={t('products.sort.label')} className="w-44">
+        <SelectTrigger aria-label={t('products.sort.label')} className="ml-auto w-44">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -79,7 +88,6 @@ export function ProductToolbar({
 
       <ToggleGroup
         variant="outline"
-        className="ml-auto"
         aria-label={t('products.view.label')}
         value={[view]}
         onValueChange={(next) => {

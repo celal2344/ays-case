@@ -19,7 +19,7 @@ const PUBLIC = ['/login', '/products', '/products/2']
 for (const theme of ['light', 'dark'] as const) {
   test.describe(`${theme} theme`, () => {
     test.beforeEach(async ({ page }) => {
-      await page.addInitScript((value) => localStorage.setItem('theme', value), theme)
+      await page.addInitScript((value) => localStorage.setItem('ays-case:v1:theme', value), theme)
     })
 
     for (const path of PUBLIC) {

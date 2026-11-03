@@ -11,7 +11,11 @@ import { useProductOverlayStore } from '../overlay-store'
 const search = (router: { state: { location: { search: unknown } } }) =>
   router.state.location.search
 
-const cardTitles = () => screen.getAllByRole('listitem').map((li) => li.textContent ?? '')
+const cardTitles = () =>
+  screen
+    .getAllByRole('listitem')
+    .filter((li) => !li.closest('[aria-label="Active filters"]'))
+    .map((li) => li.textContent ?? '')
 
 describe('shop list (PROD-1, PROD-6, EX-1..4, EX-12)', () => {
   it('PROD-6: shows the first 12 of 30 as cards with the range', async () => {

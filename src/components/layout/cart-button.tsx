@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { ShoppingCart } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { buttonVariants } from '@/components/ui/button'
@@ -10,10 +11,22 @@ import { useCart } from '@/features/cart/hooks/use-cart'
 export function CartButton() {
   const { t } = useTranslation()
   const { count } = useCart()
+  // a short bump when something was added (adjusting state while rendering, no effect needed)
+  const [seen, setSeen] = useState(count)
+  const [bump, setBump] = useState(false)
+  if (count !== seen) {
+    setSeen(count)
+    setBump(count > seen)
+  }
   return (
     <Link
       to="/cart"
-      className={cn(buttonVariants({ variant: 'outline', size: 'icon' }), 'relative')}
+      className={cn(
+        buttonVariants({ variant: 'outline', size: 'icon' }),
+        'relative',
+        bump && 'cart-bump',
+      )}
+      onAnimationEnd={() => setBump(false)}
       aria-label={t('cart.open', { n: count })}
     >
       <ShoppingCart className="size-4" />

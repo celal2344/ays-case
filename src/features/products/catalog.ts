@@ -1,5 +1,6 @@
 import type { Language } from '@/lib/format'
 
+import { salePriceCents } from './pricing'
 import type { Product, ProductSort, SortOrder } from './schemas'
 
 /** Admin changes layered over the remote catalog. See docs/data-and-state.md. */
@@ -83,4 +84,32 @@ export function paginate<T>(items: T[], page: number, pageSize: number): Page<T>
     from: total === 0 ? 0 : start + 1,
     to: start + slice.length,
   }
+}
+
+/** Keeps products whose sale price (in dollars, as typed in the filter) is within the bounds. */
+export function filterByPrice(
+  products: Product[],
+  min: number | undefined,
+  max: number | undefined,
+) {
+  if (min === undefined && max === undefined) return products
+  return products.filter((p) => {
+    const price = salePriceCents(p) / 100
+    return (min === undefined || price >= min) && (max === undefined || price <= max)
+  })
+}
+
+export function filterByBrand(products: Product[], brand: string | undefined) {
+  return brand ? products.filter((p) => p.brand === brand) : products
+}
+
+export function filterByMinRating(products: Product[], rating: number | undefined) {
+  return rating ? products.filter((p) => p.rating >= rating) : products
+}
+
+/** Distinct brands, alphabetical, for the filter panel. */
+export function brandsOf(products: Product[]): string[] {
+  return [...new Set(products.flatMap((p) => (p.brand ? [p.brand] : [])))].sort((a, b) =>
+    a.localeCompare(b),
+  )
 }
