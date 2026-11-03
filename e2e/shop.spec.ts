@@ -140,6 +140,8 @@ test('a section tab scrolls to its section, sets the hash, and a reload keeps th
 
   await page.reload()
   await expect(page.getByRole('heading', { level: 2, name: /^Reviews/ })).toBeInViewport()
+})
+
 test('the gallery lightbox opens on the current image and moves to the next', async ({ page }) => {
   await signIn(page, 'user')
   await page.goto('/products/2')
