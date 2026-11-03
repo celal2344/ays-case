@@ -212,6 +212,8 @@ export const tr = {
   recentlyViewed: {
     title: 'Son gezdiklerin',
     clear: 'Temizle',
+    previous: 'Sola kaydır',
+    next: 'Sağa kaydır',
   },
   cart: {
     title: 'Sepetin',

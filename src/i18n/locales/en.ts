@@ -210,6 +210,8 @@ export const en = {
   recentlyViewed: {
     title: 'Recently viewed',
     clear: 'Clear',
+    previous: 'Scroll left',
+    next: 'Scroll right',
   },
   cart: {
     title: 'Your cart',

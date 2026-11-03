@@ -4,13 +4,12 @@ import { useTranslation } from 'react-i18next'
 
 import { EmptyState, ErrorState } from '@/components/feedback/feedback'
 import { Button } from '@/components/ui/button'
-import { RecentlyViewedStrip } from '@/features/recently-viewed/components/recently-viewed-strip'
 import { selectShopView, usePreferencesStore } from '@/preferences/store'
 
 import { useCategories } from '../hooks/use-categories'
 import { useProductList } from '../hooks/use-product-list'
 import type { ProductSearch } from '../schemas'
-import { activeFilters, updateSearch, withoutFilter } from '../search-state'
+import { updateSearch, withoutFilter } from '../search-state'
 import { ActiveFilters } from './active-filters'
 import { FilterPanel } from './filter-panel'
 import { PaginationBar, RESULTS_ID } from '@/components/pagination-bar'
@@ -48,7 +47,6 @@ export function ProductsPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">{t('products.title')}</h1>
-      {activeFilters(search).length === 0 && !search.page ? <RecentlyViewedStrip /> : null}
       <div className="grid gap-6 lg:grid-cols-[15rem_1fr]">
         <aside aria-label={t('products.filters.title')} className="hidden lg:block">
           <div className="sticky top-36 rounded-lg border bg-card p-4">

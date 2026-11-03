@@ -15,20 +15,26 @@ describe('recently viewed strip', () => {
     expect(useRecentlyViewedStore.getState().byUser['16']).toEqual([2])
   })
 
-  it('/products shows the strip only without filters, and Clear empties it', async () => {
+  it('the product page shows the others newest first, without the current one; Clear empties it', async () => {
     signInAs('averyp')
     useRecentlyViewedStore.getState().record('16', 1)
-    await renderApp('/products')
+    useRecentlyViewedStore.getState().record('16', 4)
+    await renderApp('/products/2')
     const strip = await screen.findByRole('region', { name: 'Recently viewed' })
-    expect(within(strip).getByText('beauty item 01')).toBeInTheDocument()
+    const titles = within(strip)
+      .getAllByRole('link')
+      .map((a) => a.textContent)
+    expect(titles[0]).toContain('beauty item 04')
+    expect(titles[1]).toContain('beauty item 01')
+    expect(titles).toHaveLength(2) // product 2 itself is recorded but not listed
     await userEvent.click(within(strip).getByRole('button', { name: 'Clear' }))
     expect(screen.queryByRole('region', { name: 'Recently viewed' })).not.toBeInTheDocument()
   })
 
-  it('is hidden when a filter is active', async () => {
+  it('the shop list has no recently viewed section', async () => {
     signInAs('averyp')
     useRecentlyViewedStore.getState().record('16', 1)
-    await renderApp('/products?q=item')
+    await renderApp('/products')
     await screen.findByRole('heading', { name: 'Products' })
     expect(screen.queryByRole('region', { name: 'Recently viewed' })).not.toBeInTheDocument()
   })
