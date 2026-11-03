@@ -1,12 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useTranslation } from 'react-i18next'
+
+import { PageSkeleton } from '@/components/feedback/feedback'
+import { DashboardPage } from '@/features/admin/components/dashboard-page'
+import { catalogQueryOptions } from '@/features/products/queries'
 
 export const Route = createFileRoute('/_auth/_admin/admin/')({
-  component: AdminDashboardPlaceholder,
+  loader: ({ context }) => context.queryClient.ensureQueryData(catalogQueryOptions),
+  pendingComponent: PageSkeleton,
+  component: DashboardPage,
 })
-
-// Replaced by the real dashboard in G5.
-function AdminDashboardPlaceholder() {
-  const { t } = useTranslation()
-  return <h1 className="text-2xl font-semibold">{t('admin.title')}</h1>
-}

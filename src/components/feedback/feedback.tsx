@@ -3,7 +3,7 @@ import { AlertTriangle, FileQuestion, Inbox, ShieldAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
 function Centered({
@@ -63,9 +63,9 @@ export function NotFound() {
   return (
     <Centered icon={<FileQuestion className="size-8" />} title={t('feedback.notFound.title')}>
       <p className="text-sm text-muted-foreground">{t('feedback.notFound.body')}</p>
-      <Button variant="outline" render={<Link to="/" />}>
+      <Link to="/" className={buttonVariants({ variant: 'outline' })}>
         {t('feedback.notFound.back')}
-      </Button>
+      </Link>
     </Centered>
   )
 }
@@ -75,9 +75,9 @@ export function Forbidden() {
   return (
     <Centered icon={<ShieldAlert className="size-8" />} title={t('feedback.forbidden.title')}>
       <p className="text-sm text-muted-foreground">{t('feedback.forbidden.body')}</p>
-      <Button variant="outline" render={<Link to="/" />}>
+      <Link to="/" className={buttonVariants({ variant: 'outline' })}>
         {t('feedback.forbidden.back')}
-      </Button>
+      </Link>
     </Centered>
   )
 }

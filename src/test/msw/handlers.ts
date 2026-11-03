@@ -80,6 +80,30 @@ export const authHandlers = [
 ]
 
 export const productHandlers = [
+  // DummyJSON accepts writes but persists nothing; echo like it does
+  http.post(`${BASE}/products/add`, async ({ request }) =>
+    HttpResponse.json({ id: fixtureProducts.length + 1, ...((await request.json()) as object) }),
+  ),
+  http.put(`${BASE}/products/:id`, async ({ params, request }) =>
+    Number(params.id) <= fixtureProducts.length
+      ? HttpResponse.json({ id: Number(params.id), ...((await request.json()) as object) })
+      : HttpResponse.json(
+          { message: `Product with id '${String(params.id)}' not found` },
+          { status: 404 },
+        ),
+  ),
+  http.delete(`${BASE}/products/:id`, ({ params }) =>
+    Number(params.id) <= fixtureProducts.length
+      ? HttpResponse.json({
+          id: Number(params.id),
+          isDeleted: true,
+          deletedOn: new Date().toISOString(),
+        })
+      : HttpResponse.json(
+          { message: `Product with id '${String(params.id)}' not found` },
+          { status: 404 },
+        ),
+  ),
   http.get(`${BASE}/products/categories`, () => HttpResponse.json(fixtureCategories)),
   http.get(`${BASE}/products/:id`, ({ params }) => {
     const detail = fixtureDetail(Number(params.id))

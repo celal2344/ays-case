@@ -2,7 +2,8 @@ import { Link } from '@tanstack/react-router'
 import { ShoppingCart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { useCart } from '@/features/cart/hooks/use-cart'
 
 /** Header cart link with a live item count. */
@@ -10,12 +11,10 @@ export function CartButton() {
   const { t } = useTranslation()
   const { count } = useCart()
   return (
-    <Button
-      variant="outline"
-      size="icon"
-      className="relative"
+    <Link
+      to="/cart"
+      className={cn(buttonVariants({ variant: 'outline', size: 'icon' }), 'relative')}
       aria-label={t('cart.open', { n: count })}
-      render={<Link to="/cart" />}
     >
       <ShoppingCart className="size-4" />
       <span
@@ -24,6 +23,6 @@ export function CartButton() {
       >
         {count > 0 ? (count > 99 ? '99+' : count) : null}
       </span>
-    </Button>
+    </Link>
   )
 }
