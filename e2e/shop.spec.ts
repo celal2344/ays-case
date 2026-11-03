@@ -23,6 +23,26 @@ test('search, category, sort and paging are reflected in the URL and the list', 
   await expect(page.getByRole('link', { name: 'smartphones item 30' }).first()).toBeVisible()
 })
 
+test('the pager jumps to any page: by number and with go-to-page', async ({ page }) => {
+  await page.goto('/products')
+  await expect(page.getByText('Showing 1–12 of 30')).toBeVisible()
+
+  await page.getByRole('spinbutton', { name: 'Go to page' }).fill('3')
+  await page.getByRole('spinbutton', { name: 'Go to page' }).press('Enter')
+  await expect(page).toHaveURL(/page=3/)
+  await expect(page.getByText('Showing 25–30 of 30')).toBeVisible()
+  await expect(page.locator('#results')).toBeFocused()
+
+  await page.getByRole('button', { name: 'Page 1' }).click()
+  await expect(page).not.toHaveURL(/page=/)
+  await expect(page.getByText('Showing 1–12 of 30')).toBeVisible()
+
+  await page.goBack()
+  await expect(page).toHaveURL(/page=3/)
+  await page.reload()
+  await expect(page.getByText('Showing 25–30 of 30')).toBeVisible()
+})
+
 test('open a product, add it to the cart and see it in the cart', async ({ page }) => {
   await signIn(page, 'user')
   await page.goto('/products')

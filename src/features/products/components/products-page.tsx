@@ -12,7 +12,7 @@ import type { ProductSearch } from '../schemas'
 import { updateSearch, withoutFilter } from '../search-state'
 import { ActiveFilters } from './active-filters'
 import { FilterPanel } from './filter-panel'
-import { PaginationBar } from '@/components/pagination-bar'
+import { PaginationBar, RESULTS_ID } from '@/components/pagination-bar'
 import { ProductGrid, ProductGridSkeleton } from './product-grid'
 import { ProductTable } from './product-table'
 import { ProductToolbar } from './product-toolbar'
@@ -59,7 +59,7 @@ export function ProductsPage() {
           </div>
         </aside>
 
-        <div className="min-w-0 space-y-4">
+        <div id={RESULTS_ID} tabIndex={-1} className="min-w-0 scroll-mt-36 space-y-4 outline-none">
           <ProductToolbar
             search={search}
             view={view}
