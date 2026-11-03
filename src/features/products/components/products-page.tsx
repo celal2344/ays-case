@@ -59,7 +59,11 @@ export function ProductsPage() {
           </div>
         </aside>
 
-        <div id={RESULTS_ID} tabIndex={-1} className="min-w-0 scroll-mt-36 space-y-4 outline-none">
+        <div
+          id={RESULTS_ID}
+          tabIndex={-1}
+          className="min-w-0 scroll-mt-[calc(var(--header-h)+1rem)] space-y-4 outline-none"
+        >
           <ProductToolbar
             search={search}
             view={view}

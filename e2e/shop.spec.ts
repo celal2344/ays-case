@@ -100,3 +100,16 @@ test('the category menu reaches any category in two interactions', async ({ page
   await expect(page).toHaveURL(/category=groceries/)
   await expect(page.getByText('10 results')).toBeVisible()
 })
+
+test('the sticky buy bar sits flush under the header on desktop', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'the bar is a bottom bar on phones')
+  await signIn(page, 'user')
+  await page.goto('/products/2')
+  await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2))
+  const bar = page.getByRole('region', { name: 'Quick add to cart' })
+  await expect(bar).toBeVisible()
+  const header = await page.locator('header').first().boundingBox()
+  const box = await bar.boundingBox()
+  expect(Math.abs(box!.y - (header!.y + header!.height))).toBeLessThanOrEqual(1)
+})

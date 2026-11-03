@@ -23,7 +23,7 @@ export function StickyBar({
     <div
       role="region"
       aria-label={t('products.sticky')}
-      className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 shadow-lg backdrop-blur md:top-14 md:bottom-auto md:border-t-0 md:border-b"
+      className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 shadow-lg backdrop-blur md:top-(--header-h) md:bottom-auto md:border-t-0 md:border-b"
     >
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2">
         <ProductImage src={product.thumbnail} alt="" className="size-10 shrink-0 rounded-md" />
