@@ -63,7 +63,9 @@
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(
+    0.52 0.22 27
+  ); /* darker than shadcn default so destructive text passes WCAG AA on its tint */
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -127,4 +129,13 @@
   html {
     @apply font-sans;
   }
+}
+
+/* sonner's built-in "rich" success/info/warning colours miss WCAG AA (4.5:1) on their tinted
+   backgrounds; these darker text colours pass in light mode. Dark mode keeps sonner's own. */
+html body [data-sonner-toaster][data-sonner-theme='light'] {
+  --success-text: #006b24;
+  --info-text: #0a45b8;
+  --warning-text: #7a4a00;
+  --error-text: #b4161b;
 }

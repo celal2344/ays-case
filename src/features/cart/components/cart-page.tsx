@@ -92,6 +92,8 @@ function CartRow({
         to="/products/$productId"
         params={{ productId: String(product.id) }}
         className="shrink-0"
+        aria-hidden="true"
+        tabIndex={-1}
       >
         <ProductImage src={product.thumbnail} alt="" className="size-20 rounded-md" />
       </Link>

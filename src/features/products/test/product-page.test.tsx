@@ -92,7 +92,7 @@ describe('product page (PDP-1..6)', () => {
     )!
     const titles = within(section)
       .getAllByRole('link')
-      .map((a) => a.getAttribute('aria-label'))
+      .map((a) => a.textContent)
       .filter(Boolean)
     expect(titles).toContain('groceries item 05')
     expect(titles).not.toContain('groceries item 02')

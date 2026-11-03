@@ -14,7 +14,7 @@ describe('PreferencesControls', () => {
         <PreferencesControls />
       </ThemeProvider>,
     )
-    await userEvent.click(screen.getByRole('button', { name: 'Türkçe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'TR Türkçe' }))
     expect(usePreferencesStore.getState().language).toBe('tr')
     expect(localStorage.getItem('ays-case:v1:prefs')).toContain('"language":"tr"')
   })

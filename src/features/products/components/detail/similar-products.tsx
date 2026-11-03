@@ -43,8 +43,8 @@ export function SimilarProducts({ productId, category }: { productId: number; ca
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
+        <CarouselPrevious className="left-0" />
+        <CarouselNext className="right-0" />
       </Carousel>
     </section>
   )

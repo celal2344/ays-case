@@ -55,10 +55,10 @@ export function LanguageToggle() {
         if (value) setLanguage(value)
       }}
     >
-      <ToggleGroupItem value="tr" aria-label="Türkçe">
+      <ToggleGroupItem value="tr" aria-label="TR Türkçe">
         TR
       </ToggleGroupItem>
-      <ToggleGroupItem value="en" aria-label="English">
+      <ToggleGroupItem value="en" aria-label="EN English">
         EN
       </ToggleGroupItem>
     </ToggleGroup>

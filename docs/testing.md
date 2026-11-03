@@ -37,6 +37,10 @@ Test helper `renderWithProviders(ui, { route, authState })` creates a fresh Quer
 2. `shop.spec.ts` — search, filter, sort, paginate, detail, add to cart (desktop + 390px mobile).
 3. `admin.spec.ts` — create → edit → delete, reflected in shop.
 4. `checkout.spec.ts` — cart → checkout form validation → order placed → history.
+5. `a11y.spec.ts` — axe-core (WCAG 2.0/2.1 A and AA) on every main page, light and dark.
+6. `responsive.spec.ts` — no horizontal scroll on any page at desktop and Pixel 7 viewports.
+
+DummyJSON is served from the shared unit-test fixtures by `e2e/support/mock-api.ts` (`page.route`), so the specs never touch the network. Runs: `pnpm e2e` (Chromium desktop + Pixel 7; starts `pnpm dev` and reuses a running one locally). CI has a separate `e2e` job that uploads the HTML report.
 
 ## Coverage target
 Lines ≥ 80% on `src/features/**` and `src/lib/**` (report only, not a CI gate — pure functions should be ~100%).
