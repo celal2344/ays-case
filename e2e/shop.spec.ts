@@ -11,12 +11,13 @@ test('search, category, sort and paging are reflected in the URL and the list', 
   await expect(page).toHaveURL(/page=2/)
   await expect(page.getByText('Showing 13–24 of 30')).toBeVisible()
 
-  await page.getByRole('searchbox', { name: 'Search products' }).fill('item 07')
+  await page.getByRole('combobox', { name: 'Search products' }).fill('item 07')
   await expect(page).toHaveURL(/q=item(\+|%20)07/)
   await expect(page.getByRole('link', { name: 'beauty item 07' }).first()).toBeVisible()
   await expect(page.getByText('Showing 1–1 of 1')).toBeVisible()
 
-  await page.getByRole('searchbox', { name: 'Search products' }).fill('')
+  await page.getByRole('combobox', { name: 'Search products' }).fill('')
+  await page.keyboard.press('Escape') // on phones the open search is a full-screen layer
   await page.getByRole('combobox', { name: 'Sort by' }).click()
   await page.getByRole('option', { name: 'Price: high to low' }).click()
   await expect(page).toHaveURL(/sort=price/)
@@ -172,4 +173,40 @@ test('the gallery lightbox opens on the current image and moves to the next', as
   await expect(dialog.getByText('3 / 3')).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
+})
+
+test('the search suggestions open a product without leaving the page while typing', async ({
+  page,
+}) => {
+  await signIn(page, 'user')
+  await page.goto('/orders')
+  await page.getByRole('combobox', { name: 'Search products' }).fill('groceries item 02')
+  await expect(page).toHaveURL(/\/orders$/)
+  await page.getByRole('option', { name: /^groceries item 02/ }).click()
+  await expect(page).toHaveURL(/\/products\/2$/)
+  await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
+})
+
+test('the empty search box shows recently viewed and recent searches, and a chip runs the search', async ({
+  page,
+}) => {
+  await signIn(page, 'user')
+  await page.goto('/products/2')
+  await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
+  const box = page.getByRole('combobox', { name: 'Search products' })
+  await box.fill('item 07')
+  await box.press('Enter')
+  await expect(page).toHaveURL(/q=item(\+|%20)07/)
+  await box.fill('')
+  await box.click()
+  await expect(page.getByRole('heading', { name: 'Recently viewed' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Best deals' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'groceries item 02' }).first()).toBeVisible()
+  await page.getByRole('button', { name: 'item 07', exact: true }).click()
+  await expect(page).toHaveURL(/q=item(\+|%20)07/)
+  await expect(page.getByRole('heading', { name: 'Best deals' })).toHaveCount(0)
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  )
+  expect(overflow).toBeLessThanOrEqual(0)
 })

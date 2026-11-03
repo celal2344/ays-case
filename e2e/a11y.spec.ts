@@ -31,6 +31,20 @@ for (const theme of ['light', 'dark'] as const) {
       })
     }
 
+    test('the open search suggestions have no WCAG A/AA violations', async ({ page }) => {
+      await page.goto('/products')
+      await page.getByRole('combobox', { name: 'Search products' }).fill('item 0')
+      await expect(page.getByRole('listbox')).toBeVisible()
+      expect(await violations(page)).toEqual([])
+    })
+
+    test('the open search focus panel has no WCAG A/AA violations', async ({ page }) => {
+      await page.goto('/products')
+      await page.getByRole('combobox', { name: 'Search products' }).click()
+      await expect(page.getByRole('heading', { name: 'Best deals' })).toBeVisible()
+      expect(await violations(page)).toEqual([])
+    })
+
     test('the open gallery lightbox has no WCAG A/AA violations', async ({ page }) => {
       await page.goto('/products/2')
       await page.getByRole('button', { name: 'Zoom image' }).first().click()

@@ -8,6 +8,7 @@ import { useCartStore } from '@/features/cart/store'
 import { useFavoritesStore } from '@/features/favorites/store'
 import { useRecentlyViewedStore } from '@/features/recently-viewed/store'
 import { useOrdersStore } from '@/features/orders/store'
+import { useSearchStore } from '@/features/search/store'
 import { useUserOverlayStore } from '@/features/users/overlay-store'
 import { useReviewsStore } from '@/features/reviews/store'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
@@ -56,6 +57,7 @@ beforeEach(() => {
   useFavoritesStore.setState({ byUser: {} })
   useRecentlyViewedStore.setState({ byUser: {} })
   useOrdersStore.setState({ orders: [] })
+  useSearchStore.setState({ recent: [] })
 })
 
 afterEach(() => {

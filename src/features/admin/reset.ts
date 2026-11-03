@@ -3,6 +3,7 @@ import { useFavoritesStore } from '@/features/favorites/store'
 import { useOrdersStore } from '@/features/orders/store'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { useRecentlyViewedStore } from '@/features/recently-viewed/store'
+import { useSearchStore } from '@/features/search/store'
 import { useReviewsStore } from '@/features/reviews/store'
 import { useUserOverlayStore } from '@/features/users/overlay-store'
 
@@ -18,4 +19,5 @@ export function resetDemoData() {
   useFavoritesStore.getState().reset()
   useRecentlyViewedStore.getState().reset()
   useOrdersStore.getState().reset()
+  useSearchStore.getState().reset()
 }
