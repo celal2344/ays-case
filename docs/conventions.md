@@ -68,3 +68,5 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 - **shadcn is kept exactly as generated** (current default style `base-nova` on Base UI, `cn` re-exported from the `cn` package, `next-themes` used by sonner until G1). `components/ui` is generated and excluded from lint and Prettier; do not hand-edit it, regenerate with the shadcn CLI.
 - **Versions:** all dependencies are the latest at G0 (checked with `pnpm outdated`), except TypeScript 6.x and `@types/node` 24 (matches the Node 24 engine).
 - **Theme uses `next-themes`** (what the generated sonner already reads), storage key `ays-case:v1:theme`; the `preferences` Zustand store holds only language and shop view.
+- **Refresh skips only `/auth/login` and `/auth/refresh`** (not every `/auth/*`), so an expired token on `/auth/me` is refreshed during bootstrap. `DEFAULT_LANDING` is `/` until the products route exists (G3).
+- **Tests run jsdom at origin `https://dummyjson.com`** so MSW-mocked XHR needs no CORS preflight; MSW 3 uses `onUnhandledFrame`.

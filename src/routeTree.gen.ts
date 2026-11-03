@@ -10,11 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as ForbiddenRouteImport } from './routes/forbidden'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthAdminRouteImport } from './routes/_auth/_admin'
+import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
+import { Route as AuthAdminAdminIndexRouteImport } from './routes/_auth/_admin/admin/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForbiddenRoute = ForbiddenRouteImport.update({
@@ -22,31 +31,71 @@ const ForbiddenRoute = ForbiddenRouteImport.update({
   path: '/forbidden',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthAdminRoute = AuthAdminRouteImport.update({
+  id: '/_admin',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthOrdersIndexRoute = AuthOrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthAdminAdminIndexRoute = AuthAdminAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AuthAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/forbidden': typeof ForbiddenRoute
+  '/login': typeof LoginRoute
+  '/orders/': typeof AuthOrdersIndexRoute
+  '/admin/': typeof AuthAdminAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/forbidden': typeof ForbiddenRoute
+  '/login': typeof LoginRoute
+  '/orders': typeof AuthOrdersIndexRoute
+  '/admin': typeof AuthAdminAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_auth': typeof AuthRouteWithChildren
   '/forbidden': typeof ForbiddenRoute
+  '/login': typeof LoginRoute
+  '/_auth/_admin': typeof AuthAdminRouteWithChildren
+  '/_auth/orders/': typeof AuthOrdersIndexRoute
+  '/_auth/_admin/admin/': typeof AuthAdminAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/forbidden'
+  fullPaths: '/' | '/forbidden' | '/login' | '/orders/' | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/forbidden'
-  id: '__root__' | '/' | '/forbidden'
+  to: '/' | '/forbidden' | '/login' | '/orders' | '/admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/_auth'
+    | '/forbidden'
+    | '/login'
+    | '/_auth/_admin'
+    | '/_auth/orders/'
+    | '/_auth/_admin/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
   ForbiddenRoute: typeof ForbiddenRoute
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +107,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/forbidden': {
       id: '/forbidden'
       path: '/forbidden'
@@ -65,12 +121,66 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForbiddenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_auth/_admin': {
+      id: '/_auth/_admin'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthAdminRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/orders/': {
+      id: '/_auth/orders/'
+      path: '/orders'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof AuthOrdersIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/_admin/admin/': {
+      id: '/_auth/_admin/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthAdminAdminIndexRouteImport
+      parentRoute: typeof AuthAdminRoute
+    }
   }
 }
 
+interface AuthAdminRouteChildren {
+  AuthAdminAdminIndexRoute: typeof AuthAdminAdminIndexRoute
+}
+
+const AuthAdminRouteChildren: AuthAdminRouteChildren = {
+  AuthAdminAdminIndexRoute: AuthAdminAdminIndexRoute,
+}
+
+const AuthAdminRouteWithChildren = AuthAdminRoute._addFileChildren(
+  AuthAdminRouteChildren,
+)
+
+interface AuthRouteChildren {
+  AuthAdminRoute: typeof AuthAdminRouteWithChildren
+  AuthOrdersIndexRoute: typeof AuthOrdersIndexRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthAdminRoute: AuthAdminRouteWithChildren,
+  AuthOrdersIndexRoute: AuthOrdersIndexRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRouteWithChildren,
   ForbiddenRoute: ForbiddenRoute,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
