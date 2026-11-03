@@ -67,3 +67,4 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 - **TypeScript is pinned to 6.x**: `typescript-eslint` does not support TS 7 yet, and ESLint is required by the lint setup. Revisit when it does.
 - **shadcn is kept exactly as generated** (current default style `base-nova` on Base UI, `cn` re-exported from the `cn` package, `next-themes` used by sonner until G1). `components/ui` is generated and excluded from lint and Prettier; do not hand-edit it, regenerate with the shadcn CLI.
 - **Versions:** all dependencies are the latest at G0 (checked with `pnpm outdated`), except TypeScript 6.x and `@types/node` 24 (matches the Node 24 engine).
+- **Theme uses `next-themes`** (what the generated sonner already reads), storage key `ays-case:v1:theme`; the `preferences` Zustand store holds only language and shop view.
