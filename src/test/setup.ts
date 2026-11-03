@@ -1,9 +1,10 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
-import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest'
 
 import '@/i18n'
 import { useAuthStore } from '@/features/auth/store'
+import { useReviewsStore } from '@/features/reviews/store'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { usePreferencesStore } from '@/preferences/store'
 
@@ -24,6 +25,19 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 })
 
+// jsdom has no layout observers; the carousel (embla) and the sticky bar use them.
+class NoopObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() {
+    return []
+  }
+}
+Element.prototype.scrollIntoView = () => {}
+vi.stubGlobal('ResizeObserver', NoopObserver)
+vi.stubGlobal('IntersectionObserver', NoopObserver)
+
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))
 afterAll(() => server.close())
 
@@ -31,6 +45,7 @@ beforeEach(() => {
   usePreferencesStore.setState({ language: 'en', shopView: 'grid' })
   useAuthStore.setState({ accessToken: null, refreshToken: null, user: null, status: 'idle' })
   useProductOverlayStore.getState().reset()
+  useReviewsStore.getState().reset()
 })
 
 afterEach(() => {
