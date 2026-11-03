@@ -1,5 +1,6 @@
 import type { Language } from '@/lib/format'
 
+import { groupOf, type GroupId } from './category-groups'
 import { salePriceCents } from './pricing'
 import type { Product, ProductSort, SortOrder } from './schemas'
 
@@ -112,4 +113,9 @@ export function brandsOf(products: Product[]): string[] {
   return [...new Set(products.flatMap((p) => (p.brand ? [p.brand] : [])))].sort((a, b) =>
     a.localeCompare(b),
   )
+}
+
+/** Products whose category belongs to a navigation group. */
+export function filterByGroup(products: Product[], group: GroupId | undefined) {
+  return group ? products.filter((p) => groupOf(p.category) === group) : products
 }

@@ -7,6 +7,7 @@ export function normalizeSearch(search: ProductSearch): ProductSearch {
   return {
     q: q ? q : undefined,
     category: search.category || undefined,
+    group: search.group,
     sort,
     order: sort && search.order === 'desc' ? 'desc' : undefined,
     page: search.page && search.page > 1 ? search.page : undefined,
@@ -19,12 +20,13 @@ export function normalizeSearch(search: ProductSearch): ProductSearch {
 }
 
 /** The filters shown as removable chips: everything except search text, sort, view and paging. */
-export type FilterKey = 'q' | 'category' | 'price' | 'brand' | 'rating'
+export type FilterKey = 'q' | 'category' | 'group' | 'price' | 'brand' | 'rating'
 
 export function activeFilters(search: ProductSearch): FilterKey[] {
   const keys: FilterKey[] = []
   if (search.q?.trim()) keys.push('q')
   if (search.category) keys.push('category')
+  if (search.group) keys.push('group')
   if (search.minPrice !== undefined || search.maxPrice !== undefined) keys.push('price')
   if (search.brand) keys.push('brand')
   if (search.rating) keys.push('rating')
@@ -36,6 +38,7 @@ export function withoutFilter(key?: FilterKey): Partial<ProductSearch> {
   const all: Record<FilterKey, Partial<ProductSearch>> = {
     q: { q: undefined },
     category: { category: undefined },
+    group: { group: undefined },
     price: { minPrice: undefined, maxPrice: undefined },
     brand: { brand: undefined },
     rating: { rating: undefined },
@@ -49,7 +52,14 @@ export function updateSearch(
   change: Partial<ProductSearch>,
 ): ProductSearch {
   const pageChanged = 'page' in change
-  return normalizeSearch({ ...current, ...change, page: pageChanged ? change.page : undefined })
+  // picking one category replaces a whole-group filter
+  const group = 'group' in change ? change.group : 'category' in change ? undefined : current.group
+  return normalizeSearch({
+    ...current,
+    ...change,
+    group,
+    page: pageChanged ? change.page : undefined,
+  })
 }
 
 export const SORT_OPTIONS = [

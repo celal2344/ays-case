@@ -6,6 +6,7 @@ import {
   brandsOf,
   filterByBrand,
   filterByCategory,
+  filterByGroup,
   filterByMinRating,
   filterByPrice,
   filterByQuery,
@@ -20,7 +21,7 @@ import { useCatalog } from './use-catalog'
 export function useProductList(search: ProductSearch) {
   const { products, ...query } = useCatalog()
   const language = usePreferencesStore(selectLanguage)
-  const { q, category, minPrice, maxPrice, brand, rating, sort, order } = search
+  const { q, category, group, minPrice, maxPrice, brand, rating, sort, order } = search
 
   // brands offered in the panel: those of the current search and category, so every choice has results
   const brands = useMemo(
@@ -31,12 +32,15 @@ export function useProductList(search: ProductSearch) {
 
   const filtered = useMemo(() => {
     if (!products) return undefined
-    let matched = filterByCategory(filterByQuery(products, q, language), category)
+    let matched = filterByGroup(
+      filterByCategory(filterByQuery(products, q, language), category),
+      group,
+    )
     matched = filterByPrice(matched, minPrice, maxPrice)
     matched = filterByBrand(matched, brand)
     matched = filterByMinRating(matched, rating)
     return sortProducts(matched, sort, order, language)
-  }, [products, q, category, minPrice, maxPrice, brand, rating, sort, order, language])
+  }, [products, q, category, group, minPrice, maxPrice, brand, rating, sort, order, language])
 
   const page = useMemo(
     () => (filtered ? paginate(filtered, search.page ?? 1, SHOP_PAGE_SIZE) : undefined),

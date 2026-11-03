@@ -52,7 +52,7 @@ describe('filter URL state', () => {
     expect(activeFilters(search)).toEqual(['q', 'category', 'price', 'brand', 'rating'])
     expect(activeFilters({ sort: 'price' as const, page: 2 })).toEqual([])
     expect(withoutFilter('price')).toEqual({ minPrice: undefined, maxPrice: undefined })
-    expect(Object.keys(withoutFilter())).toHaveLength(6)
+    expect(Object.keys(withoutFilter())).toHaveLength(7)
   })
 })
 
@@ -145,18 +145,5 @@ describe('header search and category strip', () => {
       'item 04',
     )
     await waitFor(() => expect(search(router)).toEqual({ category: 'beauty', q: 'item 04' }))
-  })
-
-  it('the strip links to a category and marks it as the current one', async () => {
-    const { router } = await renderApp('/products')
-    const strip = await screen.findByRole('navigation', { name: 'Categories' })
-    await userEvent.click(await within(strip).findByRole('link', { name: 'Groceries' }))
-    await waitFor(() => expect(search(router)).toEqual({ category: 'groceries' }))
-    expect(within(strip).getByRole('link', { name: 'Groceries' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
-    await userEvent.click(within(strip).getByRole('link', { name: 'All categories' }))
-    await waitFor(() => expect(search(router)).toEqual({}))
   })
 })

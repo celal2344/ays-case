@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
+import { CategoryAccordion } from './category-accordion'
 import { useAdminNavItems, useNavItems } from './nav-items'
 import { PreferencesControls } from './preferences-controls'
 
@@ -18,7 +19,7 @@ export function MobileNav() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         render={
-          <Button variant="outline" size="icon" className="md:hidden" aria-label={t('nav.menu')} />
+          <Button variant="outline" size="icon" className="lg:hidden" aria-label={t('nav.menu')} />
         }
       >
         <Menu className="size-4" />
@@ -58,6 +59,7 @@ export function MobileNav() {
             </>
           ) : null}
         </nav>
+        <CategoryAccordion onNavigate={() => setOpen(false)} />
         <div className="mt-auto px-4 pb-4">
           <PreferencesControls />
         </div>

@@ -84,3 +84,19 @@ test('no horizontal scroll on the shop list', async ({ page }) => {
   )
   expect(overflow).toBeLessThanOrEqual(0)
 })
+
+test('the category menu reaches any category in two interactions', async ({ page, isMobile }) => {
+  await page.goto('/products')
+  if (isMobile) {
+    await page.getByRole('button', { name: 'Menu' }).click()
+    const sheet = page.getByRole('dialog')
+    await sheet.getByRole('button', { name: 'Groceries' }).click()
+    await sheet.getByRole('link', { name: /^Groceries\s*10$/ }).click()
+  } else {
+    const nav = page.getByRole('navigation', { name: 'Categories' })
+    await nav.getByRole('button', { name: 'Groceries' }).click()
+    await page.getByRole('link', { name: /^Groceries\s*10$/ }).click()
+  }
+  await expect(page).toHaveURL(/category=groceries/)
+  await expect(page.getByText('10 results')).toBeVisible()
+})
