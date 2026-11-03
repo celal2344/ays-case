@@ -31,6 +31,13 @@ for (const theme of ['light', 'dark'] as const) {
       })
     }
 
+    test('the open gallery lightbox has no WCAG A/AA violations', async ({ page }) => {
+      await page.goto('/products/2')
+      await page.getByRole('button', { name: 'Zoom image' }).first().click()
+      await expect(page.getByRole('dialog')).toBeVisible()
+      expect(await violations(page)).toEqual([])
+    })
+
     test('cart, checkout, orders and admin pages have no WCAG A/AA violations', async ({
       page,
     }) => {
