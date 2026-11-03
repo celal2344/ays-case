@@ -135,7 +135,7 @@ describe('product page (PDP-1..6)', () => {
   it('shows only the specs a product has (local products have none of the remote-only ones)', async () => {
     await renderApp('/products/2')
     await screen.findByRole('heading', { name: 'groceries item 02' })
-    const specs = screen.getByRole('tabpanel')
+    const specs = screen.getByRole('region', { name: 'Details' })
     expect(within(specs).getByText('Brand')).toBeInTheDocument()
     expect(within(specs).queryByText('Warranty')).not.toBeInTheDocument()
   })

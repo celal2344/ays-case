@@ -75,6 +75,7 @@ export const tr = {
       thumbnails: 'Ürün görselleri',
       show: '{{index}}. görseli göster',
     },
+    sections: 'Ürün bölümleri',
     tabs: { info: 'Detaylar', description: 'Açıklama', reviews: 'Yorumlar ({{n}})' },
     specs: {
       brand: 'Marka',

@@ -1,5 +1,4 @@
 import { screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
 import { productInput } from '@/test/fixtures/products'
@@ -11,7 +10,6 @@ describe('product detail page states', () => {
   it('shows the product with price, discount and description', async () => {
     await renderApp('/products/2')
     expect(await screen.findByRole('heading', { name: 'groceries item 02' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('tab', { name: 'Description' }))
     expect(await screen.findByText('Description of groceries item 2')).toBeInTheDocument()
     expect(screen.getAllByText('-10%').length).toBeGreaterThan(0)
     expect(screen.getAllByRole('button', { name: 'Add to cart' })[0]).toBeEnabled()
