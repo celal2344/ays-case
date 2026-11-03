@@ -119,7 +119,12 @@ export function ProductDetailPage() {
         </div>
       </div>
 
-      <Tabs id="product-tabs" value={tab} onValueChange={(value) => setTab(value as DetailTab)}>
+      <Tabs
+        id="product-tabs"
+        className="scroll-mt-[calc(var(--header-h)+1rem)]"
+        value={tab}
+        onValueChange={(value) => setTab(value as DetailTab)}
+      >
         <TabsList>
           <TabsTrigger value="info" className="text-muted-foreground data-active:text-foreground">
             {t('products.tabs.info')}

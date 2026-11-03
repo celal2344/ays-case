@@ -55,6 +55,7 @@
 }
 
 :root {
+  --header-h: 4rem;
   --background: #f6f6f6;
   --foreground: #2b2b2b;
   --card: #ffffff;
