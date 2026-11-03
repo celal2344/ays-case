@@ -58,7 +58,7 @@ http.interceptors.response.use(undefined, async (error) => {
 ```
 
 ## Response validation
-Each `api.ts` function parses responses with Zod (`productSchema.parse`) at the boundary, so a DummyJSON shape change fails loudly in one place instead of as `undefined` in the UI. Types are `z.infer` of those schemas — one source of truth (same idea as StokMate's generated `*.zod.ts`, written by hand here because DummyJSON has no OpenAPI spec).
+Each `api.ts` function parses responses with Zod (`productSchema.parse`) at the boundary, so a DummyJSON shape change fails loudly in one place instead of as `undefined` in the UI. Types are `z.infer` of those schemas — one source of truth (same idea as StokMate's generated `*.zod.ts`, written by hand here from [`dummyjson.json`](../dummyjson.json): the spec has no `required` lists or enums, so generated schemas would be all-optional; each schema cites its spec schema in a comment).
 
 ## Errors (`lib/http-error.ts`)
 ```ts
