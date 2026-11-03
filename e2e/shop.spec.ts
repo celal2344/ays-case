@@ -140,4 +140,17 @@ test('a section tab scrolls to its section, sets the hash, and a reload keeps th
 
   await page.reload()
   await expect(page.getByRole('heading', { level: 2, name: /^Reviews/ })).toBeInViewport()
+test('the gallery lightbox opens on the current image and moves to the next', async ({ page }) => {
+  await signIn(page, 'user')
+  await page.goto('/products/2')
+  await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
+  await page.getByRole('button', { name: 'Zoom image' }).first().click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText('1 / 3')).toBeVisible()
+  await dialog.getByRole('button', { name: 'Next image' }).click()
+  await expect(dialog.getByText('2 / 3')).toBeVisible()
+  await page.keyboard.press('ArrowRight')
+  await expect(dialog.getByText('3 / 3')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
 })
