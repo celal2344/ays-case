@@ -19,6 +19,8 @@ import { DeliveryInfo } from './detail/delivery-info'
 import { Gallery } from './detail/gallery'
 import { ProductBreadcrumb } from './detail/product-breadcrumb'
 import { QuantityStepper } from '@/components/quantity-stepper'
+import { RecentlyViewedStrip } from '@/features/recently-viewed/components/recently-viewed-strip'
+import { useRecordView } from '@/features/recently-viewed/hooks/use-recently-viewed'
 import { SimilarProducts } from './detail/similar-products'
 import { Specs } from './detail/specs'
 import { StickyBar } from './detail/sticky-bar'
@@ -43,6 +45,7 @@ export function ProductDetailPage() {
   const [tab, setTab] = useState<DetailTab>('info')
   const actionsRef = useRef<HTMLDivElement>(null)
   const actionsVisible = useInView(actionsRef)
+  useRecordView(id, product !== undefined)
   const { summary } = useProductReviews(id, product?.reviews ?? NO_REVIEWS, 'newest')
 
   if (notFound) return <NotFound />
@@ -149,6 +152,7 @@ export function ProductDetailPage() {
       </Tabs>
 
       <SimilarProducts productId={id} category={product.category} />
+      <RecentlyViewedStrip excludeId={id} />
 
       <StickyBar
         product={product}

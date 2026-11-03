@@ -209,6 +209,10 @@ export const tr = {
     empty: 'Henüz favoriniz yok',
     emptyCta: 'Ürünlere göz at',
   },
+  recentlyViewed: {
+    title: 'Son gezdiklerin',
+    clear: 'Temizle',
+  },
   cart: {
     title: 'Sepetin',
     open: 'Sepet, {{n}} ürün',

@@ -6,6 +6,7 @@ import '@/i18n'
 import { useAuthStore } from '@/features/auth/store'
 import { useCartStore } from '@/features/cart/store'
 import { useFavoritesStore } from '@/features/favorites/store'
+import { useRecentlyViewedStore } from '@/features/recently-viewed/store'
 import { useOrdersStore } from '@/features/orders/store'
 import { useUserOverlayStore } from '@/features/users/overlay-store'
 import { useReviewsStore } from '@/features/reviews/store'
@@ -53,6 +54,7 @@ beforeEach(() => {
   useUserOverlayStore.getState().reset()
   useCartStore.setState({ byUser: {} })
   useFavoritesStore.setState({ byUser: {} })
+  useRecentlyViewedStore.setState({ byUser: {} })
   useOrdersStore.setState({ orders: [] })
 })
 

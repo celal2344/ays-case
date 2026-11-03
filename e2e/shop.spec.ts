@@ -100,3 +100,16 @@ test('the category menu reaches any category in two interactions', async ({ page
   await expect(page).toHaveURL(/category=groceries/)
   await expect(page.getByText('10 results')).toBeVisible()
 })
+
+test('recently viewed shows visited products newest first on the shop list', async ({ page }) => {
+  await signIn(page, 'user')
+  await page.goto('/products/1')
+  await expect(page.getByRole('heading', { name: 'beauty item 01' })).toBeVisible()
+  await page.goto('/products/2')
+  await expect(page.getByRole('heading', { name: 'groceries item 02' })).toBeVisible()
+  await page.goto('/products')
+  const strip = page.getByRole('region', { name: 'Recently viewed' })
+  await expect(strip.getByRole('link', { name: /item 0[12]$/ }).first()).toHaveText(
+    'groceries item 02',
+  )
+})
