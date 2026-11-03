@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
 import { productInput } from '@/test/fixtures/products'
@@ -6,19 +7,20 @@ import { renderApp } from '@/test/render'
 
 import { useProductOverlayStore } from '../overlay-store'
 
-describe('product detail (minimal, G3)', () => {
+describe('product detail page states', () => {
   it('shows the product with price, discount and description', async () => {
     await renderApp('/products/2')
     expect(await screen.findByRole('heading', { name: 'groceries item 02' })).toBeInTheDocument()
-    expect(screen.getByText('Description of groceries item 2')).toBeInTheDocument()
-    expect(screen.getByText('-10%')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add to cart' })).toBeEnabled()
+    await userEvent.click(screen.getByRole('tab', { name: 'Description' }))
+    expect(await screen.findByText('Description of groceries item 2')).toBeInTheDocument()
+    expect(screen.getAllByText('-10%').length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: 'Add to cart' })[0]).toBeEnabled()
   })
 
   it('disables Add to cart for an out-of-stock product', async () => {
     await renderApp('/products/3')
-    expect(await screen.findByText('Out of stock')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add to cart' })).toBeDisabled()
+    expect((await screen.findAllByText('Out of stock')).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: 'Add to cart' })[0]).toBeDisabled()
   })
 
   it('applies the admin patch on top of the remote product', async () => {

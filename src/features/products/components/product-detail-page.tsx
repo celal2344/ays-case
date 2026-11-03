@@ -1,52 +1,140 @@
-import { Link, getRouteApi } from '@tanstack/react-router'
-import { ArrowLeft, ShoppingCart } from 'lucide-react'
+import { getRouteApi } from '@tanstack/react-router'
+import { ShoppingCart, Zap } from 'lucide-react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ErrorState, NotFound, PageSkeleton } from '@/components/feedback/feedback'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useProductReviews } from '@/features/reviews/hooks/use-product-reviews'
+import { RatingStars } from '@/features/reviews/components/rating-stars'
+import { ReviewsTab } from '@/features/reviews/components/reviews-tab'
 
-import { useAddToCart } from '../hooks/use-add-to-cart'
+import type { Review } from '../schemas'
+import { useAddToCart, useBuyNow } from '../hooks/use-add-to-cart'
+import { useInView } from '../hooks/use-in-view'
 import { useProduct } from '../hooks/use-product'
+import { Gallery } from './detail/gallery'
+import { ProductBreadcrumb } from './detail/product-breadcrumb'
+import { QuantityStepper } from './detail/quantity-stepper'
+import { SimilarProducts } from './detail/similar-products'
+import { Specs } from './detail/specs'
+import { StickyBar } from './detail/sticky-bar'
 import { DiscountBadge, StockBadge } from './product-badges'
-import { ProductImage } from './product-image'
 import { ProductPrice } from './product-price'
+
+const NO_REVIEWS: Review[] = []
 
 const route = getRouteApi('/products/$productId')
 
-/** Minimal detail page; G3b replaces it with the full product page and reviews. */
+type DetailTab = 'info' | 'description' | 'reviews'
+
 export function ProductDetailPage() {
   const { t } = useTranslation()
   const { productId } = route.useParams()
-  const { product, notFound, isPending, query } = useProduct(Number(productId))
+  const id = Number(productId)
+  const { product, notFound, isPending, query } = useProduct(id)
   const addToCart = useAddToCart()
+  const buyNow = useBuyNow()
+
+  const [quantity, setQuantity] = useState(1)
+  const [tab, setTab] = useState<DetailTab>('info')
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const actionsVisible = useInView(actionsRef)
+  const { summary } = useProductReviews(id, product?.reviews ?? NO_REVIEWS, 'newest')
 
   if (notFound) return <NotFound />
   if (isPending) return <PageSkeleton />
   if (!product) return <ErrorState onRetry={() => void query.refetch()} />
 
+  const outOfStock = product.stock <= 0
+  const images = product.images.length > 0 ? product.images : [product.thumbnail]
+  const showReviews = () => {
+    setTab('reviews')
+    document.getElementById('product-tabs')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   return (
-    <div className="space-y-4">
-      <Button variant="ghost" size="sm" render={<Link to="/products" />}>
-        <ArrowLeft className="size-4" />
-        {t('products.backToList')}
-      </Button>
-      <div className="grid gap-6 md:grid-cols-2">
-        <ProductImage src={product.images[0] ?? product.thumbnail} alt={product.title} eager />
-        <div className="space-y-3">
-          {product.brand ? <p className="text-sm text-muted-foreground">{product.brand}</p> : null}
-          <h1 className="text-2xl font-semibold">{product.title}</h1>
-          <div className="flex items-center gap-2">
-            <ProductPrice product={product} className="text-xl" />
-            <DiscountBadge product={product} />
-            <StockBadge stock={product.stock} />
+    <div className="space-y-8 pb-16 md:pb-0">
+      <ProductBreadcrumb product={product} />
+
+      <div className="grid gap-8 md:grid-cols-2">
+        <Gallery images={images} title={product.title} />
+
+        <div className="space-y-4">
+          <div>
+            {product.brand ? (
+              <p className="text-sm text-muted-foreground">{product.brand}</p>
+            ) : null}
+            <h1 className="text-2xl font-semibold">{product.title}</h1>
           </div>
-          <p className="text-muted-foreground">{product.description}</p>
-          <Button disabled={product.stock <= 0} onClick={() => addToCart(product)}>
-            <ShoppingCart className="size-4" />
-            {t('products.addToCart')}
-          </Button>
+
+          <button
+            type="button"
+            onClick={showReviews}
+            className="flex items-center gap-2 text-sm hover:underline"
+          >
+            <RatingStars rating={summary.count > 0 ? summary.average : product.rating} />
+            <span className="font-medium">
+              {(summary.count > 0 ? summary.average : product.rating).toFixed(1)}
+            </span>
+            <span className="text-muted-foreground">
+              {t('reviews.count', { count: summary.count })}
+            </span>
+          </button>
+
+          <div className="space-y-2 rounded-lg border p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <ProductPrice product={product} className="text-2xl" />
+              <DiscountBadge product={product} />
+              <StockBadge stock={product.stock} />
+            </div>
+            <div className="flex flex-wrap items-center gap-3" ref={actionsRef}>
+              <QuantityStepper
+                value={quantity}
+                max={Math.max(1, product.stock)}
+                onChange={setQuantity}
+              />
+              <Button size="lg" disabled={outOfStock} onClick={() => buyNow(product)}>
+                <Zap className="size-4" />
+                {t('products.buyNow')}
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                disabled={outOfStock}
+                onClick={() => addToCart(product)}
+              >
+                <ShoppingCart className="size-4" />
+                {t('products.addToCart')}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
+
+      <Tabs id="product-tabs" value={tab} onValueChange={(value) => setTab(value as DetailTab)}>
+        <TabsList>
+          <TabsTrigger value="info">{t('products.tabs.info')}</TabsTrigger>
+          <TabsTrigger value="description">{t('products.tabs.description')}</TabsTrigger>
+          <TabsTrigger value="reviews">
+            {t('products.tabs.reviews', { n: summary.count })}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="info" className="pt-4">
+          <Specs product={product} />
+        </TabsContent>
+        <TabsContent value="description" className="pt-4">
+          <p className="max-w-3xl text-muted-foreground">{product.description}</p>
+        </TabsContent>
+        <TabsContent value="reviews" className="pt-4">
+          <ReviewsTab productId={id} seeded={product.reviews} />
+        </TabsContent>
+      </Tabs>
+
+      <SimilarProducts productId={id} category={product.category} />
+
+      <StickyBar product={product} visible={!actionsVisible} onAdd={() => addToCart(product)} />
     </div>
   )
 }

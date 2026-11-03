@@ -6,9 +6,13 @@ import { createRoot } from 'react-dom/client'
 
 import './i18n'
 import './index.css'
+import { useAuthStore } from './features/auth/store'
 import { queryClient } from './lib/query-client'
 import { storageKey } from './lib/storage'
 import { router } from './router'
+
+// Validate a persisted session in the background so public pages (header, nav) know who is signed in.
+void useAuthStore.getState().bootstrap()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -72,3 +72,6 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 - **Tests run jsdom at origin `https://dummyjson.com`** so MSW-mocked XHR needs no CORS preflight; MSW 3 uses `onUnhandledFrame`.
 - **Catalog schema facts (checked against the live API):** 92 of 194 products have no `brand`, so it is optional; `GET /products?limit=0&select=...` returns all 194; detail 404s are not retried.
 - **Search params use `.catch(undefined)`** so a malformed URL falls back to defaults; `undefined` always means default and is stripped from the URL (`search-state.ts`).
+- **Session bootstrap runs at startup** (`main.tsx`, non-blocking) so public pages know the signed-in user after a reload; guards still await it on protected routes.
+- **Product page extras:** the first breadcrumb crumb is "Products" (the shop list is the home page); quantity, Buy now and Add to cart are stubs until G4/G6 (toasts); the verified-buyer check is a stub that returns false until the orders store exists (G6); admins can hide seeded DummyJSON reviews (stored as hidden keys), local reviews can be edited and deleted by their author.
+- **Tests stub `ResizeObserver` / `IntersectionObserver` / `scrollIntoView`** in `src/test/setup.ts` (jsdom has none); the sticky-bar test swaps in a controllable observer.
