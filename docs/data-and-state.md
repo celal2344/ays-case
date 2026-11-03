@@ -133,8 +133,8 @@ export const selectIsAdmin = (s: AuthState) => s.user?.role === "admin";
 interface CartLine { productId: number; quantity: number; addedAt: string }
 interface CartState {
   byUser: Record<number, CartLine[]>;
-  add(userId: number, productId: number, qty?: number): void;
-  setQuantity(userId: number, productId: number, qty: number): void;
+  add(userId: number, productId: number, qty: number, stock: number): number; // capped at stock, returns the new line quantity
+  setQuantity(userId: number, productId: number, qty: number, stock: number): number; // clamped to 1…stock
   remove(userId: number, productId: number): void;
   clear(userId: number): void;
   removeProductEverywhere(productId: number): void;

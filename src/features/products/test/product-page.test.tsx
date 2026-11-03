@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
 
+import { signInAs } from '@/test/auth'
 import { fixtureDetail } from '@/test/fixtures/products'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
@@ -69,7 +70,8 @@ describe('product page (PDP-1..6)', () => {
     expect(addButtons()[0]).toBeDisabled()
   })
 
-  it('PDP-4: the quantity is clamped to stock and Buy now / Add to cart respond', async () => {
+  it('PDP-4: the quantity is clamped to stock and Add to cart uses it', async () => {
+    signInAs('averyp')
     await renderApp('/products/6') // stock 4
     const quantity = await screen.findByRole('textbox', { name: 'Quantity' })
     await userEvent.clear(quantity)
@@ -79,10 +81,8 @@ describe('product page (PDP-1..6)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Decrease quantity' }))
     expect(quantity).toHaveValue('3')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Buy now' }))
-    expect(await screen.findByText(/Checkout arrives in a later release/)).toBeInTheDocument()
     await userEvent.click(addButtons()[0]!)
-    expect(await screen.findByText(/The cart arrives in the next release/)).toBeInTheDocument()
+    expect(await screen.findByText(/was added to your cart/)).toBeInTheDocument()
   })
 
   it('PDP-5: similar products are from the same category and exclude the current product', async () => {

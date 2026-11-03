@@ -11,12 +11,12 @@ import { RatingStars } from '@/features/reviews/components/rating-stars'
 import { ReviewsTab } from '@/features/reviews/components/reviews-tab'
 
 import type { Review } from '../schemas'
-import { useAddToCart, useBuyNow } from '../hooks/use-add-to-cart'
+import { useAddToCart, useBuyNow } from '@/features/cart/hooks/use-add-to-cart'
 import { useInView } from '../hooks/use-in-view'
 import { useProduct } from '../hooks/use-product'
 import { Gallery } from './detail/gallery'
 import { ProductBreadcrumb } from './detail/product-breadcrumb'
-import { QuantityStepper } from './detail/quantity-stepper'
+import { QuantityStepper } from '@/components/quantity-stepper'
 import { SimilarProducts } from './detail/similar-products'
 import { Specs } from './detail/specs'
 import { StickyBar } from './detail/sticky-bar'
@@ -95,7 +95,7 @@ export function ProductDetailPage() {
                 max={Math.max(1, product.stock)}
                 onChange={setQuantity}
               />
-              <Button size="lg" disabled={outOfStock} onClick={() => buyNow(product)}>
+              <Button size="lg" disabled={outOfStock} onClick={() => buyNow(product, quantity)}>
                 <Zap className="size-4" />
                 {t('products.buyNow')}
               </Button>
@@ -103,7 +103,7 @@ export function ProductDetailPage() {
                 size="lg"
                 variant="outline"
                 disabled={outOfStock}
-                onClick={() => addToCart(product)}
+                onClick={() => addToCart(product, quantity)}
               >
                 <ShoppingCart className="size-4" />
                 {t('products.addToCart')}
@@ -134,7 +134,11 @@ export function ProductDetailPage() {
 
       <SimilarProducts productId={id} category={product.category} />
 
-      <StickyBar product={product} visible={!actionsVisible} onAdd={() => addToCart(product)} />
+      <StickyBar
+        product={product}
+        visible={!actionsVisible}
+        onAdd={() => addToCart(product, quantity)}
+      />
     </div>
   )
 }

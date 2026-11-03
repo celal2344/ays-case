@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-import { useAddToCart } from '../hooks/use-add-to-cart'
+import { useAddToCart } from '@/features/cart/hooks/use-add-to-cart'
 import type { Product } from '../schemas'
 import { DiscountBadge, StockBadge } from './product-badges'
 import { ProductImage } from './product-image'

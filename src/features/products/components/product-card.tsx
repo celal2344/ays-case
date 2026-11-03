@@ -1,11 +1,10 @@
 import { Link } from '@tanstack/react-router'
-import { ShoppingCart, Star } from 'lucide-react'
+import { Star } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 
-import { useAddToCart } from '../hooks/use-add-to-cart'
+import { CartControls } from '@/features/cart/components/cart-controls'
 import type { Product } from '../schemas'
 import { DiscountBadge, StockBadge } from './product-badges'
 import { ProductImage } from './product-image'
@@ -13,8 +12,6 @@ import { ProductPrice } from './product-price'
 
 export function ProductCard({ product }: { product: Product }) {
   const { t } = useTranslation()
-  const addToCart = useAddToCart()
-  const outOfStock = product.stock <= 0
   return (
     <Card className="h-full gap-0 overflow-hidden p-0">
       <Link
@@ -50,15 +47,7 @@ export function ProductCard({ product }: { product: Product }) {
         <ProductPrice product={product} className="mt-auto pt-1" />
       </CardContent>
       <CardFooter className="p-3 pt-0">
-        <Button
-          className="w-full"
-          size="sm"
-          disabled={outOfStock}
-          onClick={() => addToCart(product)}
-        >
-          <ShoppingCart className="size-4" />
-          {t('products.addToCart')}
-        </Button>
+        <CartControls product={product} />
       </CardFooter>
     </Card>
   )
