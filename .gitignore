@@ -1,29 +1,51 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build output
+dist
+dist-ssr
+*.tsbuildinfo
+
+# Environment (only .env.example is committed)
+.env
+.env.*
+!.env.example
+*.local
+
+# Test output
+coverage
+playwright-report
+test-results
+blob-report
+playwright/.cache
+
 # Logs
 logs
 *.log
 npm-debug.log*
+pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
+# Editors and OS
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.DS_Store
+Thumbs.db
+Desktop.ini
 
-.env
-playwright-report
-test-results
-coverage
+# Claude Code: personal settings and worktrees stay local
+.claude/settings.local.json
+.claude/worktrees
+
+# Temporary files
+*.tmp
+.cache
+.eslintcache
