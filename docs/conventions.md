@@ -70,3 +70,5 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 - **Theme uses `next-themes`** (what the generated sonner already reads), storage key `ays-case:v1:theme`; the `preferences` Zustand store holds only language and shop view.
 - **Refresh skips only `/auth/login` and `/auth/refresh`** (not every `/auth/*`), so an expired token on `/auth/me` is refreshed during bootstrap. `DEFAULT_LANDING` is `/` until the products route exists (G3).
 - **Tests run jsdom at origin `https://dummyjson.com`** so MSW-mocked XHR needs no CORS preflight; MSW 3 uses `onUnhandledFrame`.
+- **Catalog schema facts (checked against the live API):** 92 of 194 products have no `brand`, so it is optional; `GET /products?limit=0&select=...` returns all 194; detail 404s are not retried.
+- **Search params use `.catch(undefined)`** so a malformed URL falls back to defaults; `undefined` always means default and is stripped from the URL (`search-state.ts`).

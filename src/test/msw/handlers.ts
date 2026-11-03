@@ -2,6 +2,8 @@ import { http, HttpResponse } from 'msw'
 
 import type { User } from '@/features/auth/schemas'
 
+import { fixtureCategories, fixtureDetail, fixtureProducts } from '../fixtures/products'
+
 const BASE = 'https://dummyjson.com'
 
 export const fixtureUsers: Record<string, User & { password: string }> = {
@@ -77,4 +79,25 @@ export const authHandlers = [
   }),
 ]
 
-export const handlers = [...authHandlers]
+export const productHandlers = [
+  http.get(`${BASE}/products/categories`, () => HttpResponse.json(fixtureCategories)),
+  http.get(`${BASE}/products/:id`, ({ params }) => {
+    const detail = fixtureDetail(Number(params.id))
+    return detail
+      ? HttpResponse.json(detail)
+      : HttpResponse.json(
+          { message: `Product with id '${String(params.id)}' not found` },
+          { status: 404 },
+        )
+  }),
+  http.get(`${BASE}/products`, () =>
+    HttpResponse.json({
+      products: fixtureProducts,
+      total: fixtureProducts.length,
+      skip: 0,
+      limit: 0,
+    }),
+  ),
+]
+
+export const handlers = [...authHandlers, ...productHandlers]

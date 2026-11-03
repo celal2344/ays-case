@@ -4,6 +4,7 @@ import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest'
 
 import '@/i18n'
 import { useAuthStore } from '@/features/auth/store'
+import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { usePreferencesStore } from '@/preferences/store'
 
 import { server } from './msw/server'
@@ -29,6 +30,7 @@ afterAll(() => server.close())
 beforeEach(() => {
   usePreferencesStore.setState({ language: 'en', shopView: 'grid' })
   useAuthStore.setState({ accessToken: null, refreshToken: null, user: null, status: 'idle' })
+  useProductOverlayStore.getState().reset()
 })
 
 afterEach(() => {

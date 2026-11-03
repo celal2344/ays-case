@@ -14,6 +14,8 @@ import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as ForbiddenRouteImport } from './routes/forbidden'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthAdminRouteImport } from './routes/_auth/_admin'
+import { Route as ProductsIndexRouteImport } from './routes/products/index'
+import { Route as ProductsProductIdRouteImport } from './routes/products/$productId'
 import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
 import { Route as AuthAdminAdminIndexRouteImport } from './routes/_auth/_admin/admin/index'
 
@@ -40,6 +42,16 @@ const AuthAdminRoute = AuthAdminRouteImport.update({
   id: '/_admin',
   getParentRoute: () => AuthRoute,
 } as any)
+const ProductsIndexRoute = ProductsIndexRouteImport.update({
+  id: '/products/',
+  path: '/products/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductsProductIdRoute = ProductsProductIdRouteImport.update({
+  id: '/products/$productId',
+  path: '/products/$productId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthOrdersIndexRoute = AuthOrdersIndexRouteImport.update({
   id: '/orders/',
   path: '/orders/',
@@ -55,6 +67,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/forbidden': typeof ForbiddenRoute
   '/login': typeof LoginRoute
+  '/products/$productId': typeof ProductsProductIdRoute
+  '/products/': typeof ProductsIndexRoute
   '/orders/': typeof AuthOrdersIndexRoute
   '/admin/': typeof AuthAdminAdminIndexRoute
 }
@@ -62,6 +76,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/forbidden': typeof ForbiddenRoute
   '/login': typeof LoginRoute
+  '/products/$productId': typeof ProductsProductIdRoute
+  '/products': typeof ProductsIndexRoute
   '/orders': typeof AuthOrdersIndexRoute
   '/admin': typeof AuthAdminAdminIndexRoute
 }
@@ -72,14 +88,30 @@ export interface FileRoutesById {
   '/forbidden': typeof ForbiddenRoute
   '/login': typeof LoginRoute
   '/_auth/_admin': typeof AuthAdminRouteWithChildren
+  '/products/$productId': typeof ProductsProductIdRoute
+  '/products/': typeof ProductsIndexRoute
   '/_auth/orders/': typeof AuthOrdersIndexRoute
   '/_auth/_admin/admin/': typeof AuthAdminAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/forbidden' | '/login' | '/orders/' | '/admin/'
+  fullPaths:
+    | '/'
+    | '/forbidden'
+    | '/login'
+    | '/products/$productId'
+    | '/products/'
+    | '/orders/'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/forbidden' | '/login' | '/orders' | '/admin'
+  to:
+    | '/'
+    | '/forbidden'
+    | '/login'
+    | '/products/$productId'
+    | '/products'
+    | '/orders'
+    | '/admin'
   id:
     | '__root__'
     | '/'
@@ -87,6 +119,8 @@ export interface FileRouteTypes {
     | '/forbidden'
     | '/login'
     | '/_auth/_admin'
+    | '/products/$productId'
+    | '/products/'
     | '/_auth/orders/'
     | '/_auth/_admin/admin/'
   fileRoutesById: FileRoutesById
@@ -96,6 +130,8 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   ForbiddenRoute: typeof ForbiddenRoute
   LoginRoute: typeof LoginRoute
+  ProductsProductIdRoute: typeof ProductsProductIdRoute
+  ProductsIndexRoute: typeof ProductsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -134,6 +170,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthAdminRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/products/': {
+      id: '/products/'
+      path: '/products'
+      fullPath: '/products/'
+      preLoaderRoute: typeof ProductsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/products/$productId': {
+      id: '/products/$productId'
+      path: '/products/$productId'
+      fullPath: '/products/$productId'
+      preLoaderRoute: typeof ProductsProductIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_auth/orders/': {
       id: '/_auth/orders/'
@@ -181,6 +231,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   ForbiddenRoute: ForbiddenRoute,
   LoginRoute: LoginRoute,
+  ProductsProductIdRoute: ProductsProductIdRoute,
+  ProductsIndexRoute: ProductsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
