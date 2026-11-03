@@ -19,8 +19,8 @@ Source: `Frontend_Case.pdf` (case brief, Turkish). Each requirement has an ID us
 | AUTH-3 | Login unlocks some routes | After login the user is redirected to `?redirect=` target or `/products` |
 | AUTH-4 | Not logged in → no access to protected pages | Visiting `/cart`, `/checkout`, `/orders`, `/admin/*` while logged out redirects to `/login?redirect=<path>` |
 | AUTH-5 | Logout | Header menu → Logout clears tokens, user, and in-memory query cache; redirects to `/login` |
-| AUTH-6 | Login state survives refresh (localStorage) | Tokens + user persisted; on boot `/auth/me` validates the token; expired → refresh → else logout |
-| AUTH-7 (derived) | Admin vs user | Role comes from DummyJSON `user.role`. `admin` → admin routes. `user`/`moderator` → shop only. Non-admin on `/admin/*` → 403 page |
+| AUTH-6 | Login state survives refresh (localStorage) | Tokens + user persisted; on boot `/auth/me` validates the token; expired → refresh → any remaining failure logs out. A session that dies mid-use is handled by the route guard on the next navigation |
+| AUTH-7 (derived) | Admin vs user | Role comes from DummyJSON `user.role`. `admin` → admin routes; every other role (incl. `moderator`, which has no special logic) → shop only. Non-admin on `/admin/*` → `/forbidden`. Admins can also shop (cart, checkout, orders) |
 
 ## 3. Products
 | ID | Requirement | Acceptance criteria |
@@ -35,6 +35,25 @@ Source: `Frontend_Case.pdf` (case brief, Turkish). Each requirement has an ID us
 | PROD-8 | User buys products | Checkout flow creates an order (see CART-4) |
 | PROD-9 | Card or table view | Shop = cards, admin = table (EXTRA: shop has a card/table toggle) |
 
+### Product detail (Trendyol-style layout)
+| ID | Requirement | Acceptance criteria |
+|---|---|---|
+| PDP-1 | Breadcrumb | Home › category › title; each crumb links to the filtered list |
+| PDP-2 | Gallery | Main image + thumbnail strip, click to zoom (dialog), keyboard accessible |
+| PDP-3 | Price block | Current price, struck old price, discount badge, "only N left" at stock ≤ 5, out-of-stock state |
+| PDP-4 | Buy now + Add to cart | Quantity stepper clamped to stock; Buy now = add + navigate to `/checkout`; logged-out → login with pending action |
+| PDP-5 | Similar products | Carousel of same-category products from the merged catalog, excluding the current one |
+| PDP-6 | Sticky add-to-cart | Bar appears after the main buttons scroll out of view; bottom bar on mobile |
+
+### Reviews
+| ID | Requirement | Acceptance criteria |
+|---|---|---|
+| REV-1 | List reviews | DummyJSON `reviews[]` from `GET /products/{id}` plus local reviews, newest first, sortable by newest / highest / lowest |
+| REV-2 | Rating summary | Average and 5→1 star histogram computed from seeded + local reviews |
+| REV-3 | Add review | Logged-in user, 1–5 stars + text (10–500), one review per user per product, stored locally, survives refresh |
+| REV-4 | Edit / delete own review | Author can edit or delete; admin can delete any |
+| REV-5 | Verified buyer | Badge when the author has an order containing the product |
+
 ## 4. Cart
 | ID | Requirement | Acceptance criteria |
 |---|---|---|
@@ -43,6 +62,15 @@ Source: `Frontend_Case.pdf` (case brief, Turkish). Each requirement has an ID us
 | CART-3 | Remove item | Remove button + "clear cart" |
 | CART-4 | Cart lives in a store | Zustand store, persisted per user id |
 | CART-5 (derived) | Purchase | `/checkout`: summary + shipping form → `POST /carts/add` (DummyJSON computes totals) → order saved to orders store → stock decremented in overlay → cart cleared → success page |
+
+## 4b. Admin: users
+| ID | Requirement | Acceptance criteria |
+|---|---|---|
+| USER-1 | Admin lists users | `/admin/users`: table (avatar, name, username, email, role) with search, role filter, pagination 20; data from `GET /users` merged with the user overlay |
+| USER-2 | Admin adds user | Form (username, password, first/last name, email, role). `POST /users/add` (simulated) then stored in the user overlay with a local id ≥ 100000 |
+| USER-3 | Admin edits user | `PUT /users/{id}` (simulated; skipped for local ids), patch stored in the overlay. DummyJSON accepts `role` but does not persist it, so role edits live only in the overlay |
+| USER-4 | Admin deletes user | Confirm dialog; hidden everywhere; the user's cart is dropped, past orders stay as history |
+| USER-5 | Guardrails | Cannot delete or demote yourself; cannot remove or demote the last admin; the overlay patch is applied on top of `/auth/me` on login so edits take effect on this browser |
 
 ## 5. Non-functional
 | ID | Requirement | Acceptance criteria |
@@ -73,6 +101,6 @@ Source: `Frontend_Case.pdf` (case brief, Turkish). Each requirement has an ID us
 | EX-15 | Reset demo data | Admin button: clears overlay + orders (handy for evaluators) |
 
 ## 7. Out of scope
-- Real payments, real user registration, password reset
+- Real payments, public self-registration, password reset (admin-managed users are overlay-only, see USER-*)
 - Server-side persistence of anything
 - SSR / Next.js

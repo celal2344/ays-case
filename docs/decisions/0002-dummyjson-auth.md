@@ -8,6 +8,8 @@ Brief: simple form, no real password check, "dummy user check", admin and user c
 ## Decision
 Log in with real DummyJSON users (`POST /auth/login`), read `role` from `GET /auth/me`, persist tokens + user in a Zustand `persist` store, refresh on 401. "Fill admin / Fill user" buttons remove the need to know passwords.
 
+Roles: the enum keeps `moderator` because DummyJSON returns it, but the app only checks `role === "admin"`; moderators behave as plain users. Admins can also shop.
+
 ## Consequences
 - Uses extra API endpoints (bonus), roles come from data, not hardcoded.
 - Real token expiry → needs the refresh interceptor (covered in tests).

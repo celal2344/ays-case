@@ -30,7 +30,7 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 - **No monorepo / Turborepo** — one app, nothing to share.
 - **Axios instead of fetch** — required by the brief.
 - **Zustand for auth instead of a class + `useSyncExternalStore`** — brief requires a store; Zustand's `getState()` gives the same "readable outside React" property the class had.
-- **Hand-written Zod schemas instead of Orval** — DummyJSON has no OpenAPI spec.
+- **Hand-written Zod schemas instead of Orval** — the DummyJSON OpenAPI spec (`dummyjson.json`) has no `required` lists or enums, so schemas are written by hand from it.
 - **Client-side filtering** — StokMate's API did server-side pagination; here the overlay forces client-side ([ADR-0004](decisions/0004-client-side-catalog.md)).
 - **No SignalR / no mobile** — not in scope.
 

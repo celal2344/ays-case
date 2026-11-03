@@ -1,6 +1,6 @@
-# Dummy Shop — Frontend Case
+# Ays Case — Frontend Case
 
-React + Tailwind e-commerce frontend on top of [DummyJSON](https://dummyjson.com): fake auth with roles, admin product CRUD, user cart and checkout. No real backend — writes are simulated by DummyJSON and kept locally.
+React + Tailwind e-commerce frontend on top of [DummyJSON](https://dummyjson.com): fake auth with roles, admin product and user CRUD, a Trendyol-style product page with reviews, user cart and checkout. No real backend — writes are simulated by DummyJSON and kept locally.
 
 > Status: **planning**. Docs in [`docs/`](docs/) are the source of truth; start with the [implementation plan](docs/implementation-plan.md).
 

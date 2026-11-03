@@ -18,7 +18,7 @@ Test helper `renderWithProviders(ui, { route, authState })` creates a fresh Quer
 | AUTH-1/2 | Login success navigates to redirect target; invalid credentials shows DummyJSON message |
 | AUTH-4 | Logged-out visit to `/cart` → `/login?redirect=/cart` |
 | AUTH-6 | Persisted token + `/auth/me` 200 → stays logged in after reload; 401 then refresh 200 → retried; refresh 401 → logged out |
-| AUTH-7 | `user` role on `/admin` → `/forbidden`; admin sees Admin nav |
+| AUTH-7 | `user` and `moderator` roles on `/admin` → `/forbidden`; admin sees Admin nav and can also use the cart |
 | AUTH-5 | Logout clears tokens, query cache, redirects |
 | PROD-3 | Admin creates product → appears first in shop list, has id ≥ 100000, survives store rehydrate |
 | PROD-4 | Edit remote product → PUT sent, list and detail show new price; edit local product → no request |
@@ -27,6 +27,9 @@ Test helper `renderWithProviders(ui, { route, authState })` creates a fresh Quer
 | CART-4 | Cart per user: user A's cart not visible to user B |
 | CART-5 | Checkout → `POST /carts/add` → order in history with snapshot prices → stock decremented → cart empty |
 | EX-1..4 | URL `?q=phone&category=smartphones&sort=price&order=desc&page=2` renders matching results; changing filter resets page to 1 |
+| PDP-1..6 | Breadcrumb links; thumbnail click swaps image, zoom opens; discount/old price/low-stock shown; Buy now adds and navigates to `/checkout`; similar products exclude current; sticky bar appears after scroll |
+| REV-1..5 | Seeded + local merged; histogram counts; add review (one per user), edit/delete own, admin deletes any; verified-buyer badge only with an order; survives rehydrate |
+| USER-1..5 | List merges overlay; create → local id ≥ 100000; edit local user → no request; delete hides user and clears cart; cannot delete self or last admin; role patch applied after login |
 | EX-8 | Translation parity script passes |
 
 ## E2E specs
