@@ -72,11 +72,11 @@ describe('cart (CART-1..4)', () => {
     expect(await screen.findByText(/Only 4 of smartphones item 06 available/)).toBeInTheDocument()
   })
 
-  it('Buy now adds the product and opens the cart', async () => {
+  it('Buy now adds the product and opens checkout', async () => {
     signInAs('averyp')
     const { router } = await renderApp('/products/2')
     await userEvent.click(await screen.findByRole('button', { name: 'Buy now' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/cart'))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/checkout'))
     expect(cartOf(16)[0]?.productId).toBe(2)
   })
 

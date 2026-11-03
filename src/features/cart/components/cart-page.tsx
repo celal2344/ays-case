@@ -1,7 +1,6 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useRouter } from '@tanstack/react-router'
 import { ShoppingBag, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/feedback/feedback'
 import { QuantityStepper } from '@/components/quantity-stepper'
@@ -18,17 +17,11 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatPrice } from '@/lib/format'
+import { Money } from '@/components/money'
 import { ProductImage } from '@/features/products/components/product-image'
-import { selectLanguage, usePreferencesStore } from '@/preferences/store'
 
 import { useCartView } from '../hooks/use-cart-view'
 import type { CartItem, CartTotals } from '../selectors'
-
-function Money({ cents }: { cents: number }) {
-  const language = usePreferencesStore(selectLanguage)
-  return <>{formatPrice(cents / 100, language)}</>
-}
 
 function Summary({
   totals,
@@ -142,6 +135,7 @@ function CartRow({
 export function CartPage() {
   const { t } = useTranslation()
   const cart = useCartView()
+  const router = useRouter()
 
   if (cart.isError) return <ErrorState onRetry={() => void cart.refetch()} />
   if (cart.isPending) return <PageSkeleton />
@@ -160,7 +154,7 @@ export function CartPage() {
     )
   }
 
-  const checkout = () => toast.info(t('cart.checkoutSoon'))
+  const checkout = () => void router.navigate({ to: '/checkout' })
   const canCheckout = !cart.hasUnavailable && cart.totals.totalCents > 0
 
   return (

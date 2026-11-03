@@ -1,7 +1,8 @@
-/**
- * Whether a user has bought a product. Reads the orders store once it exists (G6); until then nobody
- * has an order, so nobody is a verified buyer.
- */
+import { hasBought } from '@/features/orders/build-order'
+import { useOrdersStore } from '@/features/orders/store'
+
+/** Whether a user has bought a product: they have an order containing it. */
 export function useVerifiedBuyer(): (userId: number, productId: number) => boolean {
-  return () => false
+  const orders = useOrdersStore((s) => s.orders)
+  return (userId, productId) => hasBought(orders, userId, productId)
 }

@@ -1,12 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useTranslation } from 'react-i18next'
+
+import { OrdersPage } from '@/features/orders/components/orders-page'
 
 export const Route = createFileRoute('/_auth/orders/')({
-  component: OrdersPlaceholder,
+  component: OrdersPage,
 })
-
-// Replaced by the real order history in G6.
-function OrdersPlaceholder() {
-  const { t } = useTranslation()
-  return <h1 className="text-2xl font-semibold">{t('orders.title')}</h1>
-}

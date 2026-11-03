@@ -41,11 +41,11 @@ export function useAddToCart() {
   }
 }
 
-/** Adds, then goes to the cart (checkout takes over in G6). */
+/** Adds, then goes straight to checkout. */
 export function useBuyNow() {
   const router = useRouter()
   const addToCart = useAddToCart()
   return (product: Pick<Product, 'id' | 'title' | 'stock'>, quantity = 1) => {
-    if (addToCart(product, quantity)) void router.navigate({ to: '/cart' })
+    if (addToCart(product, quantity)) void router.navigate({ to: '/checkout' })
   }
 }

@@ -155,4 +155,19 @@ export const userHandlers = [
   ),
 ]
 
-export const handlers = [...authHandlers, ...productHandlers, ...userHandlers]
+export const cartHandlers = [
+  // DummyJSON "creates" a cart but stores nothing; ids it does not know are silently dropped
+  http.post(`${BASE}/carts/add`, async ({ request }) => {
+    const body = (await request.json()) as {
+      userId: number
+      products: { id: number; quantity: number }[]
+    }
+    return HttpResponse.json({
+      id: 209,
+      userId: body.userId,
+      products: body.products.filter((p) => p.id <= fixtureProducts.length),
+    })
+  }),
+]
+
+export const handlers = [...authHandlers, ...productHandlers, ...userHandlers, ...cartHandlers]
