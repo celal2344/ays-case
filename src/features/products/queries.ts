@@ -9,20 +9,20 @@ import { productKeys } from './query-keys'
 export const catalogQueryOptions = queryOptions({
   queryKey: productKeys.catalog(),
   queryFn: getCatalog,
-  staleTime: Infinity,
+  staleTime: 'static',
 })
 
 export const categoriesQueryOptions = queryOptions({
   queryKey: productKeys.categories(),
   queryFn: getCategories,
-  staleTime: Infinity,
+  staleTime: 'static',
 })
 
 export const productDetailQueryOptions = (id: number) =>
   queryOptions({
     queryKey: productKeys.detail(id),
     queryFn: () => getProduct(id),
-    staleTime: Infinity,
+    staleTime: 'static',
     // a missing product will not appear on retry
     retry: (failureCount, error) => toAppError(error).kind !== 'not_found' && failureCount < 1,
   })

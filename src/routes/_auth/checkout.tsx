@@ -11,7 +11,7 @@ export const Route = createFileRoute('/_auth/checkout')({
     const lines = userId === undefined ? [] : (useCartStore.getState().byUser[userId] ?? [])
     if (lines.length === 0) throw redirect({ to: '/cart' })
   },
-  loader: ({ context }) => context.queryClient.ensureQueryData(catalogQueryOptions),
+  loader: ({ context }) => context.queryClient.query(catalogQueryOptions),
   pendingComponent: PageSkeleton,
   component: CheckoutPage,
 })
