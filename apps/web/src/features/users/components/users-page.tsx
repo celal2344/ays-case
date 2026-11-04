@@ -11,6 +11,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { runExclusive } from '@/lib/in-flight'
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/feedback/feedback'
 import { PaginationBar, RESULTS_ID } from '@/components/pagination-bar'
 import { SearchBox } from '@/components/search-box'
@@ -197,11 +198,17 @@ export function UsersPage() {
     const user = toDelete
     if (!user) return
     setToDelete(null)
-    deleteUser.mutate(user.id, {
-      onSuccess: () =>
-        toast.success(t('admin.users.deleted', { name: `${user.firstName} ${user.lastName}` })),
-      onError: (error) => toast.error(userErrorText(t, error)),
-    })
+    const id = `delete:user:${user.id}`
+    void runExclusive(id, () =>
+      deleteUser.mutateAsync(user.id).then(
+        () =>
+          toast.success(t('admin.users.deleted', { name: `${user.firstName} ${user.lastName}` }), {
+            id,
+          }),
+        (error: Parameters<typeof userErrorText>[1]) =>
+          toast.error(userErrorText(t, error), { id }),
+      ),
+    )
   }
 
   if (isError) return <ErrorState onRetry={() => void refetch()} />

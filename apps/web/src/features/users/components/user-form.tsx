@@ -1,11 +1,12 @@
 import { useForm, useStore } from '@tanstack/react-form'
 import { Link, useRouter } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { PendingButton } from '@/components/pending-button'
+import { runExclusive } from '@/lib/in-flight'
 import { UnsavedChangesDialog } from '@/components/unsaved-changes'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -52,19 +53,20 @@ export function UserForm({ user }: { user?: User }) {
   const form = useForm({
     defaultValues: user ? toUserFormValues(user) : emptyUserForm,
     validators: { onSubmit: user ? userFormSchema : userCreateFormSchema },
-    onSubmit: async ({ value }) => {
-      try {
-        if (user) {
-          await update.mutateAsync({ id: user.id, patch: toUserPatch(value) })
-          if (user.id === currentUserId) await refreshSession()
-        } else await create.mutateAsync(toUserInput(value))
-      } catch {
-        return // the error is shown below the form
-      }
-      markSaved()
-      toast.success(t(user ? 'admin.users.form.updated' : 'admin.users.form.created'))
-      void router.navigate({ to: '/admin/users' })
-    },
+    onSubmit: ({ value }) =>
+      runExclusive(`form:user:${user?.id ?? 'new'}`, async () => {
+        try {
+          if (user) {
+            await update.mutateAsync({ id: user.id, patch: toUserPatch(value) })
+            if (user.id === currentUserId) await refreshSession()
+          } else await create.mutateAsync(toUserInput(value))
+        } catch {
+          return // the error is shown below the form
+        }
+        markSaved()
+        toast.success(t(user ? 'admin.users.form.updated' : 'admin.users.form.created'))
+        void router.navigate({ to: '/admin/users' })
+      }),
   })
 
   const dirty = useStore(form.store, (s) => s.isDirty)
@@ -219,10 +221,9 @@ export function UserForm({ user }: { user?: User }) {
         ) : null}
 
         <div className="flex gap-2">
-          <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+          <PendingButton type="submit" pending={mutation.isPending}>
             {t(user ? 'admin.users.form.save' : 'admin.users.form.create')}
-          </Button>
+          </PendingButton>
           <Link to="/admin/users" className={buttonVariants({ variant: 'outline' })}>
             {t('admin.form.cancel')}
           </Link>

@@ -1,9 +1,10 @@
-import { screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
 import { serverSession } from '@/test/msw/handlers'
 import { renderApp } from '@/test/render'
+import { only, recordRequests } from '@/test/requests'
 
 import { setSessionExpiredHandler, useAuthStore } from '../store'
 
@@ -104,5 +105,17 @@ describe('auth flow (AUTH-1..7)', () => {
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Log out' }))
     await waitFor(() => expect(pathname(router)).toBe('/login'))
     expect(useAuthStore.getState()).toMatchObject({ user: null, status: 'anonymous' })
+  })
+
+  it('a double click on Log out sends one sign-out request', async () => {
+    signInAs('admin')
+    const requests = recordRequests()
+    const { router } = await renderApp('/orders')
+    await userEvent.click(screen.getByRole('button', { name: 'Emily Johnson' }))
+    const item = await screen.findByRole('menuitem', { name: 'Log out' })
+    fireEvent.click(item)
+    fireEvent.click(item)
+    await waitFor(() => expect(pathname(router)).toBe('/login'))
+    expect(only(requests, 'POST /api/auth/sign-out')).toHaveLength(1)
   })
 })

@@ -1,6 +1,8 @@
 import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
 
+import { PendingButton } from '@/components/pending-button'
+import { runExclusive } from '@/lib/in-flight'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -26,16 +28,17 @@ export function ReviewForm({
   const form = useForm({
     defaultValues: { rating: editing?.rating ?? 0, comment: editing?.comment ?? '' },
     validators: { onSubmit: reviewFormSchema },
-    onSubmit: async ({ value }) => {
-      try {
-        if (editing) await update.mutateAsync({ id: editing.id, ...value })
-        else await create.mutateAsync(value)
-      } catch {
-        return // the reason was shown as a message
-      }
-      form.reset()
-      onDone()
-    },
+    onSubmit: ({ value }) =>
+      runExclusive(`form:review:${editing?.id ?? 'new'}`, async () => {
+        try {
+          if (editing) await update.mutateAsync({ id: editing.id, ...value })
+          else await create.mutateAsync(value)
+        } catch {
+          return // the reason was shown as a message
+        }
+        form.reset()
+        onDone()
+      }),
   })
 
   return (
@@ -96,9 +99,9 @@ export function ReviewForm({
       </form.Field>
 
       <div className="flex gap-2">
-        <Button type="submit" disabled={mutation.isPending}>
+        <PendingButton type="submit" pending={mutation.isPending}>
           {t(editing ? 'reviews.form.save' : 'reviews.form.submit')}
-        </Button>
+        </PendingButton>
         {editing ? (
           <Button type="button" variant="outline" onClick={onDone}>
             {t('reviews.form.cancel')}

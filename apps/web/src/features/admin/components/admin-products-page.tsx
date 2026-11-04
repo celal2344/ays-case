@@ -17,6 +17,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { runExclusive } from '@/lib/in-flight'
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/feedback/feedback'
 import { PaginationBar, RESULTS_ID } from '@/components/pagination-bar'
 import { SearchBox } from '@/components/search-box'
@@ -291,10 +292,13 @@ export function AdminProductsPage() {
     const product = toDelete
     if (!product) return
     setToDelete(null)
-    deleteProduct.mutate(product.id, {
-      onSuccess: () => toast.success(t('admin.products.deleted', { title: product.title })),
-      onError: (error) => toast.error(error.message),
-    })
+    const id = `delete:product:${product.id}`
+    void runExclusive(id, () =>
+      deleteProduct.mutateAsync(product.id).then(
+        () => toast.success(t('admin.products.deleted', { title: product.title }), { id }),
+        (error: { message: string }) => toast.error(error.message, { id }),
+      ),
+    )
   }
 
   if (isError) return <ErrorState onRetry={() => void refetch()} />

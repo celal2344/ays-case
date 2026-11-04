@@ -1,13 +1,14 @@
 import { useForm } from '@tanstack/react-form'
 import { getRouteApi } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { PendingButton } from '@/components/pending-button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { errorMessageKey } from '@/lib/error-message'
+import { runExclusive } from '@/lib/in-flight'
 
 import { DEMO_ACCOUNTS } from '../demo-accounts'
 import { useLogin } from '../hooks/use-login'
@@ -23,7 +24,8 @@ export function LoginPage() {
   const form = useForm({
     defaultValues: { username: '', password: '' },
     validators: { onSubmit: loginFormSchema },
-    onSubmit: ({ value }) => login.mutateAsync(value).catch(() => undefined),
+    onSubmit: ({ value }) =>
+      runExclusive('form:login', () => login.mutateAsync(value).catch(() => undefined)),
   })
 
   const error = login.error
@@ -93,10 +95,9 @@ export function LoginPage() {
               </p>
             ) : null}
 
-            <Button type="submit" className="w-full" disabled={login.isPending}>
-              {login.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            <PendingButton type="submit" className="w-full" pending={login.isPending}>
               {t('login.submit')}
-            </Button>
+            </PendingButton>
 
             <div className="grid grid-cols-2 gap-2">
               {(['admin', 'user'] as const).map((role) => (
