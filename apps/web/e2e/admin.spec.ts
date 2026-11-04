@@ -12,6 +12,7 @@ test('admin creates, edits and deletes a product, and the shop follows', async (
   await page.getByLabel('Description').fill('A gadget created by the end-to-end test.')
   await page.getByRole('combobox', { name: 'Category' }).click()
   await page.getByRole('option', { name: 'Beauty' }).click()
+  await page.getByLabel('SKU').fill('E2E-1')
   await page.getByLabel('Price').fill('25')
   await page.getByLabel('Discount %').fill('0')
   await page.getByLabel('Stock').fill('7')

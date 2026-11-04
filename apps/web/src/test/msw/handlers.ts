@@ -1,11 +1,17 @@
 import { http, HttpResponse } from 'msw'
 
-import type { Shipping } from '@ays/validators'
+import type { ProductBody, ProductPatchBody, Shipping } from '@ays/validators'
 
 import type { User } from '@/features/auth/schemas'
 
 import { fixtureUserList } from '../fixtures/users'
-import { fixtureCategories, fixtureDetail, fixtureProducts } from '../fixtures/products'
+import {
+  FakeAdmin,
+  isFailure,
+  LOOKUP_TABLES,
+  type Failure,
+  type LookupRecord,
+} from '../fixtures/admin'
 import { FakeShopping } from '../fixtures/shopping'
 
 const BASE = 'http://localhost/api'
@@ -27,7 +33,7 @@ export function toPublicUser(user: User & { password: string }): User {
  */
 export const serverSession: { userId: string | null } = { userId: null }
 
-const sessionUser = () => fixtureUserList.find((u) => u.id === serverSession.userId)
+const sessionUser = () => admin.users.find((u) => u.id === serverSession.userId)
 
 const sessionBody = (user: User) => ({
   session: { id: `session-${user.id}`, userId: user.id, token: 'token' },
@@ -57,30 +63,113 @@ export const authHandlers = [
   }),
 ]
 
+/** The mocked server's admin side: products, lookups and users (reset before every test in `setup.ts`). */
+export const admin = new FakeAdmin()
+
+const asJson = (value: object, status = 200) => HttpResponse.json(value, { status })
+const failure = (f: Failure) => asJson({ code: f.code, message: f.message }, f.status)
+
+/** Runs `run` for a signed-in admin; anyone else gets the 401 or 403 the real API sends. */
+const asAdmin = <T>(run: (actingId: string) => T) => {
+  const user = sessionUser()
+  if (!user) return asJson({ code: 'unauthorized', message: 'Sign in first' }, 401)
+  if (user.role !== 'admin') return asJson({ code: 'forbidden', message: 'Admins only' }, 403)
+  return run(user.id)
+}
+
 export const productHandlers = [
-  http.get(`${BASE}/categories`, () => HttpResponse.json({ data: fixtureCategories })),
+  http.get(`${BASE}/categories`, () => asJson({ data: admin.lookups.categories })),
   http.get(`${BASE}/products/:id`, ({ params }) => {
-    const detail = fixtureDetail(Number(params.id))
+    const detail = admin.liveProduct(Number(params.id))
     return detail
-      ? HttpResponse.json({ data: shopping.withReviews(detail) })
-      : HttpResponse.json({ code: 'not_found', message: 'Product not found' }, { status: 404 })
+      ? asJson({ data: shopping.withReviews(detail) })
+      : asJson({ code: 'not_found', message: 'Product not found' }, 404)
   }),
   http.get(`${BASE}/products`, () =>
-    HttpResponse.json({ data: fixtureProducts.map((p) => shopping.withStock(p)) }),
+    asJson({ data: admin.liveProducts().map((p) => shopping.withStock(p)) }),
   ),
+  http.post(`${BASE}/products`, async ({ request }) =>
+    asAdmin(async () => {
+      const result = admin.createProduct((await request.json()) as ProductBody)
+      return isFailure(result) ? failure(result) : asJson({ data: result }, 201)
+    }),
+  ),
+  http.patch(`${BASE}/products/:id`, async ({ params, request }) =>
+    asAdmin(async () => {
+      const result = admin.updateProduct(
+        Number(params.id),
+        (await request.json()) as ProductPatchBody,
+      )
+      return isFailure(result) ? failure(result) : asJson({ data: result })
+    }),
+  ),
+  http.delete(`${BASE}/products/:id`, ({ params }) =>
+    asAdmin(() => {
+      const result = admin.deleteProduct(Number(params.id))
+      return result ? failure(result) : new HttpResponse(null, { status: 204 })
+    }),
+  ),
+  http.post(`${BASE}/products/:id/restore`, ({ params }) =>
+    asAdmin(() => {
+      const result = admin.restoreProduct(Number(params.id))
+      return isFailure(result) ? failure(result) : asJson({ data: result })
+    }),
+  ),
+  http.get(`${BASE}/admin/products`, () => asAdmin(() => asJson({ data: admin.adminProducts() }))),
 ]
 
+const lookupHandlers = LOOKUP_TABLES.flatMap((table) => [
+  http.get(`${BASE}/admin/${table}`, () => asAdmin(() => asJson({ data: admin.lookups[table] }))),
+  http.post(`${BASE}/admin/${table}`, async ({ request }) =>
+    asAdmin(async () => {
+      const result = admin.createLookup(table, (await request.json()) as Omit<LookupRecord, 'id'>)
+      return isFailure(result) ? failure(result) : asJson({ data: result }, 201)
+    }),
+  ),
+  http.patch(`${BASE}/admin/${table}/:id`, async ({ params, request }) =>
+    asAdmin(async () => {
+      const result = admin.updateLookup(
+        table,
+        Number(params.id),
+        (await request.json()) as Omit<LookupRecord, 'id'>,
+      )
+      return isFailure(result) ? failure(result) : asJson({ data: result })
+    }),
+  ),
+  http.delete(`${BASE}/admin/${table}/:id`, ({ params }) =>
+    asAdmin(() => {
+      const result = admin.deleteLookup(table, Number(params.id))
+      return result ? failure(result) : new HttpResponse(null, { status: 204 })
+    }),
+  ),
+])
+
 export const userHandlers = [
-  http.get(`${BASE}/users`, () => {
-    const user = sessionUser()
-    if (!user) {
-      return HttpResponse.json({ code: 'unauthorized', message: 'Sign in first' }, { status: 401 })
-    }
-    if (user.role !== 'admin') {
-      return HttpResponse.json({ code: 'forbidden', message: 'Admins only' }, { status: 403 })
-    }
-    return HttpResponse.json({ data: fixtureUserList })
-  }),
+  http.get(`${BASE}/users`, () => asAdmin(() => asJson({ data: admin.users }))),
+  http.post(`${BASE}/users`, async ({ request }) =>
+    asAdmin(async () => {
+      const result = admin.createUser(
+        (await request.json()) as Parameters<FakeAdmin['createUser']>[0],
+      )
+      return isFailure(result) ? failure(result) : asJson({ data: result }, 201)
+    }),
+  ),
+  http.patch(`${BASE}/users/:id`, async ({ params, request }) =>
+    asAdmin(async (actingId) => {
+      const result = admin.updateUser(
+        String(params.id),
+        (await request.json()) as Partial<User>,
+        actingId,
+      )
+      return isFailure(result) ? failure(result) : asJson({ data: result })
+    }),
+  ),
+  http.delete(`${BASE}/users/:id`, ({ params }) =>
+    asAdmin((actingId) => {
+      const result = admin.deleteUser(String(params.id), actingId)
+      return result ? failure(result) : new HttpResponse(null, { status: 204 })
+    }),
+  ),
 ]
 
 /** The mocked server's cart, favorites and recently viewed (reset before every test in `setup.ts`). */
@@ -158,6 +247,7 @@ export const reviewHandlers = [
 export const handlers = [
   ...authHandlers,
   ...productHandlers,
+  ...lookupHandlers,
   ...userHandlers,
   ...shoppingHandlers,
   ...orderHandlers,

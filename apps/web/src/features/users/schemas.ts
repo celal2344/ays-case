@@ -30,8 +30,14 @@ export const userFormSchema = z.object({
   role: roleSchema,
   password: z.string(),
 })
-/** The initial password is only asked for when creating; its length is checked by that field. */
+/** The initial password is only asked for when creating. */
 export const PASSWORD_LIMITS = { min: 8, max: 72 } as const
+export const userCreateFormSchema = userFormSchema.extend({
+  password: z
+    .string()
+    .min(PASSWORD_LIMITS.min, USER_ERRORS.password)
+    .max(PASSWORD_LIMITS.max, USER_ERRORS.password),
+})
 export type UserFormValues = z.infer<typeof userFormSchema>
 
 export const emptyUserForm: UserFormValues = {

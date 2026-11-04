@@ -29,7 +29,7 @@ import {
   toUserInput,
   toUserPatch,
   USER_ERRORS,
-  PASSWORD_LIMITS,
+  userCreateFormSchema,
   userFormSchema,
   roleSchema,
   type User,
@@ -41,6 +41,7 @@ export function UserForm({ user }: { user?: User }) {
   const router = useRouter()
   const { users } = useUsers()
   const currentUserId = useAuthStore((s) => s.user?.id)
+  const refreshSession = useAuthStore((s) => s.refresh)
   const create = useCreateUser()
   const update = useUpdateUser()
   const mutation = user ? update : create
@@ -50,11 +51,13 @@ export function UserForm({ user }: { user?: User }) {
 
   const form = useForm({
     defaultValues: user ? toUserFormValues(user) : emptyUserForm,
-    validators: { onSubmit: userFormSchema },
+    validators: { onSubmit: user ? userFormSchema : userCreateFormSchema },
     onSubmit: async ({ value }) => {
       try {
-        if (user) await update.mutateAsync({ id: user.id, patch: toUserPatch(value) })
-        else await create.mutateAsync(toUserInput(value))
+        if (user) {
+          await update.mutateAsync({ id: user.id, patch: toUserPatch(value) })
+          if (user.id === currentUserId) await refreshSession()
+        } else await create.mutateAsync(toUserInput(value))
       } catch {
         return // the error is shown below the form
       }
@@ -158,15 +161,7 @@ export function UserForm({ user }: { user?: User }) {
         </form.Field>
 
         {user ? null : (
-          <form.Field
-            name="password"
-            validators={{
-              onSubmit: ({ value }) =>
-                value.length >= PASSWORD_LIMITS.min && value.length <= PASSWORD_LIMITS.max
-                  ? undefined
-                  : USER_ERRORS.password,
-            }}
-          >
+          <form.Field name="password">
             {(field) => (
               <div className="space-y-1.5">
                 <Label htmlFor="password">{t('admin.users.form.password')}</Label>

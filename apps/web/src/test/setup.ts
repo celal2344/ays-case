@@ -6,11 +6,9 @@ import '@/i18n'
 import { useAuthStore } from '@/features/auth/store'
 import { useGuestViewedStore } from '@/features/recently-viewed/guest-store'
 import { useSearchStore } from '@/features/search/store'
-import { useUserOverlayStore } from '@/features/users/overlay-store'
-import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { usePreferencesStore } from '@/preferences/store'
 
-import { serverSession, shopping } from './msw/handlers'
+import { admin, serverSession, shopping } from './msw/handlers'
 import { server } from './msw/server'
 
 // jsdom has no matchMedia; next-themes reads it to resolve the "system" theme.
@@ -48,8 +46,7 @@ beforeEach(() => {
   usePreferencesStore.setState({ language: 'en', shopView: 'grid' })
   serverSession.userId = null
   useAuthStore.setState({ user: null, status: 'idle' })
-  useProductOverlayStore.getState().reset()
-  useUserOverlayStore.getState().reset()
+  admin.reset()
   shopping.reset()
   useGuestViewedStore.setState({ ids: [] })
   useSearchStore.setState({ recent: [] })

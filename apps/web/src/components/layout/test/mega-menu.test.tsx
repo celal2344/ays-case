@@ -3,8 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 
-import { useProductOverlayStore } from '@/features/products/overlay-store'
-import { cat, fixtureCategories, fixtureProducts, productInput } from '@/test/fixtures/products'
+import { serveCatalog } from '@/test/catalog'
+import { cat, fixtureCategories } from '@/test/fixtures/products'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
@@ -78,17 +78,16 @@ describe('mega-menu navigation', () => {
     await waitFor(() => expect(search(router)).toEqual({}))
   })
 
-  it('a product in a category the map does not know shows up under Other, and counts follow admin edits', async () => {
+  it('a product in a category the map does not know shows up under Other, and counts follow the catalog', async () => {
     server.use(
       http.get('http://localhost/api/categories', () =>
         HttpResponse.json({ data: [...fixtureCategories, cat('pet-toys', 'Pet Toys')] }),
       ),
     )
-    useProductOverlayStore
-      .getState()
-      .create(
-        productInput({ title: 'Plush mouse', category: cat('pet-toys', 'Pet Toys'), stock: 3 }),
-      )
+    serveCatalog((products) => [
+      { ...products[0]!, id: 100, title: 'Plush mouse', category: cat('pet-toys', 'Pet Toys') },
+      ...products,
+    ])
     await renderApp('/products')
     const nav = await screen.findByRole('navigation', { name: 'Categories' })
     await userEvent.click(await within(nav).findByRole('button', { name: 'Other' }))
@@ -96,9 +95,7 @@ describe('mega-menu navigation', () => {
   })
 
   it('groups with no products are not rendered', async () => {
-    for (const p of fixtureProducts.filter((p) => p.category.slug === 'groceries')) {
-      useProductOverlayStore.getState().remove(p.id)
-    }
+    serveCatalog((products) => products.filter((p) => p.category.slug !== 'groceries'))
     await renderApp('/products')
     const nav = await screen.findByRole('navigation', { name: 'Categories' })
     await within(nav).findByRole('button', { name: 'Beauty & Care' })

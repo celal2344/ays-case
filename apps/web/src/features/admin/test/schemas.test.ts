@@ -1,32 +1,34 @@
 import { describe, expect, it } from 'vitest'
 
-import { cat, fixtureCategories, fixtureProducts } from '@/test/fixtures/products'
+import { fixtureDetail } from '@/test/fixtures/products'
 
 import {
   adminProductSearchSchema,
   emptyProductForm,
   productFormSchema,
   toFormValues,
-  toNewProduct,
-  toProductPatch,
+  toProductBody,
   type ProductFormValues,
 } from '../schemas'
 
-const categories = [...fixtureCategories, cat('furniture', 'Furniture')]
 const valid: ProductFormValues = {
+  ...emptyProductForm,
   title: 'Desk lamp',
   description: 'A warm desk lamp for late nights.',
-  category: 'furniture',
-  brand: 'Lumen',
+  sku: 'LAMP-1',
+  categoryId: '2',
+  brandId: '3',
   price: '24.99',
   discountPercentage: '10',
   stock: '7',
-  thumbnail: 'https://img.test/lamp.webp',
+  tagIds: ['1', '2'],
+  images: [{ url: 'https://img.test/a.webp' }, { url: 'https://img.test/b.webp' }],
+  primaryImage: 1,
 }
 
 const issues = (values: Partial<ProductFormValues>) => {
   const result = productFormSchema.safeParse({ ...valid, ...values })
-  return result.success ? [] : result.error.issues.map((i) => i.path.join('.'))
+  return result.success ? [] : result.error.issues.map((i) => i.path[0])
 }
 
 describe('productFormSchema', () => {
@@ -35,7 +37,15 @@ describe('productFormSchema', () => {
   })
 
   it('requires the empty form to be filled in', () => {
-    expect(issues(emptyProductForm).sort()).toEqual(['category', 'description', 'price', 'title'])
+    const result = productFormSchema.safeParse(emptyProductForm)
+    const paths = result.success ? [] : result.error.issues.map((i) => i.path[0])
+    expect([...new Set(paths)].sort()).toEqual([
+      'categoryId',
+      'description',
+      'price',
+      'sku',
+      'title',
+    ])
   })
 
   it('title: 2–100 characters', () => {
@@ -54,10 +64,10 @@ describe('productFormSchema', () => {
     for (const price of ['0.01', '10', '10.5', '1999.99']) expect(issues({ price })).toEqual([])
   })
 
-  it('discount: 0–90', () => {
-    expect(issues({ discountPercentage: '91' })).toEqual(['discountPercentage'])
+  it('discount: 0–100', () => {
+    expect(issues({ discountPercentage: '101' })).toEqual(['discountPercentage'])
     expect(issues({ discountPercentage: '-1' })).toEqual(['discountPercentage'])
-    expect(issues({ discountPercentage: '90' })).toEqual([])
+    expect(issues({ discountPercentage: '100' })).toEqual([])
     expect(issues({ discountPercentage: '0' })).toEqual([])
   })
 
@@ -66,50 +76,67 @@ describe('productFormSchema', () => {
     expect(issues({ stock: '0' })).toEqual([])
   })
 
-  it('brand: at most 50 characters; thumbnail: empty or an http(s) URL', () => {
-    expect(issues({ brand: 'x'.repeat(51) })).toEqual(['brand'])
-    expect(issues({ thumbnail: '' })).toEqual([])
-    expect(issues({ thumbnail: 'not a url' })).toEqual(['thumbnail'])
-    expect(issues({ thumbnail: 'javascript:alert(1)' })).toEqual(['thumbnail'])
+  it('minimum order quantity: a whole number, 1 or more', () => {
+    for (const minimumOrderQuantity of ['0', '1.5', ''])
+      expect(issues({ minimumOrderQuantity })).toEqual(['minimumOrderQuantity'])
+  })
+
+  it('measures: empty or a positive number with limited decimals', () => {
+    expect(issues({ weightKg: '', widthCm: '' })).toEqual([])
+    expect(issues({ weightKg: '1.25' })).toEqual([])
+    expect(issues({ weightKg: '0' })).toEqual(['weightKg'])
+    expect(issues({ widthCm: '1.25' })).toEqual(['widthCm'])
+  })
+
+  it('image URLs must be http(s)', () => {
+    expect(issues({ images: [{ url: 'not a url' }] })).toEqual(['images'])
+    expect(issues({ images: [{ url: 'javascript:alert(1)' }] })).toEqual(['images'])
   })
 })
 
-describe('form ↔ product mapping', () => {
-  it('toNewProduct turns strings into numbers and fills neutral defaults', () => {
-    expect(toNewProduct(valid, categories)).toMatchObject({
+describe('form ↔ request body mapping', () => {
+  it('toProductBody turns strings into numbers, cents, grams and millimetres', () => {
+    expect(
+      toProductBody({ ...valid, weightKg: '1.5', widthCm: '12.5', barcode: '  ' }),
+    ).toMatchObject({
       title: 'Desk lamp',
-      brand: { name: 'Lumen', slug: 'lumen' },
-      category: { slug: 'furniture', name: 'Furniture' },
+      sku: 'LAMP-1',
+      barcode: null,
+      categoryId: 2,
+      brandId: 3,
       priceCents: 2499,
       discountPercentage: 10,
       stock: 7,
-      rating: null,
-      reviewCount: 0,
-      availability: 'in',
-      tags: [{ slug: 'furniture', name: 'Furniture' }],
+      weightG: 1500,
+      widthMm: 125,
+      heightMm: null,
+      tagIds: [1, 2],
+      images: [
+        { url: 'https://img.test/a.webp', isPrimary: false },
+        { url: 'https://img.test/b.webp', isPrimary: true },
+      ],
     })
   })
 
-  it('toNewProduct has no brand when it is empty and derives out-of-stock availability for zero stock', () => {
-    const product = toNewProduct({ ...valid, brand: '  ', stock: '0' }, categories)
-    expect(product.brand).toBeNull()
-    expect(product.availability).toBe('out')
+  it('toProductBody sends null for an empty brand and policies', () => {
+    const body = toProductBody({ ...valid, brandId: '' })
+    expect(body.brandId).toBeNull()
+    expect(body.warrantyPolicyId).toBeNull()
   })
 
-  it('toProductPatch stores an emptied brand as null, which survives JSON', () => {
-    const patch = toProductPatch({ ...valid, brand: '' }, categories)
-    expect(patch.brand).toBeNull()
-    expect(JSON.parse(JSON.stringify(patch))).toHaveProperty('brand', null)
-  })
-
-  it('toFormValues round-trips a product', () => {
-    const product = fixtureProducts[1]!
-    const values = toFormValues(product)
+  it('toFormValues round-trips a product detail', () => {
+    const detail = fixtureDetail(2)!
+    const tagIdBySlug = new Map(detail.tags.map((tag, index) => [tag.slug, index + 1]))
+    const values = toFormValues(detail, tagIdBySlug)
     expect(productFormSchema.safeParse(values).success).toBe(true)
-    expect(toProductPatch(values, categories)).toMatchObject({
-      title: product.title,
-      priceCents: product.priceCents,
-      stock: product.stock,
+    expect(toProductBody(values)).toMatchObject({
+      title: detail.title,
+      sku: detail.sku,
+      priceCents: detail.priceCents,
+      stock: detail.stock,
+      weightG: 4000,
+      widthMm: 150,
+      tagIds: [1, 2],
     })
   })
 })

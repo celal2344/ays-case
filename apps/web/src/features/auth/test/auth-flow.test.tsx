@@ -79,7 +79,7 @@ describe('auth flow (AUTH-1..7)', () => {
     signInAs('admin')
     const { router } = await renderApp('/admin')
     expect(pathname(router)).toBe('/admin')
-    expect(screen.getByRole('heading', { name: 'Admin' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Admin' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Admin/ })).toBeInTheDocument()
   })
 

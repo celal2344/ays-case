@@ -52,7 +52,9 @@ function sluggedApi(client: SluggedClient): LookupApi {
 }
 
 type Policy = (typeof api.admin)['warranty-policies']
-type PolicyClient = Pick<Policy, '$get' | '$post'> & { ':id': Pick<Policy[':id'], '$patch' | '$delete'> }
+type PolicyClient = Pick<Policy, '$get' | '$post'> & {
+  ':id': Pick<Policy[':id'], '$patch' | '$delete'>
+}
 
 function policyApi(client: PolicyClient): LookupApi {
   return {

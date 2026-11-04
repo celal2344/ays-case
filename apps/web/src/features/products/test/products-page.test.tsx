@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
-import { useProductOverlayStore } from '../overlay-store'
+import { serveCatalog } from '@/test/catalog'
 
 const search = (router: { state: { location: { search: unknown } } }) =>
   router.state.location.search
@@ -102,9 +102,12 @@ describe('shop list (PROD-1, PROD-6, EX-1..4, EX-12)', () => {
     expect(within(outOfStockCard).getByRole('button', { name: 'Add to cart' })).toBeDisabled()
   })
 
-  it('reads through the overlay: patched price and deleted products show up in the list', async () => {
-    useProductOverlayStore.getState().remove(1)
-    useProductOverlayStore.getState().update(2, { title: 'Renamed by admin' })
+  it('shows the catalog as the server sends it: edited and removed products', async () => {
+    serveCatalog((products) =>
+      products
+        .filter((p) => p.id !== 1)
+        .map((p) => (p.id === 2 ? { ...p, title: 'Renamed by admin' } : p)),
+    )
     await renderApp('/products')
     expect(await screen.findByText('Showing 1–12 of 29')).toBeInTheDocument()
     expect(screen.getByText('Renamed by admin')).toBeInTheDocument()

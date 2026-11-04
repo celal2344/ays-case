@@ -5,12 +5,7 @@ import { selectIsAdmin, selectIsAuthenticated, useAuthStore } from '@/features/a
 export interface NavItem {
   to: NonNullable<LinkProps['to']>
   labelKey:
-    | 'nav.products'
-    | 'nav.orders'
-    | 'admin.nav.dashboard'
-    | 'admin.nav.products'
-    | 'admin.nav.users'
-   
+    'nav.products' | 'nav.orders' | 'admin.nav.dashboard' | 'admin.nav.products' | 'admin.nav.users'
 }
 
 export function useNavItems(): NavItem[] {

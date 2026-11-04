@@ -16,6 +16,8 @@ interface AuthState {
   bootstrap: () => Promise<void>
   login: (username: string, password: string) => Promise<User>
   logout: () => void
+  /** Re-reads the signed-in user (after an admin edits their own account). */
+  refresh: () => Promise<void>
   /** The server rejected the session (expired or revoked) while the user was signed in. */
   expire: () => void
 }
@@ -84,6 +86,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
     set({ user, status: 'authenticated' })
     return user
+  },
+
+  refresh: async () => {
+    const user = await readSession().catch(() => null)
+    if (user) set({ user })
   },
 
   logout: () => {

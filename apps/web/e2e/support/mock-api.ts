@@ -1,8 +1,7 @@
 import type { Page, Route } from '@playwright/test'
 
-import { fixtureCategories, fixtureDetail, fixtureProducts } from '../../src/test/fixtures/products'
+import { FakeAdmin, isFailure, LOOKUP_TABLES, type Failure } from '../../src/test/fixtures/admin'
 import { FakeShopping } from '../../src/test/fixtures/shopping'
-import { fixtureUserList } from '../../src/test/fixtures/users'
 
 const accounts = {
   emilys: { id: 'user-1', password: 'emilyspass' },
@@ -19,6 +18,7 @@ const json = (route: Route, body: unknown, status = 200) =>
 export async function mockApi(page: Page) {
   let signedInAs: string | null = null
   const shopping = new FakeShopping()
+  const admin = new FakeAdmin()
 
   await page.route(/^https:\/\/(cdn\.)?dummyjson\.com\/.+/, (route) =>
     route.fulfill({ contentType: 'image/png', body: Buffer.from(PIXEL, 'base64') }),
@@ -28,7 +28,7 @@ export async function mockApi(page: Page) {
     const request = route.request()
     const { pathname } = new URL(request.url())
     const method = request.method()
-    const user = fixtureUserList.find((u) => u.id === signedInAs)
+    const user = admin.users.find((u) => u.id === signedInAs)
 
     if (pathname === '/api/auth/sign-in/username' && method === 'POST') {
       const body = request.postDataJSON() as { username: string; password: string }
@@ -59,23 +59,74 @@ export async function mockApi(page: Page) {
       return json(route, { success: true })
     }
 
-    if (pathname === '/api/categories') return json(route, { data: fixtureCategories })
-    if (pathname === '/api/products') {
-      return json(route, { data: fixtureProducts.map((p) => shopping.withStock(p)) })
+    const body = () => request.postDataJSON() as never
+    const failure = (f: Failure) => json(route, { code: f.code, message: f.message }, f.status)
+    const needAdmin = () => {
+      if (!user) return json(route, { code: 'unauthorized', message: 'Sign in first' }, 401)
+      if (user.role !== 'admin')
+        return json(route, { code: 'forbidden', message: 'Admins only' }, 403)
+      return null
     }
+    const result = (value: object | null, status = 200) =>
+      value === null
+        ? route.fulfill({ status: 204 })
+        : isFailure(value)
+          ? failure(value)
+          : json(route, { data: value }, status)
+
+    if (pathname === '/api/categories') return json(route, { data: admin.lookups.categories })
+
+    const lookup = new RegExp(`^/api/admin/(${LOOKUP_TABLES.join('|')})(?:/([0-9]+))?$`).exec(
+      pathname,
+    )
+    if (lookup) {
+      const denied = needAdmin()
+      if (denied) return denied
+      const table = lookup[1] as (typeof LOOKUP_TABLES)[number]
+      const id = Number(lookup[2])
+      if (method === 'GET') return json(route, { data: admin.lookups[table] })
+      if (method === 'POST') return result(admin.createLookup(table, body()), 201)
+      if (method === 'PATCH') return result(admin.updateLookup(table, id, body()))
+      if (method === 'DELETE') return result(admin.deleteLookup(table, id))
+    }
+    if (pathname === '/api/admin/products') {
+      return needAdmin() ?? json(route, { data: admin.adminProducts() })
+    }
+
+    if (pathname === '/api/products') {
+      if (method === 'POST') return needAdmin() ?? result(admin.createProduct(body()), 201)
+      return json(route, { data: admin.liveProducts().map((p) => shopping.withStock(p)) })
+    }
+    const restore = /^\/api\/products\/(\d+)\/restore$/.exec(pathname)?.[1]
+    if (restore) return needAdmin() ?? result(admin.restoreProduct(Number(restore)))
     const productId = /^\/api\/products\/(\d+)$/.exec(pathname)?.[1]
+    if (productId && method === 'PATCH') {
+      return needAdmin() ?? result(admin.updateProduct(Number(productId), body()))
+    }
+    if (productId && method === 'DELETE') {
+      return needAdmin() ?? result(admin.deleteProduct(Number(productId)))
+    }
     if (productId) {
-      const detail = fixtureDetail(Number(productId))
+      const detail = admin.liveProduct(Number(productId))
       return detail
         ? json(route, { data: shopping.withReviews(detail) })
         : json(route, { code: 'not_found', message: 'Product not found' }, 404)
     }
 
     if (pathname === '/api/users') {
-      if (!user) return json(route, { code: 'unauthorized', message: 'Sign in first' }, 401)
-      if (user.role !== 'admin')
-        return json(route, { code: 'forbidden', message: 'Admins only' }, 403)
-      return json(route, { data: fixtureUserList })
+      const denied = needAdmin()
+      if (denied) return denied
+      return method === 'POST'
+        ? result(admin.createUser(body()), 201)
+        : json(route, { data: admin.users })
+    }
+    const userId = /^\/api\/users\/([^/]+)$/.exec(pathname)?.[1]
+    if (userId) {
+      const denied = needAdmin()
+      if (denied) return denied
+      return method === 'DELETE'
+        ? result(admin.deleteUser(userId, signedInAs))
+        : result(admin.updateUser(userId, body(), signedInAs))
     }
 
     const productParam = Number(/\/(\d+)$/.exec(pathname)?.[1])
