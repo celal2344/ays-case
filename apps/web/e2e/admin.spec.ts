@@ -15,7 +15,7 @@ test('admin creates, edits and deletes a product, and the shop follows', async (
   await page.getByLabel('SKU').fill('E2E-1')
   await page.getByLabel('Price').fill('25')
   await page.getByLabel('Discount %').fill('0')
-  await page.getByLabel('Stock').fill('7')
+  await page.getByLabel('Stock', { exact: true }).fill('7')
   await page.getByRole('button', { name: 'Create product' }).click()
   await expect(page).toHaveURL(/\/admin\/products$/)
 
