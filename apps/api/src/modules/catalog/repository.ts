@@ -15,6 +15,7 @@ import {
   user,
   warrantyPolicies,
 } from '../../db/schema'
+import { reviewColumns } from '../reviews/repository'
 
 // Ratings, the histogram, availability and numeric casts are all computed here, in SQL.
 const baseColumns = {
@@ -121,15 +122,7 @@ export function findImages(db: Database, productId: number) {
 
 export function findReviews(db: Database, productId: number) {
   return db
-    .select({
-      id: reviews.id,
-      rating: reviews.rating,
-      comment: reviews.comment,
-      createdAt: reviews.createdAt,
-      updatedAt: reviews.updatedAt,
-      authorId: user.id,
-      authorName: user.name,
-    })
+    .select(reviewColumns)
     .from(reviews)
     .innerJoin(user, eq(user.id, reviews.userId))
     .where(eq(reviews.productId, productId))
