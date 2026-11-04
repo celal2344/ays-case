@@ -1,6 +1,6 @@
 # Architecture
 
-Single Vite SPA. No monorepo (StokMate needed one for web + mobile + shared client; this case has one app, so Turborepo would be noise). Practices that carry over from StokMate are listed in [conventions.md](conventions.md).
+A pnpm + Turborepo workspace. Today only `apps/web` (the Vite SPA) exists; `apps/api` and shared `packages/*` come with the backend work. Practices that carry over from StokMate are listed in [conventions.md](conventions.md).
 
 ## Layers
 ```mermaid
@@ -34,60 +34,62 @@ Rules:
 ays-case/
 ├── .github/workflows/ci.yml
 ├── docs/                         # this doc set
-├── e2e/                          # Playwright specs
-├── public/
-├── src/
-│   ├── main.tsx                  # providers + router
-│   ├── router.tsx                # createRouter, context { queryClient, auth }
-│   ├── routeTree.gen.ts          # generated, committed
-│   ├── routes/                   # TanStack file routes (thin: load + render a page)
-│   │   ├── __root.tsx
-│   │   ├── index.tsx             # → redirect /products
-│   │   ├── login.tsx
-│   │   ├── forbidden.tsx
-│   │   ├── products/index.tsx
-│   │   ├── products/$productId.tsx
-│   │   ├── _auth.tsx             # guard: logged in
-│   │   ├── _auth/cart.tsx
-│   │   ├── _auth/checkout.tsx
-│   │   ├── _auth/orders/index.tsx
-│   │   ├── _auth/orders/$orderId.tsx
-│   │   ├── _auth/_admin.tsx      # guard: role === "admin"
-│   │   ├── _auth/_admin/admin/index.tsx
-│   │   ├── _auth/_admin/admin/products/index.tsx
-│   │   ├── _auth/_admin/admin/products/new.tsx
-│   │   ├── _auth/_admin/admin/products/$productId.edit.tsx
-│   │   ├── _auth/_admin/admin/users/index.tsx
-│   │   ├── _auth/_admin/admin/users/new.tsx
-│   │   └── _auth/_admin/admin/users/$userId.edit.tsx
-│   ├── features/
-│   │   ├── auth/      { api.ts, store.ts, schemas.ts, components/, hooks/ }
-│   │   ├── products/  { api.ts, overlay-store.ts, schemas.ts, query-keys.ts, catalog.ts, components/, hooks/ }
-│   │   ├── cart/      { store.ts, selectors.ts, components/ }
-│   │   ├── orders/    { api.ts, store.ts, components/ }
-│   │   ├── users/     { api.ts, overlay-store.ts, schemas.ts, catalog.ts, query-keys.ts, components/, hooks/ }
-│   │   ├── reviews/   { store.ts, schemas.ts, summary.ts, components/ }
-│   │   └── admin/     { components/ }  # shared admin table, product form, stats
-│   ├── components/
-│   │   ├── ui/                   # shadcn generated
-│   │   ├── layout/               # AppShell, Header, MobileNav, UserMenu
-│   │   └── feedback/             # ErrorState, EmptyState, PageSkeleton, NotFound, Forbidden
-│   ├── lib/
-│   │   ├── http.ts               # axios instance, auth + refresh interceptors
-│   │   ├── http-error.ts         # AxiosError → AppError
-│   │   ├── query-client.ts
-│   │   ├── storage.ts            # versioned localStorage keys, safe JSON
-│   │   ├── format.ts             # currency, dates (Intl)
-│   │   └── utils.ts              # cn()
-│   ├── i18n/ { index.ts, locales/en.ts, locales/tr.ts }
-│   ├── preferences/              # theme + language store and controls
-│   ├── test/ { setup.ts, msw/handlers.ts, msw/server.ts, fixtures/, render.tsx }
-│   └── styles.css                # Tailwind + theme tokens
-├── scripts/check-translation-parity.mjs
-├── AGENTS.md
-├── components.json  eslint.config.js  prettier.config.mjs
-├── tsconfig.json  vite.config.ts  vitest.config.ts  playwright.config.ts
-└── vercel.json                   # SPA rewrite
+├── AGENTS.md  README.md  dummyjson.json
+├── package.json  pnpm-workspace.yaml  turbo.json  pnpm-lock.yaml
+└── apps/web/
+    ├── e2e/                          # Playwright specs
+    ├── public/
+    ├── src/
+    │   ├── main.tsx                  # providers + router
+    │   ├── router.tsx                # createRouter, context { queryClient, auth }
+    │   ├── routeTree.gen.ts          # generated, committed
+    │   ├── routes/                   # TanStack file routes (thin: load + render a page)
+    │   │   ├── __root.tsx
+    │   │   ├── index.tsx             # → redirect /products
+    │   │   ├── login.tsx
+    │   │   ├── forbidden.tsx
+    │   │   ├── products/index.tsx
+    │   │   ├── products/$productId.tsx
+    │   │   ├── _auth.tsx             # guard: logged in
+    │   │   ├── _auth/cart.tsx
+    │   │   ├── _auth/checkout.tsx
+    │   │   ├── _auth/orders/index.tsx
+    │   │   ├── _auth/orders/$orderId.tsx
+    │   │   ├── _auth/_admin.tsx      # guard: role === "admin"
+    │   │   ├── _auth/_admin/admin/index.tsx
+    │   │   ├── _auth/_admin/admin/products/index.tsx
+    │   │   ├── _auth/_admin/admin/products/new.tsx
+    │   │   ├── _auth/_admin/admin/products/$productId.edit.tsx
+    │   │   ├── _auth/_admin/admin/users/index.tsx
+    │   │   ├── _auth/_admin/admin/users/new.tsx
+    │   │   └── _auth/_admin/admin/users/$userId.edit.tsx
+    │   ├── features/
+    │   │   ├── auth/      { api.ts, store.ts, schemas.ts, components/, hooks/ }
+    │   │   ├── products/  { api.ts, overlay-store.ts, schemas.ts, query-keys.ts, catalog.ts, components/, hooks/ }
+    │   │   ├── cart/      { store.ts, selectors.ts, components/ }
+    │   │   ├── orders/    { api.ts, store.ts, components/ }
+    │   │   ├── users/     { api.ts, overlay-store.ts, schemas.ts, catalog.ts, query-keys.ts, components/, hooks/ }
+    │   │   ├── reviews/   { store.ts, schemas.ts, summary.ts, components/ }
+    │   │   └── admin/     { components/ }  # shared admin table, product form, stats
+    │   ├── components/
+    │   │   ├── ui/                   # shadcn generated
+    │   │   ├── layout/               # AppShell, Header, MobileNav, UserMenu
+    │   │   └── feedback/             # ErrorState, EmptyState, PageSkeleton, NotFound, Forbidden
+    │   ├── lib/
+    │   │   ├── http.ts               # axios instance, auth + refresh interceptors
+    │   │   ├── http-error.ts         # AxiosError → AppError
+    │   │   ├── query-client.ts
+    │   │   ├── storage.ts            # versioned localStorage keys, safe JSON
+    │   │   ├── format.ts             # currency, dates (Intl)
+    │   │   └── utils.ts              # cn()
+    │   ├── i18n/ { index.ts, locales/en.ts, locales/tr.ts }
+    │   ├── preferences/              # theme + language store and controls
+    │   ├── test/ { setup.ts, msw/handlers.ts, msw/server.ts, fixtures/, render.tsx }
+    │   └── styles.css                # Tailwind + theme tokens
+    ├── scripts/check-translation-parity.mjs
+    ├── components.json  eslint.config.js  prettier.config.mjs
+    ├── tsconfig.json  vite.config.ts  vitest.config.ts  playwright.config.ts
+    └── vercel.json                   # SPA rewrite
 ```
 
 Feature rule: a feature may import from `lib/`, `components/`, and another feature's **public** hooks/types only (e.g. `cart` imports `products` types). No deep imports into another feature's internals.

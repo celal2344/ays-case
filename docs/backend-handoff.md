@@ -10,13 +10,13 @@ Demo accounts (real DummyJSON users): admin `emilys` / `emilyspass`, user `avery
 
 ## 2. Contract the frontend expects today
 
-Every response is Zod-parsed at the boundary (`src/features/*/api.ts`, schemas in `src/features/*/schemas.ts`). A backend can either match these shapes exactly, or change the schema and `api.ts` in the same PR. Do not change shapes silently: the MSW fixtures in `src/test/` and the Playwright mock in `e2e/support/mock-api.ts` mirror them.
+Every response is Zod-parsed at the boundary (`apps/web/src/features/*/api.ts`, schemas in `apps/web/src/features/*/schemas.ts`). A backend can either match these shapes exactly, or change the schema and `api.ts` in the same PR. Do not change shapes silently: the MSW fixtures in `apps/web/src/test/` and the Playwright mock in `apps/web/e2e/support/mock-api.ts` mirror them.
 
 | Method + path | Request | Response the frontend parses | Today's behaviour |
 |---|---|---|---|
 | `POST /auth/login` | `{ username, password, expiresInMins: 60 }` | `{ accessToken, refreshToken, id, username, email, firstName, lastName, image }` (no role) | DummyJSON accounts |
 | `GET /auth/me` | Bearer | `{ id, username, email, firstName, lastName, image, role }`, `role` is `admin \| moderator \| user` | Run right after login and on app start; any failure after one refresh attempt logs out |
-| `POST /auth/refresh` | `{ refreshToken, expiresInMins: 60 }` | `{ accessToken, refreshToken }` | Single-flight 401 recovery in `src/lib/http.ts`; login/refresh are never retried |
+| `POST /auth/refresh` | `{ refreshToken, expiresInMins: 60 }` | `{ accessToken, refreshToken }` | Single-flight 401 recovery in `apps/web/src/lib/http.ts`; login/refresh are never retried |
 | `GET /products` | `?limit=0&select=<fields>` | `{ products: Product[] }` | **Whole catalog in one request** (about 194 items); search, filter, sort and paging run client-side (ADR-0004) |
 | `GET /products/{id}` | | Product plus `images[]`, `sku`, `weight`, `dimensions`, `warrantyInformation`, `shippingInformation`, `returnPolicy`, `reviews[]` | Detail page |
 | `GET /products/categories` | | `{ slug, name, url }[]` | |
@@ -29,7 +29,7 @@ Product shape (list): `id, title, description, category (slug), price, discountP
 
 ## 3. What is faked in the browser and needs a server
 
-These stores are the backend's real scope. Keys are `ays-case:v1:<name>` (`src/lib/storage.ts`).
+These stores are the backend's real scope. Keys are `ays-case:v1:<name>` (`apps/web/src/lib/storage.ts`).
 
 | Store (file) | What it holds | Becomes |
 |---|---|---|
@@ -75,10 +75,10 @@ From `AGENTS.md` and `docs/conventions.md`:
 - Zod-parse every API response in `api.ts`. No `any`, no `console.log`, no TODOs left behind.
 - All user-facing text through i18n; add keys to both `en.ts` and `tr.ts` (`pnpm check:translations` enforces parity).
 - Exact dependency versions, latest versions; say why for any new dependency.
-- `src/components/ui/*` is shadcn output: only change through the shadcn CLI.
+- `apps/web/src/components/ui/*` is shadcn output: only change through the shadcn CLI.
 - Persisted stores have `version` plus `migrate`; keys come from `lib/storage.ts`.
-- Tests live in a `test/` folder next to what they cover. Unit/component: Vitest + RTL + MSW (`onUnhandledFrame: 'error'`). E2E: Playwright (chromium + Pixel 7) against `e2e/support/mock-api.ts`, which serves the shared fixtures with `page.route`. A new endpoint needs a fixture, an MSW handler and a mock-api route, or the tests fail on unhandled requests.
-- Never commit `Frontend Case.pdf` or `docs/implementation-plan.md` (excluded locally).
+- Tests live in a `test/` folder next to what they cover. Unit/component: Vitest + RTL + MSW (`onUnhandledFrame: 'error'`). E2E: Playwright (chromium + Pixel 7) against `apps/web/e2e/support/mock-api.ts`, which serves the shared fixtures with `page.route`. A new endpoint needs a fixture, an MSW handler and a mock-api route, or the tests fail on unhandled requests.
+- Never commit `Frontend Case.pdf` (excluded locally).
 
 ## 6. Suggested approach (recommendation, not a decision)
 
@@ -87,7 +87,7 @@ From `AGENTS.md` and `docs/conventions.md`:
 3. **Keep serving the catalog as one list** at first (`limit=0`). ADR-0004 chose client-side search over a full catalog; moving to server-side pagination and search is a larger change (the URL-driven search params, filters, suggestions and best-deals all assume the full list) and should be its own decision.
 4. **Seed from DummyJSON** (products, categories, users with their roles) so the demo data and the two demo accounts keep working.
 5. **CORS**: allow the Vercel origin and localhost dev. No cookies are used.
-6. The app is a static SPA on Vercel with a catch-all rewrite (`vercel.json`); the backend is a separate deployment.
+6. The app is a static SPA on Vercel with a catch-all rewrite (`apps/web/vercel.json`); the backend is a separate deployment.
 
 ## 7. Open questions for the owner
 
@@ -102,8 +102,8 @@ From `AGENTS.md` and `docs/conventions.md`:
 
 ```bash
 pnpm lint && pnpm typecheck && pnpm check:translations
-pnpm exec vitest run <changed test files>   # the full local suite is slow on the owner's machine
-pnpm exec playwright test <spec> -g "<name>" --project=chromium
+pnpm --filter @ays/web exec vitest run <changed test files>   # the full local suite is slow on the owner's machine
+pnpm --filter @ays/web exec playwright test <spec> -g "<name>" --project=chromium
 ```
 
 Workflow: one PR per issue, opened with `gh`; **the owner merges**. Commits are conventional (`feat(orders): ...`). Do not wait on CI, and never force-push without being told.

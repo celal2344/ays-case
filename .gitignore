@@ -52,3 +52,6 @@ Desktop.ini
 
 # TanStack router plugin scratch files
 .tanstack
+
+# Turborepo
+.turbo

@@ -1,6 +1,6 @@
 # Requirements
 
-Source: `Frontend_Case.pdf` (case brief, Turkish). Each requirement has an ID used in the [plan](implementation-plan.md) and [tests](testing.md). **MUST** = in the brief. **EXTRA** = bonus ("ek geliştirmeler artı puan").
+Source: `Frontend_Case.pdf` (case brief, Turkish). Each requirement has an ID used in the [tests](testing.md). **MUST** = in the brief. **EXTRA** = bonus ("ek geliştirmeler artı puan").
 
 ## 1. Mandated tech
 | ID | Requirement | Our choice |
@@ -8,7 +8,7 @@ Source: `Frontend_Case.pdf` (case brief, Turkish). Each requirement has an ID us
 | T-1 | React or Vue 3 (Composition API) | React 19 + Vite + TypeScript |
 | T-2 | Tailwind CSS | Tailwind 4 |
 | T-3 | Optional UI library (shadcn, Radix, Headless UI, …) | shadcn/ui (Radix primitives) |
-| T-4 | Axios | Single axios instance in `src/lib/http.ts` |
+| T-4 | Axios | Single axios instance in `apps/web/src/lib/http.ts` |
 | T-5 | Zustand or Pinia | Zustand (auth, cart, orders, product overlay, preferences) |
 
 ## 2. Authentication

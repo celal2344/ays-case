@@ -19,7 +19,7 @@ pnpm test         # unit + integration
 pnpm e2e          # Playwright
 ```
 
-Node 24+ and pnpm 11+.
+Node 24+ and pnpm 11+. The repo is a pnpm + Turborepo workspace; the web app lives in `apps/web` and all commands above run from the root.
 
 ## Demo accounts
 
