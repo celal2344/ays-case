@@ -1,35 +1,23 @@
-import { z } from 'zod'
+import { REVIEW_LIMITS, reviewBodySchema } from '@ays/validators'
 
-export const REVIEW_MIN_LENGTH = 10
-export const REVIEW_MAX_LENGTH = 500
+export const REVIEW_MIN_LENGTH = REVIEW_LIMITS.comment.min
+export const REVIEW_MAX_LENGTH = REVIEW_LIMITS.comment.max
 
-/** A review written in this app (API reviews are read-only and come with the product). */
-export const localReviewSchema = z.object({
-  id: z.string(),
-  productId: z.number().int(),
-  userId: z.string(),
-  authorName: z.string(),
-  rating: z.number().int().min(1).max(5),
-  comment: z.string(),
-  createdAt: z.string(),
-})
-export type LocalReview = z.infer<typeof localReviewSchema>
+// The rules are the API's own (shared validators); the form shows its own translated texts.
+export const reviewFormSchema = reviewBodySchema
+export type { ReviewBody as ReviewFormValues } from '@ays/validators'
 
-export const reviewFormSchema = z.object({
-  rating: z.number().int().min(1).max(5),
-  comment: z.string().trim().min(REVIEW_MIN_LENGTH).max(REVIEW_MAX_LENGTH),
-})
-export type ReviewFormValues = z.infer<typeof reviewFormSchema>
-
-/** One row in the reviews list, whether it came from the API or was written here. */
+/** One row in the reviews list. */
 export interface ReviewItem {
   key: string
+  id: number
   rating: number
   comment: string
   date: string
+  authorId: string
   authorName: string
-  /** Present only for reviews written in this app. */
-  local?: { id: string; userId: string }
+  /** Computed by the API: the author has an order with this product. */
+  verifiedBuyer: boolean
 }
 
 export type ReviewSort = 'newest' | 'highest' | 'lowest'
@@ -40,5 +28,5 @@ export interface ReviewSummary {
   average: number | null
   count: number
   /** Number of reviews per star. */
-  histogram: Record<1 | 2 | 3 | 4 | 5, number>
+  histogram: Record<'1' | '2' | '3' | '4' | '5', number>
 }

@@ -1,48 +1,38 @@
 import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import type { User } from '@/features/auth/schemas'
 
 import { REVIEW_MAX_LENGTH, REVIEW_MIN_LENGTH, reviewFormSchema } from '../schemas'
-import { useReviewsStore } from '../store'
+import { useReviewMutations } from '../hooks/use-review-mutations'
 import { StarInput } from './rating-stars'
 
 export function ReviewForm({
   productId,
-  user,
   editing,
   onDone,
 }: {
   productId: number
-  user: User
   /** Present when editing the user's existing review. */
-  editing?: { id: string; rating: number; comment: string }
+  editing?: { id: number; rating: number; comment: string }
   onDone: () => void
 }) {
   const { t } = useTranslation()
-  const add = useReviewsStore((s) => s.add)
-  const update = useReviewsStore((s) => s.update)
+  const { create, update } = useReviewMutations(productId)
+  const mutation = editing ? update : create
 
   const form = useForm({
     defaultValues: { rating: editing?.rating ?? 0, comment: editing?.comment ?? '' },
     validators: { onSubmit: reviewFormSchema },
-    onSubmit: ({ value }) => {
-      if (editing) {
-        update(productId, editing.id, value)
-      } else {
-        const created = add({
-          productId,
-          userId: user.id,
-          authorName: `${user.firstName} ${user.lastName}`,
-          ...value,
-        })
-        if (!created) return
+    onSubmit: async ({ value }) => {
+      try {
+        if (editing) await update.mutateAsync({ id: editing.id, ...value })
+        else await create.mutateAsync(value)
+      } catch {
+        return // the reason was shown as a message
       }
-      toast.success(t(editing ? 'reviews.form.updated' : 'reviews.form.added'))
       form.reset()
       onDone()
     },
@@ -106,7 +96,9 @@ export function ReviewForm({
       </form.Field>
 
       <div className="flex gap-2">
-        <Button type="submit">{t(editing ? 'reviews.form.save' : 'reviews.form.submit')}</Button>
+        <Button type="submit" disabled={mutation.isPending}>
+          {t(editing ? 'reviews.form.save' : 'reviews.form.submit')}
+        </Button>
         {editing ? (
           <Button type="button" variant="outline" onClick={onDone}>
             {t('reviews.form.cancel')}

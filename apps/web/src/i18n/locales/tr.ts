@@ -201,6 +201,7 @@ export const tr = {
       submit: 'Yorumu gönder',
       save: 'Değişiklikleri kaydet',
       cancel: 'Vazgeç',
+      exists: 'Bu ürünü zaten değerlendirdin.',
       added: 'Teşekkürler, yorumun eklendi.',
       updated: 'Yorumun güncellendi.',
     },

@@ -17,3 +17,23 @@ export function errorMessageKey(error: AppError) {
       return 'errors.server' as const
   }
 }
+
+/**
+ * A translated message for the API error codes the UI explains in its own words (checkout shortage,
+ * duplicate review); other errors fall back to the kind-based message.
+ */
+export function errorCodeKey(error: AppError) {
+  switch (error.code) {
+    case 'cart_empty':
+      return 'checkout.errors.empty' as const
+    case 'insufficient_stock':
+    case 'product_unavailable':
+      return 'checkout.errors.stock' as const
+    case 'review_exists':
+      return 'reviews.form.exists' as const
+    case 'out_of_stock':
+      return 'checkout.errors.stock' as const
+    default:
+      return errorMessageKey(error)
+  }
+}

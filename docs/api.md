@@ -22,6 +22,9 @@ Response and request types come from the API's routes (`AppType`) and the shared
 | `GET/POST/PUT/DELETE /api/cart…` | session | `GET /cart`, `POST /cart/items` `{ productId, quantity }` (adds, capped at stock), `PUT /cart/items/:productId` `{ quantity }` (clamped to 1..stock), `DELETE /cart/items/:productId`, `DELETE /cart`; 404 unknown or deleted product, 409 `out_of_stock`, 422 quantity below 1 |
 | `GET /api/favorites`, `PUT/DELETE /api/favorites/:productId` | session | product ids, newest first; PUT and DELETE are idempotent (204) |
 | `GET /api/recently-viewed`, `PUT /api/recently-viewed/:productId`, `DELETE /api/recently-viewed` | session | product ids, newest first; a PUT trims the list to the newest 12 |
+| `POST /api/orders` | session | body `{ shipping }` only; one transaction creates the order from the server cart (server prices), takes stock, empties the cart. 201; 422 `cart_empty`; 409 `insufficient_stock` or `product_unavailable` (nothing changes) |
+| `GET /api/orders`, `GET /api/orders/:id` | session | my orders, newest first, with frozen lines; another user's id is 404 |
+| `POST /api/products/:id/reviews`, `PATCH /api/reviews/:id`, `DELETE /api/reviews/:id` | session | one review per user and product (409 `review_exists`); edit is the author's; delete is the author's or an admin's; the product's rating, count and histogram update by themselves |
 | `POST /api/auth/sign-in/username` | public | `{ username, password }`, sets the session cookie                                                                                                 |
 | `GET /api/auth/get-session`       | cookie | the session user, including `role`                                                                                                                |
 | `POST /api/auth/sign-out`         | cookie |                                                                                                                                                   |
@@ -38,7 +41,7 @@ Demo accounts: `emilys` / `emilyspass` (admin), `averyp` / `averyppass` (user). 
 
 ## Errors
 
-`AppError { kind, message, status }`, where `kind` is one of `network | unauthorized | forbidden | not_found | validation | server`. The UI maps `kind` to an i18n message (`lib/error-message.ts`); the server's message is shown for validation errors such as a failed sign-in.
+`AppError { kind, message, status, code }` (`code` is the API's machine-readable error code, e.g. `insufficient_stock`), where `kind` is one of `network | unauthorized | forbidden | not_found | validation | server`. The UI maps `kind` to an i18n message (`lib/error-message.ts`); the server's message is shown for validation errors such as a failed sign-in.
 
 ## Tests
 

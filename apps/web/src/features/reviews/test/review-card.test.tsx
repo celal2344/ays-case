@@ -6,16 +6,18 @@ import { ReviewCard } from '../components/review-card'
 import type { ReviewItem } from '../schemas'
 
 const review: ReviewItem = {
-  key: 'k',
+  key: '1',
+  id: 1,
   rating: 4,
   comment: 'Works well.',
   date: '2025-04-30T09:41:02.053Z',
+  authorId: 'user-7',
   authorName: 'Ada Lovelace',
+  verifiedBuyer: false,
 }
 
 const base = {
   review,
-  verified: false,
   canEdit: false,
   canDelete: false,
   onEdit: vi.fn(),
@@ -32,7 +34,7 @@ describe('ReviewCard', () => {
     expect(screen.queryByText('Verified buyer')).not.toBeInTheDocument()
     rerender(
       <ul>
-        <ReviewCard {...base} verified />
+        <ReviewCard {...base} review={{ ...review, verifiedBuyer: true }} />
       </ul>,
     )
     expect(screen.getByText('Verified buyer')).toBeInTheDocument()

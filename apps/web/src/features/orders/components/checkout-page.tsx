@@ -12,9 +12,9 @@ import { Label } from '@/components/ui/label'
 import { FieldError } from '@/features/admin/components/field-error'
 import { useCartView } from '@/features/cart/hooks/use-cart-view'
 import { ProductImage } from '@/features/products/components/product-image'
-import { errorMessageKey } from '@/lib/error-message'
+import { errorCodeKey } from '@/lib/error-message'
 
-import { CheckoutError, usePlaceOrder } from '../hooks/use-place-order'
+import { usePlaceOrder } from '../hooks/use-place-order'
 import { emptyShipping, shippingSchema, type Shipping } from '../schemas'
 import { CheckoutSteps } from './checkout-steps'
 import { TotalsList } from './order-totals'
@@ -53,13 +53,9 @@ export function CheckoutPage() {
   if (cart.isPending) return <PageSkeleton />
 
   const error = placeOrder.error
-  const errorText = !error
-    ? null
-    : error instanceof CheckoutError
-      ? error.problem === 'stock' && error.title
-        ? t('checkout.errors.stockTitle', { title: error.title })
-        : t(`checkout.errors.${error.problem}`)
-      : t(errorMessageKey(error))
+  // a refusal is keyed by the API's error code; the server's message also names the product
+  const errorText = !error ? null : t(errorCodeKey(error))
+  const errorDetail = error?.code === 'insufficient_stock' ? error.message : null
   const canPlace = !cart.hasUnavailable && cart.totals.totalCents > 0 && !placeOrder.isPending
 
   return (
@@ -97,7 +93,7 @@ export function CheckoutPage() {
                         onChange={(e) => field.handleChange(e.target.value)}
                         aria-invalid={field.state.meta.errors.length > 0}
                       />
-                      <FieldError errors={field.state.meta.errors} />
+                      <FieldError errors={field.state.meta.errors} keyPrefix="checkout.errors." />
                     </div>
                   )}
                 </form.Field>
@@ -136,6 +132,7 @@ export function CheckoutPage() {
               {errorText ? (
                 <p role="alert" className="text-sm text-destructive">
                   {errorText}
+                  {errorDetail ? <span className="block text-xs">{errorDetail}</span> : null}
                 </p>
               ) : null}
               <Button

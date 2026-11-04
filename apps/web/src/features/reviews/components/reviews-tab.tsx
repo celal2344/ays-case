@@ -14,9 +14,8 @@ import { selectIsAdmin, selectUser, useAuthStore } from '@/features/auth/store'
 import type { Review } from '@/features/products/schemas'
 
 import { useProductReviews } from '../hooks/use-product-reviews'
-import { useVerifiedBuyer } from '../hooks/use-verified-buyer'
+import { useReviewMutations } from '../hooks/use-review-mutations'
 import type { ReviewSort, ReviewSummary } from '../schemas'
-import { useReviewsStore } from '../store'
 import { ReviewCard } from './review-card'
 import { ReviewForm } from './review-form'
 import { ReviewSummaryPanel } from './review-summary-panel'
@@ -25,26 +24,24 @@ const SORTS: ReviewSort[] = ['newest', 'highest', 'lowest']
 
 export function ReviewsTab({
   productId,
-  seeded,
+  reviews,
   summary,
 }: {
   productId: number
-  seeded: Review[]
+  reviews: Review[]
   summary: ReviewSummary
 }) {
   const { t } = useTranslation()
   const location = useLocation()
   const user = useAuthStore(selectUser)
   const isAdmin = useAuthStore(selectIsAdmin)
-  const isVerifiedBuyer = useVerifiedBuyer()
-  const removeLocal = useReviewsStore((s) => s.remove)
-  const hideSeeded = useReviewsStore((s) => s.hideSeeded)
+  const { remove } = useReviewMutations(productId)
 
   const [sort, setSort] = useState<ReviewSort>('newest')
   const [editing, setEditing] = useState(false)
-  const items = useProductReviews(productId, seeded, sort)
+  const items = useProductReviews(reviews, sort)
 
-  const own = user ? items.find((r) => r.local?.userId === user.id) : undefined
+  const own = user ? items.find((r) => r.authorId === user.id) : undefined
   const sortItems = SORTS.map((value) => ({ value, label: t(`reviews.sort.${value}`) }))
 
   return (
@@ -55,12 +52,7 @@ export function ReviewsTab({
         own && !editing ? null : (
           <ReviewForm
             productId={productId}
-            user={user}
-            editing={
-              own && own.local
-                ? { id: own.local.id, rating: own.rating, comment: own.comment }
-                : undefined
-            }
+            editing={own ? { id: own.id, rating: own.rating, comment: own.comment } : undefined}
             onDone={() => setEditing(false)}
           />
         )
@@ -102,20 +94,15 @@ export function ReviewsTab({
           </div>
           <ul className="space-y-3">
             {items.map((review) => {
-              const isOwn = Boolean(user && review.local?.userId === user.id)
+              const isOwn = Boolean(user && review.authorId === user.id)
               return (
                 <ReviewCard
                   key={review.key}
                   review={review}
-                  verified={review.local ? isVerifiedBuyer(review.local.userId, productId) : false}
                   canEdit={isOwn}
                   canDelete={isOwn || isAdmin}
                   onEdit={() => setEditing(true)}
-                  onDelete={() =>
-                    review.local
-                      ? removeLocal(productId, review.local.id)
-                      : hideSeeded(productId, review.key)
-                  }
+                  onDelete={() => remove.mutate(review.id)}
                 />
               )
             })}

@@ -1,5 +1,6 @@
 import type { Product, ProductDetail } from '@ays/validators'
 
+import { toReview } from '../reviews/repository'
 import { getDb } from '../../db/client'
 import {
   findCategories,
@@ -83,14 +84,7 @@ export async function getProduct(id: number): Promise<ProductDetail | undefined>
       '4': row.rating4 ?? 0,
       '5': row.rating5 ?? 0,
     },
-    reviews: reviewRows.map((review) => ({
-      id: review.id,
-      rating: review.rating,
-      comment: review.comment,
-      createdAt: review.createdAt.toISOString(),
-      updatedAt: review.updatedAt.toISOString(),
-      author: { id: review.authorId, name: review.authorName },
-    })),
+    reviews: reviewRows.map(toReview),
   }
 }
 

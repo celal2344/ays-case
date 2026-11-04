@@ -1,44 +1,7 @@
-import { z } from 'zod'
+import type { Shipping } from '@ays/validators'
 
-export const ORDER_ERRORS = {
-  fullName: 'checkout.errors.fullName',
-  address: 'checkout.errors.address',
-  city: 'checkout.errors.city',
-  phone: 'checkout.errors.phone',
-} as const
-
-export const shippingSchema = z.object({
-  fullName: z.string().trim().min(2, ORDER_ERRORS.fullName).max(80, ORDER_ERRORS.fullName),
-  address: z.string().trim().min(5, ORDER_ERRORS.address).max(200, ORDER_ERRORS.address),
-  city: z.string().trim().min(2, ORDER_ERRORS.city).max(60, ORDER_ERRORS.city),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\+?[0-9 ()-]{7,20}$/, ORDER_ERRORS.phone),
-})
-export type Shipping = z.infer<typeof shippingSchema>
+// The order, its lines and the shipping rules are the API's own (shared validators). The form's
+// messages are the field names; the checkout page turns them into translated texts.
+export { shippingSchema, type Order, type OrderLine, type Shipping } from '@ays/validators'
 
 export const emptyShipping: Shipping = { fullName: '', address: '', city: '', phone: '' }
-
-/** A purchased line, frozen at purchase time so later admin edits cannot rewrite history. */
-export interface OrderLine {
-  productId: number
-  title: string
-  thumbnail: string | null
-  /** List price per unit, in cents. */
-  listCents: number
-  /** Price per unit actually paid (after discount), in cents. */
-  unitCents: number
-  discountPercentage: number
-  quantity: number
-}
-
-export interface Order {
-  id: string
-  userId: string
-  createdAt: string
-  lines: OrderLine[]
-  totals: { subtotalCents: number; discountCents: number; totalCents: number }
-  shipping: Shipping
-  /** Id echoed by `POST /carts/add`; absent when the order held only local products. */
-}

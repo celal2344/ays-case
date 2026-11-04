@@ -10,7 +10,9 @@ import { cartRoutes } from './modules/cart/routes'
 import { categoryRoutes, productRoutes } from './modules/catalog/routes'
 import { favoriteRoutes } from './modules/favorites/routes'
 import { healthRoutes } from './modules/health/routes'
+import { orderRoutes } from './modules/orders/routes'
 import { recentlyViewedRoutes } from './modules/recently-viewed/routes'
+import { productReviewRoutes, reviewRoutes } from './modules/reviews/routes'
 import { userRoutes } from './modules/users/routes'
 import { openApiDocumentation } from './utils/openapi'
 
@@ -22,6 +24,9 @@ const app = new Hono()
   .on(['GET', 'POST'], '/auth/*', (c) => getAuth().handler(c.req.raw))
   .route('/health', healthRoutes)
   .route('/products', productRoutes)
+  .route('/products', productReviewRoutes)
+  .route('/reviews', reviewRoutes)
+  .route('/orders', orderRoutes)
   .route('/categories', categoryRoutes)
   .route('/users', userRoutes)
   .route('/cart', cartRoutes)

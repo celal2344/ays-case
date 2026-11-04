@@ -2,17 +2,18 @@ import { API_BASE_URL, hcWithType } from '@ays/api-client'
 
 import { useAuthStore } from '@/features/auth/store'
 
-import { errorFromResponse, toAppError } from './http-error'
+import { AppError, errorFromResponse, toAppError } from './http-error'
 
 /** The typed Hono RPC client. Same origin as the app, so the session cookie rides along. */
 export const api = hcWithType(API_BASE_URL)
 
-type OkBody<R> = Extract<R, { status: 200 }> extends { json: () => Promise<infer B> } ? B : never
+type OkBody<R, S extends number = 200> =
+  Extract<R, { status: S }> extends {
+    json: () => Promise<infer B>
+  }
+    ? B
+    : never
 
-/**
- * Runs an RPC call and returns the typed body of its 200 answer. Transport failures and non-2xx
- * answers become `AppError`, so callers and `queryOptions` deal with one error type.
- */
 type Settled = { status: number; ok: boolean }
 
 /** Sends the request; failures and non-2xx answers become `AppError`. Returns the raw response. */
@@ -32,14 +33,19 @@ async function send<R extends Settled>(request: Promise<R>): Promise<R> {
 }
 
 /**
- * Runs an RPC call and returns the typed body of its 200 answer. Transport failures and non-2xx
- * answers become `AppError`, so callers and `queryOptions` deal with one error type.
+ * Runs an RPC call and returns the typed body of its success answer (200, or the status passed
+ * second). Transport failures and non-2xx answers become `AppError`, so callers and
+ * `queryOptions` deal with one error type.
  */
-export async function call<R extends Settled & { json: () => Promise<unknown> }>(
-  request: Promise<R>,
-): Promise<OkBody<R>> {
+export async function call<
+  R extends Settled & { json: () => Promise<unknown> },
+  S extends number = 200,
+>(request: Promise<R>, success?: S): Promise<OkBody<R, S>> {
   const res = await send(request)
-  return (await res.json()) as OkBody<R>
+  if (success !== undefined && res.status !== success) {
+    throw new AppError('server', `Unexpected status ${res.status}`, res.status)
+  }
+  return (await res.json()) as OkBody<R, S>
 }
 
 /** Like `call`, for answers without a body (204). */

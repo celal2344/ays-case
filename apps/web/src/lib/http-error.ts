@@ -4,12 +4,15 @@ export type AppErrorKind =
 export class AppError extends Error {
   readonly kind: AppErrorKind
   readonly status?: number
+  /** The API's machine-readable error code (`insufficient_stock`, `review_exists`, …), when it sent one. */
+  readonly code?: string
 
-  constructor(kind: AppErrorKind, message: string, status?: number) {
+  constructor(kind: AppErrorKind, message: string, status?: number, code?: string) {
     super(message)
     this.name = 'AppError'
     this.kind = kind
     this.status = status
+    this.code = code
   }
 }
 
@@ -39,5 +42,9 @@ export async function errorFromResponse(res: Response): Promise<AppError> {
     typeof body.message === 'string'
       ? body.message
       : res.statusText
-  return new AppError(kindFromStatus(res.status), message, res.status)
+  const code =
+    typeof body === 'object' && body !== null && 'code' in body && typeof body.code === 'string'
+      ? body.code
+      : undefined
+  return new AppError(kindFromStatus(res.status), message, res.status, code)
 }

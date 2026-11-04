@@ -11,12 +11,12 @@ Our API serves the catalog and users read-only; it has no product or user writes
 | Categories                                               | TanStack Query `productKeys.categories()` | no                                             | —                             |
 | Admin changes (created / patched / deleted)              | `useProductOverlayStore` (Zustand)        | yes                                            | `ays-case:v1:product-overlay` |
 | Admin user changes (created / patched / deleted)         | `useUserOverlayStore` (Zustand)           | yes                                            | `ays-case:v1:user-overlay`    |
-| Reviews written in the app                               | `useReviewsStore` (Zustand)               | yes                                            | `ays-case:v1:reviews`         |
+| Reviews | TanStack Query: part of the product detail (`productKeys.detail(id)`) | no, on the server | — |
 | Remote users (admin list)                                | TanStack Query `userKeys.list()`          | no                                             | —                             |
 | Current user (the session cookie is owned by the server) | `useAuthStore`                            | no, restored by `bootstrap()`                  | —                             |
 | Cart, favorites, recently viewed (signed in) | TanStack Query (`cartKeys`, `favoriteKeys`, `recentlyViewedKeys`) | no, on the server per user | — |
 | Recently viewed (signed out) | `useGuestViewedStore` (Zustand) | no, memory only | — |
-| Orders                                                   | `useOrdersStore`                          | yes, per user                                  | `ays-case:v1:orders`          |
+| Orders | TanStack Query (`orderKeys`) | no, on the server per user | — |
 | Theme, language, shop view (grid/table)                  | `usePreferencesStore`                     | yes                                            | `ays-case:v1:prefs`           |
 | List filters (q, category, sort, order, page)            | URL search params (TanStack Router)       | in URL                                         | —                             |
 | Form drafts, dialogs                                     | component state                           | no                                             | —                             |
@@ -121,11 +121,13 @@ export function applyUserOverlay(
 
 ## Reviews
 
-- Reviews come from `GET /api/products/:id` (`reviews[]`: `id, rating, comment, createdAt, author`). The headline rating, count and histogram also come from the API, so a review written only in this browser appears in the list but does not move them.
-- `useReviewsStore`: `byProduct: Record<number, LocalReview[]>` with `LocalReview { id, productId, userId, authorName, rating, comment, createdAt }`; actions `add`, `update`, `remove`, `removeProduct`, `reset`. One review per user per product.
-- `features/reviews/merge.ts` (pure): `mergeReviews(seeded, local)` and `sortReviews`. Nothing averages ratings on the client.
-- Verified buyer: author has an order containing the product (selector over the orders store).
-- Deleting a product also calls `reviews.removeProduct(id)`. Reset demo data clears this store.
+Reviews are real: they live in the database, one per user per product, and come with the product detail (`reviews[]`: `id, rating, comment, createdAt, author, verifiedBuyer`).
+
+- Create, edit and delete go through the API (`features/reviews/api.ts`, `useReviewMutations`). The rules are shared (`REVIEW_LIMITS` in `@ays/validators`): rating 1 to 5, comment 10 to 500 characters. A second review by the same user is refused with `409 review_exists`; an author edits and deletes their own review, an admin can delete any.
+- The headline rating, count and 1 to 5 histogram are computed by the database (`product_rating_stats`), so after each change the product detail and the catalog list are refetched; nothing is averaged in the browser.
+- `verifiedBuyer` is computed in SQL (the author has an order line for the product) and is not required to review.
+- `features/reviews/sort.ts` (pure) only sorts the list for display.
+- Deleting a product in the admin overlay does not touch reviews on the server.
 
 ## Auth store
 
@@ -162,34 +164,30 @@ interface CartLine { productId: number; quantity: number; addedAt: string }
 - Checkout reads the cart from the query cache and empties it on the server after the (still local) order is recorded.
 - Totals selector: subtotal, discount (`discountPercentage`), total, in integer cents.
 
-## Orders store
+## Orders and checkout (server)
+
+Orders live in the database per user and are read through TanStack Query (`features/orders`: `api.ts`, `queries.ts`, `useOrders`, `useOrder`). `Order`, `OrderLine` and the shipping rules come from `@ays/validators`.
 
 ```ts
 interface Order {
-  id: string; // crypto.randomUUID()
-  userId: string; // Better Auth user id, e.g. user-16
-  createdAt: string;
-  lines: {
-    productId: number;
-    title: string;
-    thumbnail: string;
-    unitPrice: number;
-    quantity: number;
-    discountPercentage: number;
-  }[];
-  totals: { subtotal: number; discount: number; total: number };
-  shipping: { fullName: string; address: string; city: string; phone: string };
+  id: string // uuid
+  userId: string // Better Auth user id, e.g. user-16
+  createdAt: string
+  lines: { productId: number | null; title: string; thumbnail: string | null; listCents: number; unitCents: number; discountPercentage: number; quantity: number }[]
+  totals: { subtotalCents: number; discountCents: number; totalCents: number }
+  shipping: { fullName: string; address: string; city: string; phone: string }
 }
 ```
 
-Lines are a **snapshot** (title/price at purchase time) — later admin edits must not change past orders.
+Lines are a **snapshot** (title and prices at purchase time): later product edits never change past orders. `productId` becomes null only if the product is hard-deleted.
 
-## Checkout sequence
+### Checkout
 
-1. Validate cart lines against merged stock (abort with a message if a line exceeds stock).
-2. No request is made: the API has no checkout yet. Totals are computed by us from merged prices.
-3. `ordersStore.add(order)` → `overlay.decrementStock(lines)` → `cart.clear(userId)`.
-4. Navigate to `/orders/$orderId?placed=1` (success banner).
+`POST /orders` takes only `{ shipping }`. In one transaction the server locks the cart's products, checks stock against its own catalog, prices the lines (`salePriceCents`), stores the order, takes the stock with a guarded update and empties the cart; any refusal changes nothing. The page keeps computing totals for display, and the confirmation and order pages show the server's numbers.
+
+1. The form validates with the shared `shippingSchema`; the submit button is disabled while the request is pending.
+2. On success the cart, orders, catalog and product-detail queries are invalidated (stock changed) and the app opens `/orders/$orderId?placed=1`.
+3. Refusals are explained by the API's error `code`: `cart_empty`, `insufficient_stock` and `product_unavailable` (`errorCodeKey` in `lib/error-message.ts`); the server's message also names the product.
 
 ## Query keys
 
@@ -212,4 +210,4 @@ Factory pattern copied from StokMate `packages/domain/src/query-keys.ts`.
 
 ## Reset demo data (EX-15)
 
-Admin dashboard button → `overlay.reset()`, `userOverlay.reset()`, `reviews.reset()`, `orders.reset()`, the server-side cart, favorites and recently viewed are not touched → confirm dialog first.
+Admin dashboard button → `overlay.reset()`, `userOverlay.reset()`, `search.reset()` → confirm dialog first. Everything on the server (cart, favorites, recently viewed, orders, reviews) is not touched.

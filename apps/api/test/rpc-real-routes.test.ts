@@ -2,7 +2,7 @@
  * The RPC canary on the real routes: `hc<AppType>` with base URL /api must infer the request
  * input and a typed response per status for the catalog endpoints. Enforced by `tsc --noEmit`.
  */
-import type { CartItem, Category, Product, ProductDetail } from '@ays/validators'
+import type { CartItem, Category, Order, Product, ProductDetail, Review } from '@ays/validators'
 import { hc, type ClientResponse } from 'hono/client'
 import { describe, expectTypeOf, it } from 'vitest'
 
@@ -67,5 +67,30 @@ describe('hc<AppType> on the real routes', () => {
     type Put = (typeof client.favorites)[':productId']['$put']
     expectTypeOf<Parameters<Put>[0]>().toEqualTypeOf<{ param: { productId: string } }>()
     expectTypeOf(client['recently-viewed'].$get).toBeFunction()
+  })
+
+  it('types checkout: only shipping goes in; order, shortage and empty cart come out', () => {
+    type Post = typeof client.orders.$post
+    expectTypeOf<Parameters<Post>[0]>().toMatchTypeOf<{ json: { shipping: object } }>()
+    type Res = Awaited<ReturnType<Post>>
+    expectTypeOf<Extract<Res, { status: 201 }>>().toEqualTypeOf<
+      ClientResponse<{ data: Order }, 201, 'json'>
+    >()
+    expectTypeOf<Extract<Res, { status: 409 }>['json']>().toBeFunction()
+    expectTypeOf<Extract<Res, { status: 422 }>['json']>().toBeFunction()
+    type Get = (typeof client.orders)[':id']['$get']
+    expectTypeOf<Parameters<Get>[0]>().toEqualTypeOf<{ param: { id: string } }>()
+  })
+
+  it('types reviews: create, edit and delete', () => {
+    type Create = (typeof client.products)[':id']['reviews']['$post']
+    expectTypeOf<Extract<Awaited<ReturnType<Create>>, { status: 201 }>>().toEqualTypeOf<
+      ClientResponse<{ data: Review }, 201, 'json'>
+    >()
+    type Patch = (typeof client.reviews)[':id']['$patch']
+    expectTypeOf<Extract<Awaited<ReturnType<Patch>>, { status: 200 }>>().toEqualTypeOf<
+      ClientResponse<{ data: Review }, 200, 'json'>
+    >()
+    expectTypeOf(client.reviews[':id'].$delete).toBeFunction()
   })
 })

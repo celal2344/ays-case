@@ -1,79 +1,33 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { selectUser, useAuthStore } from '@/features/auth/store'
-import { buildCartItems, cartTotals } from '@/features/cart/selectors'
-import { clearCart } from '@/features/cart/api'
 import { cartKeys } from '@/features/cart/queries'
-import type { CartLine } from '@/features/cart/selectors'
-import { applyOverlay } from '@/features/products/catalog'
-import { useProductOverlayStore } from '@/features/products/overlay-store'
-import { catalogQueryOptions } from '@/features/products/queries'
-import { AppError } from '@/lib/http-error'
+import { productKeys } from '@/features/products/query-keys'
+import type { AppError } from '@/lib/http-error'
 
-import { buildOrder } from '../build-order'
+import { placeOrder } from '../api'
+import { orderKeys } from '../queries'
 import type { Order, Shipping } from '../schemas'
-import { useOrdersStore } from '../store'
-
-export type CheckoutProblem = 'empty' | 'stock'
-
-/** A refused purchase; `problem` and `title` let the page say what to fix. */
-export class CheckoutError extends AppError {
-  readonly problem: CheckoutProblem
-  readonly title?: string
-  constructor(problem: CheckoutProblem, title?: string) {
-    super('validation', problem)
-    this.problem = problem
-    this.title = title
-  }
-}
 
 /**
- * The purchase (docs/data-and-state.md, "Checkout sequence"). Everything is read fresh from the cart cache and the stores,
- * and orders live in the browser until the API has a checkout, so nothing leaves the client.
+ * The purchase is one server operation (docs/data-and-state.md, "Checkout"): the server reads its own
+ * cart and prices, takes the stock and empties the cart, or refuses and changes nothing. The page
+ * only sends the shipping details and shows the server's numbers.
  */
 export function usePlaceOrder() {
   const queryClient = useQueryClient()
-  const user = useAuthStore(selectUser)
 
   return useMutation<Order, AppError, Shipping>({
-    mutationFn: async (shipping) => {
-      if (!user) throw new AppError('unauthorized', 'Not signed in')
-      const lines = queryClient.getQueryData<CartLine[]>(cartKeys.all) ?? []
-      if (lines.length === 0) throw new CheckoutError('empty')
-
-      const remote = queryClient.getQueryData(catalogQueryOptions.queryKey) ?? []
-      const { created, patched, deleted } = useProductOverlayStore.getState()
-      const products = applyOverlay(remote, { created, patched, deleted })
-      const { items, missing } = buildCartItems(lines, products)
-      if (missing.length > 0) throw new CheckoutError('stock')
-      const short = lines.find((l) => {
-        const product = products.find((p) => p.id === l.productId)
-        return !product || product.stock < l.quantity
-      })
-      if (short) {
-        const title = products.find((p) => p.id === short.productId)?.title
-        throw new CheckoutError('stock', title)
-      }
-
-      const order = buildOrder({
-        id: crypto.randomUUID(),
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-        items,
-        totals: cartTotals(items),
-        shipping,
-      })
-      useOrdersStore.getState().add(order)
-      useProductOverlayStore
-        .getState()
-        .decrementStock(
-          items.map((i) => ({ id: i.product.id, quantity: i.quantity, stock: i.product.stock })),
-        )
-      // the order is already recorded; if emptying the server cart fails, the refetch shows it
-      queryClient.setQueryData<CartLine[]>(cartKeys.all, [])
-      await clearCart().catch(() => undefined)
-      void queryClient.invalidateQueries({ queryKey: cartKeys.all })
-      return order
+    mutationFn: placeOrder,
+    onSuccess: (order) => {
+      queryClient.setQueryData(orderKeys.detail(order.id), order)
     },
+    // stock changed and the cart is empty, so those are refetched; a refusal leaves both as they were
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: cartKeys.all }),
+        queryClient.invalidateQueries({ queryKey: orderKeys.all }),
+        queryClient.invalidateQueries({ queryKey: productKeys.catalog() }),
+        queryClient.invalidateQueries({ queryKey: productKeys.details() }),
+      ]),
   })
 }

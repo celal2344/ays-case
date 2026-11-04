@@ -184,7 +184,7 @@ export function ProductDetailPage() {
           <p className="max-w-3xl text-muted-foreground">{product.description}</p>
         </DetailSection>
         <DetailSection id="reviews" title={t('products.tabs.reviews', { n: summary.count })}>
-          <ReviewsTab productId={id} seeded={product.reviews} summary={summary} />
+          <ReviewsTab productId={id} reviews={product.reviews} summary={summary} />
         </DetailSection>
         <div id="similar" className={SECTION_SCROLL_MARGIN}>
           <SimilarProducts productId={id} category={product.category.slug} />

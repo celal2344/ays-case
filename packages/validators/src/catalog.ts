@@ -57,6 +57,8 @@ export const reviewSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   author: z.object({ id: z.string(), name: z.string() }),
+  /** True when the author has an order containing this product (computed in SQL). */
+  verifiedBuyer: z.boolean(),
 })
 
 export const productDetailSchema = productSchema.extend({
