@@ -1,5 +1,5 @@
 import type { CartItem, CartTotals } from '@/features/cart/selectors'
-import { toCents } from '@/features/products/pricing'
+import { toCents } from '@ays/validators'
 
 import type { Order, Shipping } from './schemas'
 

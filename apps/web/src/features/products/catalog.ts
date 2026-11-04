@@ -1,7 +1,7 @@
 import type { Language } from '@/lib/format'
 
 import { groupOf, type GroupId } from './category-groups'
-import { salePriceCents } from './pricing'
+import { salePriceCents } from '@ays/validators'
 import type { Product, ProductSort, SortOrder } from './schemas'
 
 /** Admin changes layered over the remote catalog. See docs/data-and-state.md. */

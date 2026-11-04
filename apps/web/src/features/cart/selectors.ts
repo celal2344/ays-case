@@ -1,4 +1,4 @@
-import { salePriceCents, toCents } from '@/features/products/pricing'
+import { salePriceCents, toCents } from '@ays/validators'
 import type { Product } from '@/features/products/schemas'
 
 import type { CartLine } from './store'

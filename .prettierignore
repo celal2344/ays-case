@@ -8,3 +8,5 @@ playwright-report
 test-results
 AGENTS.md
 README.md
+apps/api/src/db/seed-data
+apps/api/src/db/migrations

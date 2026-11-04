@@ -17,7 +17,7 @@ import { InputGroupAddon } from '@/components/ui/input-group'
 import { normalize } from '@/features/products/catalog'
 import { useCatalog } from '@/features/products/hooks/use-catalog'
 import { useCategories } from '@/features/products/hooks/use-categories'
-import { salePriceCents } from '@/features/products/pricing'
+import { salePriceCents } from '@ays/validators'
 import { productSearchSchema } from '@/features/products/schemas'
 import { normalizeSearch } from '@/features/products/search-state'
 import {
