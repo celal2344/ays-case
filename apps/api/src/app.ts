@@ -6,6 +6,15 @@ import { openAPIRouteHandler } from 'hono-openapi'
 import { notFound, onError } from './middlewares/error-handler'
 import { getAuth } from './auth'
 import { requestLogger } from './middlewares/request-logger'
+import {
+  adminBrandRoutes,
+  adminCategoryRoutes,
+  adminReturnRoutes,
+  adminShippingRoutes,
+  adminTagRoutes,
+  adminWarrantyRoutes,
+} from './modules/admin/lookups/routes'
+import { adminProductListRoutes, productAdminRoutes } from './modules/admin/products/routes'
 import { cartRoutes } from './modules/cart/routes'
 import { categoryRoutes, productRoutes } from './modules/catalog/routes'
 import { favoriteRoutes } from './modules/favorites/routes'
@@ -13,7 +22,7 @@ import { healthRoutes } from './modules/health/routes'
 import { orderRoutes } from './modules/orders/routes'
 import { recentlyViewedRoutes } from './modules/recently-viewed/routes'
 import { productReviewRoutes, reviewRoutes } from './modules/reviews/routes'
-import { userRoutes } from './modules/users/routes'
+import { userRoutes } from './modules/admin/users/routes'
 import { openApiDocumentation } from './utils/openapi'
 
 // Chained so `AppType` carries every route for the RPC client.
@@ -25,6 +34,14 @@ const app = new Hono()
   .route('/health', healthRoutes)
   .route('/products', productRoutes)
   .route('/products', productReviewRoutes)
+  .route('/products', productAdminRoutes)
+  .route('/admin/products', adminProductListRoutes)
+  .route('/admin/categories', adminCategoryRoutes)
+  .route('/admin/brands', adminBrandRoutes)
+  .route('/admin/tags', adminTagRoutes)
+  .route('/admin/warranty-policies', adminWarrantyRoutes)
+  .route('/admin/shipping-policies', adminShippingRoutes)
+  .route('/admin/return-policies', adminReturnRoutes)
   .route('/reviews', reviewRoutes)
   .route('/orders', orderRoutes)
   .route('/categories', categoryRoutes)

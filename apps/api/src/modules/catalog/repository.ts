@@ -20,6 +20,7 @@ import { reviewColumns } from '../reviews/repository'
 // Ratings, the histogram, availability and numeric casts are all computed here, in SQL.
 const baseColumns = {
   id: products.id,
+  deletedAt: products.deletedAt,
   title: products.title,
   description: products.description,
   categoryId: categories.id,
@@ -46,7 +47,7 @@ const baseColumns = {
 
 const notDeleted = isNull(products.deletedAt)
 
-export function findProducts(db: Database) {
+export function findProducts(db: Database, includeDeleted = false) {
   return db
     .select(baseColumns)
     .from(products)
@@ -57,11 +58,11 @@ export function findProducts(db: Database) {
       productImages,
       and(eq(productImages.productId, products.id), eq(productImages.isPrimary, true)),
     )
-    .where(notDeleted)
+    .where(includeDeleted ? undefined : notDeleted)
     .orderBy(asc(products.id))
 }
 
-export async function findProductDetail(db: Database, id: number) {
+export async function findProductDetail(db: Database, id: number, includeDeleted = false) {
   const [row] = await db
     .select({
       ...baseColumns,
@@ -94,7 +95,7 @@ export async function findProductDetail(db: Database, id: number) {
       productImages,
       and(eq(productImages.productId, products.id), eq(productImages.isPrimary, true)),
     )
-    .where(and(notDeleted, eq(products.id, id)))
+    .where(and(includeDeleted ? undefined : notDeleted, eq(products.id, id)))
   return row
 }
 

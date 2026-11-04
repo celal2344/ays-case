@@ -93,4 +93,20 @@ describe('hc<AppType> on the real routes', () => {
     >()
     expectTypeOf(client.reviews[':id'].$delete).toBeFunction()
   })
+
+  it('types the admin writes: bodies in, products out', () => {
+    type Create = typeof client.products.$post
+    expectTypeOf<Parameters<Create>[0]>().toMatchTypeOf<{
+      json: { sku: string; priceCents: number }
+    }>()
+    expectTypeOf<Extract<Awaited<ReturnType<Create>>, { status: 201 }>>().toEqualTypeOf<
+      ClientResponse<{ data: ProductDetail }, 201, 'json'>
+    >()
+    type Patch = (typeof client.products)[':id']['$patch']
+    expectTypeOf<Parameters<Patch>[0]>().toMatchTypeOf<{ param: { id: string } }>()
+    expectTypeOf(client.products[':id'].restore.$post).toBeFunction()
+    expectTypeOf(client.admin.products.$get).toBeFunction()
+    expectTypeOf(client.admin.categories[':id'].$delete).toBeFunction()
+    expectTypeOf(client.users[':id'].$patch).toBeFunction()
+  })
 })

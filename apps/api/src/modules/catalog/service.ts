@@ -1,4 +1,4 @@
-import type { Product, ProductDetail } from '@ays/validators'
+import type { AdminProduct, Product, ProductDetail } from '@ays/validators'
 
 import { toReview } from '../reviews/repository'
 import { getDb } from '../../db/client'
@@ -39,6 +39,20 @@ function toProduct(row: Row, tags: { slug: string; name: string }[]): Product {
   }
 }
 
+/** Every product, soft-deleted ones included, with when each was deleted. */
+export async function listAdminProducts(): Promise<AdminProduct[]> {
+  const db = getDb()
+  const [rows, tagRows] = await Promise.all([findProducts(db, true), findTags(db)])
+  const tagsByProduct = Map.groupBy(tagRows, (tag) => tag.productId)
+  return rows.map((row) => ({
+    ...toProduct(
+      row,
+      (tagsByProduct.get(row.id) ?? []).map(({ slug, name }) => ({ slug, name })),
+    ),
+    deletedAt: row.deletedAt?.toISOString() ?? null,
+  }))
+}
+
 export async function listProducts(): Promise<Product[]> {
   const db = getDb()
   const [rows, tagRows] = await Promise.all([findProducts(db), findTags(db)])
@@ -51,9 +65,13 @@ export async function listProducts(): Promise<Product[]> {
   )
 }
 
-export async function getProduct(id: number): Promise<ProductDetail | undefined> {
+/** `includeDeleted` is for the admin, who can still open (and restore) a soft-deleted product. */
+export async function getProduct(
+  id: number,
+  includeDeleted = false,
+): Promise<ProductDetail | undefined> {
   const db = getDb()
-  const row = await findProductDetail(db, id)
+  const row = await findProductDetail(db, id, includeDeleted)
   if (!row) return undefined
   const [tagRows, images, reviewRows] = await Promise.all([
     findTags(db, [id]),
