@@ -22,6 +22,7 @@ import { Route as ProductsProductIdRouteImport } from './routes/products/$produc
 import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
 import { Route as AuthOrdersOrderIdRouteImport } from './routes/_auth/orders/$orderId'
 import { Route as AuthAdminAdminIndexRouteImport } from './routes/_auth/_admin/admin/index'
+import { Route as AuthAdminAdminLookupsKindRouteImport } from './routes/_auth/_admin/admin/lookups/$kind'
 import { Route as AuthAdminAdminProductsIndexRouteImport } from './routes/_auth/_admin/admin/products/index'
 import { Route as AuthAdminAdminProductsNewRouteImport } from './routes/_auth/_admin/admin/products/new'
 import { Route as AuthAdminAdminUsersIndexRouteImport } from './routes/_auth/_admin/admin/users/index'
@@ -92,6 +93,12 @@ const AuthAdminAdminIndexRoute = AuthAdminAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => AuthAdminRoute,
 } as any)
+const AuthAdminAdminLookupsKindRoute =
+  AuthAdminAdminLookupsKindRouteImport.update({
+    id: '/admin/lookups/$kind',
+    path: '/admin/lookups/$kind',
+    getParentRoute: () => AuthAdminRoute,
+  } as any)
 const AuthAdminAdminProductsIndexRoute =
   AuthAdminAdminProductsIndexRouteImport.update({
     id: '/admin/products/',
@@ -140,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/orders/': typeof AuthOrdersIndexRoute
   '/admin/': typeof AuthAdminAdminIndexRoute
+  '/admin/lookups/$kind': typeof AuthAdminAdminLookupsKindRoute
   '/admin/products/new': typeof AuthAdminAdminProductsNewRoute
   '/admin/users/new': typeof AuthAdminAdminUsersNewRoute
   '/admin/products/': typeof AuthAdminAdminProductsIndexRoute
@@ -159,6 +167,7 @@ export interface FileRoutesByTo {
   '/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/orders': typeof AuthOrdersIndexRoute
   '/admin': typeof AuthAdminAdminIndexRoute
+  '/admin/lookups/$kind': typeof AuthAdminAdminLookupsKindRoute
   '/admin/products/new': typeof AuthAdminAdminProductsNewRoute
   '/admin/users/new': typeof AuthAdminAdminUsersNewRoute
   '/admin/products': typeof AuthAdminAdminProductsIndexRoute
@@ -181,6 +190,7 @@ export interface FileRoutesById {
   '/_auth/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/_auth/orders/': typeof AuthOrdersIndexRoute
   '/_auth/_admin/admin/': typeof AuthAdminAdminIndexRoute
+  '/_auth/_admin/admin/lookups/$kind': typeof AuthAdminAdminLookupsKindRoute
   '/_auth/_admin/admin/products/new': typeof AuthAdminAdminProductsNewRoute
   '/_auth/_admin/admin/users/new': typeof AuthAdminAdminUsersNewRoute
   '/_auth/_admin/admin/products/': typeof AuthAdminAdminProductsIndexRoute
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/orders/$orderId'
     | '/orders/'
     | '/admin/'
+    | '/admin/lookups/$kind'
     | '/admin/products/new'
     | '/admin/users/new'
     | '/admin/products/'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/orders/$orderId'
     | '/orders'
     | '/admin'
+    | '/admin/lookups/$kind'
     | '/admin/products/new'
     | '/admin/users/new'
     | '/admin/products'
@@ -242,6 +254,7 @@ export interface FileRouteTypes {
     | '/_auth/orders/$orderId'
     | '/_auth/orders/'
     | '/_auth/_admin/admin/'
+    | '/_auth/_admin/admin/lookups/$kind'
     | '/_auth/_admin/admin/products/new'
     | '/_auth/_admin/admin/users/new'
     | '/_auth/_admin/admin/products/'
@@ -352,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAdminAdminIndexRouteImport
       parentRoute: typeof AuthAdminRoute
     }
+    '/_auth/_admin/admin/lookups/$kind': {
+      id: '/_auth/_admin/admin/lookups/$kind'
+      path: '/admin/lookups/$kind'
+      fullPath: '/admin/lookups/$kind'
+      preLoaderRoute: typeof AuthAdminAdminLookupsKindRouteImport
+      parentRoute: typeof AuthAdminRoute
+    }
     '/_auth/_admin/admin/products/': {
       id: '/_auth/_admin/admin/products/'
       path: '/admin/products'
@@ -399,6 +419,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthAdminRouteChildren {
   AuthAdminAdminIndexRoute: typeof AuthAdminAdminIndexRoute
+  AuthAdminAdminLookupsKindRoute: typeof AuthAdminAdminLookupsKindRoute
   AuthAdminAdminProductsNewRoute: typeof AuthAdminAdminProductsNewRoute
   AuthAdminAdminUsersNewRoute: typeof AuthAdminAdminUsersNewRoute
   AuthAdminAdminProductsIndexRoute: typeof AuthAdminAdminProductsIndexRoute
@@ -409,6 +430,7 @@ interface AuthAdminRouteChildren {
 
 const AuthAdminRouteChildren: AuthAdminRouteChildren = {
   AuthAdminAdminIndexRoute: AuthAdminAdminIndexRoute,
+  AuthAdminAdminLookupsKindRoute: AuthAdminAdminLookupsKindRoute,
   AuthAdminAdminProductsNewRoute: AuthAdminAdminProductsNewRoute,
   AuthAdminAdminUsersNewRoute: AuthAdminAdminUsersNewRoute,
   AuthAdminAdminProductsIndexRoute: AuthAdminAdminProductsIndexRoute,

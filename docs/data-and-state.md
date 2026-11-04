@@ -1,6 +1,6 @@
 # Data and state
 
-Our API serves the catalog and users read-only; it has no product or user writes yet (see [api.md](api.md)). So the app has two sources: the remote catalog (read-only truth) and a local **overlay** of the admin's changes. This doc defines who owns what. Decision record: [ADR-0003](decisions/0003-query-plus-zustand-overlay.md).
+Everything the shop and the admin pages show comes from our API ([api.md](api.md)), including the admin's product, lookup and user writes. The browser keeps no copy of server data beyond the Query cache. This doc defines who owns what. The overlay described in [ADR-0003](decisions/0003-query-plus-zustand-overlay.md) and [ADR-0006](decisions/0006-user-management-overlay.md) was removed when the admin CRUD moved to the API.
 
 ## Ownership table
 
@@ -9,10 +9,9 @@ Our API serves the catalog and users read-only; it has no product or user writes
 | Remote catalog (all products, list fields)               | TanStack Query `productKeys.catalog()`    | no (memory, `staleTime: Infinity` per session) | —                             |
 | Product detail (images, reviews)                         | TanStack Query `productKeys.detail(id)`   | no                                             | —                             |
 | Categories                                               | TanStack Query `productKeys.categories()` | no                                             | —                             |
-| Admin changes (created / patched / deleted)              | `useProductOverlayStore` (Zustand)        | yes                                            | `ays-case:v1:product-overlay` |
-| Admin user changes (created / patched / deleted)         | `useUserOverlayStore` (Zustand)           | yes                                            | `ays-case:v1:user-overlay`    |
 | Reviews | TanStack Query: part of the product detail (`productKeys.detail(id)`) | no, on the server | — |
-| Remote users (admin list)                                | TanStack Query `userKeys.list()`          | no                                             | —                             |
+| Users (admin list)                                       | TanStack Query `userKeys.list()`          | no                                             | —                             |
+| Admin product list (soft-deleted included), lookups      | TanStack Query (`useAdminProducts`, `['admin', 'lookups', kind]`) | no | — |
 | Current user (the session cookie is owned by the server) | `useAuthStore`                            | no, restored by `bootstrap()`                  | —                             |
 | Cart, favorites, recently viewed (signed in) | TanStack Query (`cartKeys`, `favoriteKeys`, `recentlyViewedKeys`) | no, on the server per user | — |
 | Recently viewed (signed out) | `useGuestViewedStore` (Zustand) | no, memory only | — |
@@ -25,99 +24,34 @@ Rule of thumb: **if it came from the server, it's Query; if the user made it, it
 
 All persisted stores use `persist` with `version` + `migrate`, and keys built by `lib/storage.ts` so a schema change bumps `v1 → v2` cleanly. User ids are the API's strings (`user-<n>`); browser data saved under the old numeric ids simply never matches them.
 
-## Product overlay
+## Admin writes
 
-```ts
-// features/products/overlay-store.ts
-type ProductPatch = Partial<Omit<Product, "id">>;
+The API owns every write, so there is no local overlay: the admin pages call the API and the catalog, detail and admin queries are refetched afterwards. The server enforces the rules (see [api.md](api.md)); the UI only mirrors the ones it can know up front, for example it disables Delete on your own row.
 
-interface ProductOverlayState {
-  created: Record<number, Product>; // admin-created, full objects
-  patched: Record<number, ProductPatch>; // edits to remote products
-  deleted: number[]; // ids hidden from every view
-  nextLocalId: number; // starts at 100_000
-  create(input: ProductInput, remoteEcho?: Product): Product;
-  update(id: number, patch: ProductPatch): void;
-  remove(id: number): void;
-  decrementStock(
-    lines: { id: number; quantity: number; stock: number }[],
-  ): void; // stock = current merged stock
-  reset(): void;
-}
-```
+### Products
 
-### Why local ids
-
-The API has no product writes, so created products get their own id from `nextLocalId` (≥ 100000, never clashes with real ids). `isLocal(id) = id >= 100_000`. Created users get `local-<n>` ids.
-
-### Merge (single function, pure, unit-tested)
-
-```ts
-// features/products/catalog.ts
-export function applyOverlay(remote: Product[], o: OverlaySnapshot): Product[] {
-  const hidden = new Set(o.deleted);
-  const merged = remote
-    .filter((p) => !hidden.has(p.id))
-    .map((p) => (o.patched[p.id] ? { ...p, ...o.patched[p.id] } : p));
-  const local = Object.values(o.created)
-    .filter((p) => !hidden.has(p.id))
-    .map((p) => (o.patched[p.id] ? { ...p, ...o.patched[p.id] } : p));
-  return [...local, ...merged]; // newest local first
-}
-```
-
-`useCatalog()` = `useQuery(catalogQuery)` + `useProductOverlayStore(selectSnapshot)` → `useMemo(applyOverlay)`. Every list, the detail page, the cart and checkout read through this, so an edit or delete shows up everywhere at once.
-
-Detail page: `useProduct(id)` → local product if `isLocal(id)`; else `useQuery(detail)` then apply `patched[id]`; `deleted` → 404 page.
-
-### Mutations
-
-| Action        | Network                                           | Store                                    | Query cache                                  |
-| ------------- | ------------------------------------------------- | ---------------------------------------- | -------------------------------------------- |
-| Create        | `POST /products/add` (validates shape, gets echo) | `create()` with local id                 | none needed (overlay re-merges)              |
-| Update remote | `PUT /products/{id}`                              | `update(id, patch)`                      | none: `useProduct` applies the patch on read |
-| Update local  | none (would 404)                                  | `update(id, patch)`                      | —                                            |
-| Delete remote | `DELETE /products/{id}`                           | `remove(id)`                             | `removeQueries(detail(id))`                  |
-| Delete local  | none                                              | `remove(id)` (also drops from `created`) | —                                            |
-
-Admin mutations write the overlay only; no request is sent. When the API gains write endpoints, the mutation hooks call them first and write the overlay after they succeed.
+- `GET /api/admin/products` lists every product, soft-deleted ones included (`deletedAt`); the table hides them unless `?deleted=include|only`. The public list and detail never contain deleted products.
+- Create, edit, delete (soft) and restore go through `features/admin/api.ts` and the hooks in `features/admin/hooks/use-product-mutations.ts`. The form collects dollars, kilograms and centimetres and converts once in `toProductBody` (cents, grams, millimetres). Tags and images, when sent, replace the old sets; the array order of the images is their position and one of them is primary.
+- After any product write the whole `productKeys.all` prefix is invalidated (shop list, details, admin list); after a delete the cart, favorites and recently viewed queries are refetched too, because the server removes the product from them.
+- Brands, tags, categories and the three policy tables are managed on `/admin/lookups/$kind`; their lists are Query keys `['admin', 'lookups', kind]` and are refetched after each write. A row that products still use cannot be deleted (409 `in_use`).
 
 ## Catalog loading: why fetch everything once
 
-The catalog has ~194 products. We load `GET /api/products` once (through the typed client) and do search / filter / sort / paginate on the merged list in memory. Reason: with server-side pagination, local creates/deletes would break page counts and totals. ADR: [0004](decisions/0004-client-side-catalog.md).
+The catalog has ~194 products. We load `GET /api/products` once (through the typed client) and do search / filter / sort / paginate on that list in memory. Reason: the catalog is small, and one request keeps the filters instant and the page counts exact. ADR: [0004](decisions/0004-client-side-catalog.md).
 
 The list carries the fields the cards and filters need; the detail (`GET /api/products/:id`) adds images, sku, dimensions, policies, reviews and the rating histogram. The UI uses the API's own types from `@ays/validators` (no second interface, no mapper): money stays in integer cents and is formatted at render time with `formatMoney`, and grams and millimetres are formatted with `formatWeight` and `formatDimensions`. `rating`, `reviewCount`, `availability` and the histogram are computed by the API in SQL and never derived in the browser (a product without reviews has `rating: null`).
 
-Filtering pipeline (pure, unit-tested): `applyOverlay → filterByQuery(q) → filterByCategory → sortBy → paginate`. Search matches title, brand, category, tags (case-insensitive, Turkish-safe with `toLocaleLowerCase("tr")` only when lang = tr).
+Filtering pipeline (pure, unit-tested): `filterByQuery(q) → filterByCategory → sortBy → paginate`. Search matches title, brand, category, tags (case-insensitive, Turkish-safe with `toLocaleLowerCase("tr")` only when lang = tr).
 
-## User overlay
+## Users
 
-Same pattern as products, for the admin Users panel (USER-1..5). The user list comes from `GET /api/users` (admin only); there are no user writes yet, so every admin change is kept locally.
+The Users panel (USER-1..5) calls the API; there is no local copy of the user list.
 
-```ts
-// features/users/overlay-store.ts
-interface UserOverlayState {
-  created: Record<number, User>;
-  patched: Record<number, Partial<Omit<User, "id">>>;
-  deleted: number[];
-  nextLocalId: number; // starts at 100_000
-  create(input: UserInput): User;
-  update(id: number, patch: UserPatch): void;
-  remove(id: number): void;
-  reset(): void;
-}
-// features/users/catalog.ts — pure, unit-tested
-export function applyUserOverlay(
-  remote: User[],
-  o: UserOverlaySnapshot,
-): User[];
-```
-
-- `useUsers()` = `useQuery(GET /users?limit=0)` + overlay → `useMemo(applyUserOverlay)`; search / role filter / pagination run client-side like the catalog.
-- On login (and bootstrap) the overlay patch for the user's id is applied on top of `/auth/me`, so an admin's role edit affects that user on this browser. The auth store keeps the merged user.
-- Guardrails (in the mutation hooks, tested): cannot delete or demote yourself; cannot delete or demote the last admin (counted over the merged list).
-- Deleting a user in the overlay changes nothing on the server; the database cascade removes a real user's cart, favorites and recently viewed. Orders remain.
-- Usernames are unique case-insensitively across the merged list.
+- `useUsers()` is `useQuery(GET /api/users)` (admin only); search, role filter and paging run client-side on that list.
+- Create sends an initial password, which the server hashes; the new user can sign in right away. Update patches names, email, username and role. Delete removes the user, and the database cascade removes their cart, favorites and recently viewed; orders remain.
+- The server owns the guards and answers 409 with a code: `cannot_delete_self`, `cannot_demote_self`, `last_admin`, `duplicate`. The UI also disables Delete on your own row and locks the role select on your own account; `userErrorText` turns the codes into messages.
+- Usernames are unique case-insensitively; the form checks the loaded list as you type and the server has the last word.
+- Editing your own account re-reads the session (`useAuthStore.refresh`) so the header follows at once. The role always comes from the session the server created, never from a form.
 
 ## Reviews
 
@@ -127,7 +61,7 @@ Reviews are real: they live in the database, one per user per product, and come 
 - The headline rating, count and 1 to 5 histogram are computed by the database (`product_rating_stats`), so after each change the product detail and the catalog list are refetched; nothing is averaged in the browser.
 - `verifiedBuyer` is computed in SQL (the author has an order line for the product) and is not required to review.
 - `features/reviews/sort.ts` (pure) only sorts the list for display.
-- Deleting a product in the admin overlay does not touch reviews on the server.
+- Deleting a product is a soft delete, so its reviews stay in the database and come back with a restore.
 
 ## Auth store
 
@@ -157,9 +91,8 @@ interface CartLine { productId: number; quantity: number; addedAt: string }
 
 - `useCart()` returns `lines`, `count`, `add`, `setQuantity`, `remove`, `clear`. `useFavorites()` / `useToggleFavorite()` and `useRecentlyViewed()` / `useRecordView()` keep their shape.
 - **Optimistic updates** (`lib/optimistic.ts`): the cached list changes at once, is rolled back with a toast if the request fails, and is refetched when the last in-flight mutation on that key settles.
-- Quantity rule: a whole number from 1 to the stock. The server caps an add and clamps a set; the UI computes the same value locally for the optimistic update and uses the merged stock (admin edits).
-- Lines whose product no longer exists in the merged catalog are removed (server delete) and a toast tells the user once.
-- Products created in the admin overlay have no server record, so they cannot be added to the cart yet (a toast says so).
+- Quantity rule: a whole number from 1 to the stock. The server caps an add and clamps a set; the UI computes the same value locally for the optimistic update and uses the stock the catalog reports.
+- Lines whose product no longer exists in the catalog (for example an admin deleted it) are removed (server delete) and a toast tells the user once.
 - Recently viewed keeps the newest 12 per user (`MAX_RECENTLY_VIEWED`). Signed out, a small in-memory store keeps the list; it is never persisted or merged on login.
 - Checkout reads the cart from the query cache and empties it on the server after the (still local) order is recorded.
 - Totals selector: subtotal, discount (`discountPercentage`), total, in integer cents.
@@ -210,4 +143,4 @@ Factory pattern copied from StokMate `packages/domain/src/query-keys.ts`.
 
 ## Reset demo data (EX-15)
 
-Admin dashboard button → `overlay.reset()`, `userOverlay.reset()`, `search.reset()` → confirm dialog first. Everything on the server (cart, favorites, recently viewed, orders, reviews) is not touched.
+There is no reset button any more: the data lives in the database, so a reset is a manual reseed (see the hardening issue). The dashboard shows live counts instead.

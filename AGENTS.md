@@ -31,3 +31,14 @@ Conventional commits (`feat(cart): …`). Small, one topic each.
 
 ## Tests
 - Tests go in a `test/` folder inside the feature (or lib/component group) they cover, e.g. `apps/web/src/features/cart/test/store.test.ts`; shared helpers live in `apps/web/src/test/`. See `docs/testing.md`.
+
+## Keep shell output small
+Raw command output is the biggest token cost in a session. Follow these rules:
+
+- Use quiet modes: `turbo run <task> --output-logs=errors-only`, `vitest run --reporter=dot`, `pnpm install --reporter=silent`, `tsc --pretty false | head -50`.
+- For long output, redirect to a file and read only the end: `pnpm test > /tmp/out.log 2>&1; tail -40 /tmp/out.log`. On failure, grep the file for the failing test or error; do not rerun with full output.
+- Never `cat` a large file. Use Read with `offset` and `limit`, or Grep for searching.
+- Git: `git --no-pager log -n 10 --oneline`, `git diff --stat` first, then a diff of only the files that matter.
+- Do not print lockfiles, build output, generated files, seed data or full API responses. Print the first few lines or a count.
+- Never run an unbounded command (`ls -R`, `find /`, `git log` with no limit, `docker logs` with no `--tail`).
+- One verification run per change: run lint, typecheck and tests once, read the summary, and only dig into what failed.

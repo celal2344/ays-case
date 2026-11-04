@@ -33,6 +33,12 @@ export function errorCodeKey(error: AppError) {
       return 'reviews.form.exists' as const
     case 'out_of_stock':
       return 'checkout.errors.stock' as const
+    case 'duplicate':
+      return 'admin.errors.duplicate' as const
+    case 'in_use':
+      return 'admin.errors.inUse' as const
+    case 'unknown_reference':
+      return 'admin.errors.unknownReference' as const
     default:
       return errorMessageKey(error)
   }

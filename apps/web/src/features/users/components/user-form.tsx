@@ -20,7 +20,6 @@ import { FieldError } from '@/features/admin/components/field-error'
 import { useAuthStore } from '@/features/auth/store'
 
 import { isUsernameTaken } from '../catalog'
-import { demoteGuard } from '../guardrails'
 import { useCreateUser, useUpdateUser } from '../hooks/use-user-mutations'
 import { useUsers } from '../hooks/use-users'
 import { userErrorText } from '../error-text'
@@ -30,6 +29,7 @@ import {
   toUserInput,
   toUserPatch,
   USER_ERRORS,
+  userCreateFormSchema,
   userFormSchema,
   roleSchema,
   type User,
@@ -41,20 +41,23 @@ export function UserForm({ user }: { user?: User }) {
   const router = useRouter()
   const { users } = useUsers()
   const currentUserId = useAuthStore((s) => s.user?.id)
+  const refreshSession = useAuthStore((s) => s.refresh)
   const create = useCreateUser()
   const update = useUpdateUser()
   const mutation = user ? update : create
 
-  // taking away the admin role is refused for yourself and for the last admin
-  const roleLock = user && users ? demoteGuard(users, user.id, 'user', currentUserId) : null
+  // the server refuses to demote you; the form just does not offer it (the last admin is refused too)
+  const roleLock = user && user.id === currentUserId && user.role === 'admin' ? 'self' : null
 
   const form = useForm({
     defaultValues: user ? toUserFormValues(user) : emptyUserForm,
-    validators: { onSubmit: userFormSchema },
+    validators: { onSubmit: user ? userFormSchema : userCreateFormSchema },
     onSubmit: async ({ value }) => {
       try {
-        if (user) await update.mutateAsync({ id: user.id, patch: toUserPatch(value) })
-        else await create.mutateAsync(toUserInput(value))
+        if (user) {
+          await update.mutateAsync({ id: user.id, patch: toUserPatch(value) })
+          if (user.id === currentUserId) await refreshSession()
+        } else await create.mutateAsync(toUserInput(value))
       } catch {
         return // the error is shown below the form
       }
@@ -156,6 +159,29 @@ export function UserForm({ user }: { user?: User }) {
             </div>
           )}
         </form.Field>
+
+        {user ? null : (
+          <form.Field name="password">
+            {(field) => (
+              <div className="space-y-1.5">
+                <Label htmlFor="password">{t('admin.users.form.password')}</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  aria-invalid={field.state.meta.errors.length > 0}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t('admin.users.form.passwordHint')}
+                </p>
+                <FieldError errors={field.state.meta.errors} />
+              </div>
+            )}
+          </form.Field>
+        )}
 
         <form.Field name="role">
           {(field) => (

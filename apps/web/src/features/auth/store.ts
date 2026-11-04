@@ -2,7 +2,6 @@ import { toast } from 'sonner'
 import { create } from 'zustand'
 
 import i18next from 'i18next'
-import { resolveSessionUser } from '@/features/users/session'
 import { authClient } from '@/lib/auth-client'
 import { AppError, toAppError } from '@/lib/http-error'
 import { queryClient } from '@/lib/query-client'
@@ -17,6 +16,8 @@ interface AuthState {
   bootstrap: () => Promise<void>
   login: (username: string, password: string) => Promise<User>
   logout: () => void
+  /** Re-reads the signed-in user (after an admin edits their own account). */
+  refresh: () => Promise<void>
   /** The server rejected the session (expired or revoked) while the user was signed in. */
   expire: () => void
 }
@@ -29,12 +30,12 @@ export function setSessionExpiredHandler(handler: (() => void) | null) {
   onExpired = handler
 }
 
-/** The role comes from the session user itself; the admin overlay can still adjust or remove it. */
+/** The session user comes straight from the server, role included. */
 async function readSession(): Promise<User | null> {
   const { data } = await authClient.getSession()
   if (!data) return null
   const parsed = sessionUserSchema.safeParse(data.user)
-  return parsed.success ? resolveSessionUser(parsed.data) : null
+  return parsed.success ? parsed.data : null
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
@@ -85,6 +86,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
     set({ user, status: 'authenticated' })
     return user
+  },
+
+  refresh: async () => {
+    const user = await readSession().catch(() => null)
+    if (user) set({ user })
   },
 
   logout: () => {

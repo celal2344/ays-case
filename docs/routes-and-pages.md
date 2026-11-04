@@ -12,12 +12,13 @@
 | `/checkout`                       | auth, cart not empty                         | Checkout                                |                                        |
 | `/orders`                         | auth                                         | Order history                           |                                        |
 | `/orders/$orderId`                | auth, own order                              | Order detail / success                  | `placed?: 1`                           |
-| `/admin`                          | admin                                        | Dashboard (stats, reset demo data)      |                                        |
-| `/admin/products`                 | admin                                        | Product table                           | `q, category, sort, order, page`       |
+| `/admin`                          | admin                                        | Dashboard (live counts, list links)     |                                        |
+| `/admin/products`                 | admin                                        | Product table                           | `q, category, sort, order, page, deleted` |
 | `/admin/products/new`             | admin                                        | Create form                             |                                        |
 | `/admin/products/$productId/edit` | admin                                        | Edit form                               |                                        |
+| `/admin/lookups/$kind`            | admin                                        | Categories, brands, tags and policies (list, create, edit, delete in a dialog) |                  |
 | `/admin/users`                    | admin                                        | User table                              | `q, role, page`                        |
-| `/admin/users/new`                | admin                                        | Create user form                        |                                        |
+| `/admin/users/new`                | admin                                        | Create user form (with initial password)                        |                                        |
 | `/admin/users/$userId/edit`       | admin                                        | Edit user form                          |                                        |
 | `/forbidden`                      | public                                       | 403 ("Admins only" + back link)         |                                        |
 | `*`                               | —                                            | 404 (global `defaultNotFoundComponent`) |                                        |
@@ -90,11 +91,11 @@ List of own orders (date, item count, total, link). Detail: snapshot lines, tota
 
 ### Admin dashboard
 
-Stat cards: total products (merged), low stock (≤ 5), out of stock, orders (all users, local), local changes count. "Reset demo data" with confirm dialog. Link to product table.
+Stat cards: active products, users, low stock, out of stock and orders, all read from the API. Links to the product table, the user table, "New product" and every lookup list.
 
 ### Admin product table
 
-TanStack Table: thumbnail, title, category, brand, price, stock, rating, actions (Edit, Delete). Column sort, search, category filter, pagination 20. "New product" button. Delete → `AlertDialog` → toast with result. Mobile: horizontal scroll inside the card.
+TanStack Table: thumbnail, title, category, brand, price, stock, rating, actions (Edit, Delete, or Restore for a soft-deleted product). Column sort, search, category filter, a deleted filter (active, include, only), pagination 20. "New product" button. Delete → `AlertDialog` → toast with result. Mobile: horizontal scroll inside the card.
 
 ### Admin users
 
@@ -103,7 +104,7 @@ TanStack Table: avatar, name, username, email, role badge, actions (Edit, Delete
 | Field                | Rule                                       |
 | -------------------- | ------------------------------------------ |
 | username             | required, 3–30, unique (case-insensitive)  |
-| password             | required on create (≥ 6), optional on edit |
+| password             | initial password: required on create (8–72), not on the edit form |
 | firstName / lastName | required, 1–50                             |
 | email                | valid email                                |
 | role                 | `admin`                                    | `user` | `moderator` (select; moderator has no special behaviour) |

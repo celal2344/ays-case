@@ -12,7 +12,7 @@ import {
   type Column,
   type SortingState,
 } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -47,15 +47,16 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { filterByCategory, filterByQuery } from '@/features/products/catalog'
+import { Badge } from '@/components/ui/badge'
 import { StockBadge } from '@/features/products/components/product-badges'
 import { ProductImage } from '@/features/products/components/product-image'
 import { ProductPrice } from '@/features/products/components/product-price'
-import { useCatalog } from '@/features/products/hooks/use-catalog'
+import { useAdminProducts } from '@/features/products/hooks/use-admin-products'
 import { useCategories } from '@/features/products/hooks/use-categories'
-import type { Product } from '@/features/products/schemas'
+import type { AdminProduct as Product } from '@ays/validators'
 import { selectLanguage, usePreferencesStore } from '@/preferences/store'
 
-import { useDeleteProduct } from '../hooks/use-product-mutations'
+import { useDeleteProduct, useRestoreProduct } from '../hooks/use-product-mutations'
 import { ADMIN_PAGE_SIZE, ADMIN_SORTS, type AdminProductSearch, type AdminSort } from '../schemas'
 
 const route = getRouteApi('/_auth/_admin/admin/products/')
@@ -97,6 +98,7 @@ function SortHeader<TValue>({
 }
 
 function ProductCell({ product }: { product: Product }) {
+  const { t } = useTranslation()
   return (
     <div className="max-w-64">
       <Link
@@ -109,6 +111,11 @@ function ProductCell({ product }: { product: Product }) {
       {product.brand ? (
         <span className="text-xs text-muted-foreground">{product.brand.name}</span>
       ) : null}
+      {product.deletedAt ? (
+        <Badge variant="destructive" className="ml-2">
+          {t('admin.products.deletedBadge')}
+        </Badge>
+      ) : null}
     </div>
   )
 }
@@ -116,6 +123,27 @@ function ProductCell({ product }: { product: Product }) {
 function ActionsCell({ product }: { product: Product }) {
   const { t } = useTranslation()
   const requestDelete = useContext(DeleteRequest)
+  const restore = useRestoreProduct()
+  if (product.deletedAt) {
+    return (
+      <div className="flex justify-end gap-1">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled={restore.isPending}
+          aria-label={t('admin.products.restore', { title: product.title })}
+          onClick={() =>
+            restore.mutate(product.id, {
+              onSuccess: () =>
+                toast.success(t('admin.products.restored', { title: product.title })),
+            })
+          }
+        >
+          <RotateCcw className="size-4" />
+        </Button>
+      </div>
+    )
+  }
   return (
     <div className="flex justify-end gap-1">
       <Link
@@ -198,7 +226,7 @@ export function AdminProductsPage() {
   const search = route.useSearch()
   const navigate = route.useNavigate()
   const language = usePreferencesStore(selectLanguage)
-  const { products, isPending, isError, refetch } = useCatalog()
+  const { products, isPending, isError, refetch } = useAdminProducts()
   const { categories } = useCategories()
   const deleteProduct = useDeleteProduct()
   const [toDelete, setToDelete] = useState<Product | null>(null)
@@ -206,9 +234,20 @@ export function AdminProductsPage() {
   const rows = useMemo(
     () =>
       products
-        ? filterByCategory(filterByQuery(products, search.q, language), search.category)
+        ? filterByCategory(
+            filterByQuery(
+              products.filter((p) =>
+                search.deleted === 'only'
+                  ? p.deletedAt !== null
+                  : search.deleted === 'include' || p.deletedAt === null,
+              ),
+              search.q,
+              language,
+            ),
+            search.category,
+          )
         : [],
-    [products, search.q, search.category, language],
+    [products, search.q, search.category, search.deleted, language],
   )
 
   const sorting: SortingState = useMemo(
@@ -260,6 +299,11 @@ export function AdminProductsPage() {
 
   if (isError) return <ErrorState onRetry={() => void refetch()} />
   if (isPending) return <PageSkeleton />
+  const deletedItems = [
+    { value: 'hide', label: t('admin.products.deletedFilter.hide') },
+    { value: 'include', label: t('admin.products.deletedFilter.include') },
+    { value: 'only', label: t('admin.products.deletedFilter.only') },
+  ]
 
   const total = rows.length
   const pageCount = Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE))
@@ -305,11 +349,32 @@ export function AdminProductsPage() {
               ))}
             </SelectContent>
           </Select>
+          <Select
+            items={deletedItems}
+            value={search.deleted ?? 'hide'}
+            onValueChange={(value) =>
+              update({ deleted: value === 'hide' ? undefined : (value as 'include' | 'only') })
+            }
+          >
+            <SelectTrigger aria-label={t('admin.products.deletedFilter.label')} className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {deletedItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {total === 0 ? (
           <EmptyState title={t('products.empty.filtered')}>
-            <Button variant="outline" onClick={() => update({ q: undefined, category: undefined })}>
+            <Button
+              variant="outline"
+              onClick={() => update({ q: undefined, category: undefined, deleted: undefined })}
+            >
               {t('products.empty.clear')}
             </Button>
           </EmptyState>

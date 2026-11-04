@@ -2,10 +2,8 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { useProductOverlayStore } from '@/features/products/overlay-store'
-import { useUserOverlayStore } from '@/features/users/overlay-store'
 import { signInAs } from '@/test/auth'
-import { cat, productInput, tags } from '@/test/fixtures/products'
+import { admin } from '@/test/msw/handlers'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
@@ -20,6 +18,8 @@ function recordRequests() {
   return seen
 }
 
+const writes = (requests: string[]) => requests.filter((r) => /^(PUT|POST|PATCH|DELETE)/.test(r))
+
 afterEach(() => server.events.removeAllListeners())
 
 const search = (router: { state: { location: { search: unknown } } }) =>
@@ -28,11 +28,13 @@ const search = (router: { state: { location: { search: unknown } } }) =>
 async function fillForm(values: {
   title: string
   price: string
+  sku?: string
   stock?: string
   category?: string
 }) {
   await userEvent.type(screen.getByLabelText('Title'), values.title)
   await userEvent.type(screen.getByLabelText('Description'), 'A perfectly reasonable description.')
+  await userEvent.type(screen.getByLabelText('SKU'), values.sku ?? 'NEW-1')
   await userEvent.click(screen.getByRole('combobox', { name: 'Category' }))
   await userEvent.click(await screen.findByRole('option', { name: values.category ?? 'Beauty' }))
   await userEvent.type(screen.getByLabelText('Price'), values.price)
@@ -50,6 +52,7 @@ describe('admin access', () => {
       '/admin/products',
       '/admin/products/new',
       '/admin/products/1/edit',
+      '/admin/lookups/brands',
     ]) {
       const { router, unmount } = await renderApp(path)
       expect(router.state.location.pathname).toBe('/forbidden')
@@ -131,97 +134,68 @@ describe('create a product (PROD-3)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Create product' }))
     expect(await screen.findByText('Enter a title of 2 to 100 characters.')).toBeInTheDocument()
     expect(screen.getByText('Choose a category.')).toBeInTheDocument()
+    expect(screen.getByText('Enter a SKU of 1 to 64 characters.')).toBeInTheDocument()
     expect(screen.getByText('Enter a price above 0 with at most 2 decimals.')).toBeInTheDocument()
-    expect(requests.filter((r) => r.startsWith('POST'))).toEqual([])
+    expect(writes(requests)).toEqual([])
   })
 
-  it('stores a local product (overlay only, no request) and shows it first in the shop, then after reload', async () => {
+  it('creates the product on the server and shows it in the admin table and the shop', async () => {
     signInAs('emilys')
-    const requests = recordRequests()
     const { router } = await renderApp('/admin/products/new')
     await fillForm({ title: 'Brand new gadget', price: '49.9', stock: '12' })
     await userEvent.click(screen.getByRole('button', { name: 'Create product' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/admin/products'))
-    expect(requests.filter((r) => /^(PUT|POST|DELETE)/.test(r))).toEqual([])
-
-    const created = Object.values(useProductOverlayStore.getState().created)
-    expect(created).toHaveLength(1)
-    expect(created[0]).toMatchObject({
-      id: 100_000,
+    expect(admin.adminProducts()[0]).toMatchObject({
       title: 'Brand new gadget',
+      sku: 'NEW-1',
       priceCents: 4990,
       stock: 12,
+      category: { slug: 'beauty' },
     })
 
-    // visible in the admin table (newest first) and in the shop
     expect(await screen.findByText('Showing 1–20 of 31')).toBeInTheDocument()
     expect(within(screen.getAllByRole('row')[1]!).getByText('Brand new gadget')).toBeInTheDocument()
     await router.navigate({ to: '/products' })
     expect(await screen.findByText('Brand new gadget')).toBeInTheDocument()
-
-    // survives a reload: the persisted overlay rehydrates
-    await useProductOverlayStore.persist.rehydrate()
-    expect(Object.keys(useProductOverlayStore.getState().created)).toEqual(['100000'])
   })
 
-  it('previews the thumbnail URL as you type', async () => {
+  it('shows the server refusal when the SKU is taken', async () => {
+    signInAs('emilys')
+    const { router } = await renderApp('/admin/products/new')
+    await fillForm({ title: 'Twin', price: '5', sku: 'SKU-1' })
+    await userEvent.click(screen.getByRole('button', { name: 'Create product' }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/admin/products/new')
+    expect(admin.adminProducts()).toHaveLength(30)
+  })
+
+  it('previews an image URL as you add it', async () => {
     signInAs('emilys')
     await renderApp('/admin/products/new')
-    await userEvent.type(
-      await screen.findByLabelText('Thumbnail URL (optional)'),
-      'https://img.test/x.webp',
-    )
-    expect(screen.getByRole('img', { name: 'Thumbnail preview' })).toHaveAttribute(
-      'src',
-      'https://img.test/x.webp',
-    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Add image' }))
+    await userEvent.type(screen.getByLabelText('Image 1 URL'), 'https://img.test/x.webp')
+    expect(screen.getByLabelText('Image 1 URL')).toHaveValue('https://img.test/x.webp')
   })
 })
 
 describe('edit a product (PROD-4)', () => {
-  it('pre-fills the form; saving a remote product updates the shop and the detail page', async () => {
+  it('pre-fills the form; saving updates the shop and the detail page', async () => {
     signInAs('emilys')
-    const requests = recordRequests()
     const { router } = await renderApp('/admin/products/1/edit')
     expect(await screen.findByLabelText('Title')).toHaveValue('beauty item 01')
     expect(screen.getByLabelText('Price')).toHaveValue('10')
+    expect(screen.getByLabelText('SKU')).toHaveValue('SKU-1')
 
     await userEvent.clear(screen.getByLabelText('Price'))
     await userEvent.type(screen.getByLabelText('Price'), '12.5')
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/admin/products'))
 
-    expect(requests.filter((r) => /^(PUT|POST|DELETE)/.test(r))).toEqual([])
-    expect(useProductOverlayStore.getState().patched[1]).toMatchObject({ priceCents: 1250 })
+    expect(admin.liveProduct(1)).toMatchObject({ priceCents: 1250 })
 
     await router.navigate({ to: '/products/$productId', params: { productId: '1' } })
     expect((await screen.findAllByText('$12.50')).length).toBeGreaterThan(0)
-  })
-
-  it('editing a locally created product makes no network request', async () => {
-    signInAs('emilys')
-    const local = useProductOverlayStore.getState().create(
-      productInput({
-        title: 'Local thing',
-        description: 'A product made by the admin earlier.',
-        category: cat('beauty', 'Beauty'),
-        priceCents: 500,
-        discountPercentage: 0,
-        stock: 3,
-        thumbnail: null,
-        tags: tags('beauty'),
-      }),
-    )
-    const requests = recordRequests()
-    const { router } = await renderApp(`/admin/products/${local.id}/edit`)
-    const title = await screen.findByLabelText('Title')
-    await userEvent.clear(title)
-    await userEvent.type(title, 'Local thing v2')
-    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/admin/products'))
-    expect(useProductOverlayStore.getState().created[local.id]?.title).toBe('Local thing v2')
-    expect(requests.filter((r) => /^(PUT|POST|DELETE)/.test(r))).toEqual([])
   })
 
   it('an unknown product id shows 404', async () => {
@@ -247,7 +221,7 @@ describe('edit a product (PROD-4)', () => {
       }),
     )
     await waitFor(() => expect(router.state.location.pathname).toBe('/admin/products'))
-    expect(useProductOverlayStore.getState().patched[1]).toBeUndefined()
+    expect(admin.liveProduct(1)?.title).toBe('beauty item 01')
   })
 
   it('does not ask when nothing changed', async () => {
@@ -258,8 +232,8 @@ describe('edit a product (PROD-4)', () => {
   })
 })
 
-describe('delete a product (PROD-5)', () => {
-  it('asks to confirm and removes the product from the shop and the detail page', async () => {
+describe('delete and restore a product (PROD-5)', () => {
+  it('asks to confirm, then soft-deletes it: gone from the shop and the detail page', async () => {
     signInAs('emilys')
     const requests = recordRequests()
     const { router } = await renderApp('/admin/products')
@@ -270,10 +244,8 @@ describe('delete a product (PROD-5)', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Delete' }))
 
     expect(await screen.findByText('groceries item 02 was deleted.')).toBeInTheDocument()
-    expect(requests.filter((r) => r.startsWith('DELETE'))).toEqual([])
-    expect(screen.queryByText('Showing 1–20 of 30')).not.toBeInTheDocument()
+    expect(requests.filter((r) => r.startsWith('DELETE'))).toEqual(['DELETE /api/products/2'])
     expect(await screen.findByText('Showing 1–20 of 29')).toBeInTheDocument()
-    expect(useProductOverlayStore.getState().deleted).toEqual([2])
 
     await router.navigate({ to: '/products/$productId', params: { productId: '2' } })
     expect(await screen.findByText('Page not found')).toBeInTheDocument()
@@ -281,82 +253,70 @@ describe('delete a product (PROD-5)', () => {
 
   it('cancel keeps the product', async () => {
     signInAs('emilys')
+    const requests = recordRequests()
     await renderApp('/admin/products')
     await userEvent.click(await screen.findByRole('button', { name: 'Delete groceries item 02' }))
     await userEvent.click(
       within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Cancel' }),
     )
-    expect(useProductOverlayStore.getState().deleted).toEqual([])
+    expect(writes(requests)).toEqual([])
     expect(screen.getByText('groceries item 02')).toBeInTheDocument()
   })
 
-  it('deleting a locally created product makes no network request', async () => {
+  it('deleted products can be listed and restored', async () => {
     signInAs('emilys')
-    const local = useProductOverlayStore.getState().create(
-      productInput({
-        title: 'Short lived',
-        description: 'A product that will not last.',
-        category: cat('beauty', 'Beauty'),
-        priceCents: 500,
-        discountPercentage: 0,
-        stock: 3,
-        thumbnail: null,
-        tags: tags('beauty'),
-      }),
-    )
-    const requests = recordRequests()
-    await renderApp('/admin/products')
-    await userEvent.click(await screen.findByRole('button', { name: 'Delete Short lived' }))
-    await userEvent.click(
-      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
-    )
-    expect(await screen.findByText('Short lived was deleted.')).toBeInTheDocument()
-    expect(useProductOverlayStore.getState().created[local.id]).toBeUndefined()
-    expect(requests.filter((r) => /^(PUT|POST|DELETE)/.test(r))).toEqual([])
+    admin.deleteProduct(2)
+    await renderApp('/admin/products?deleted=only')
+    expect(await screen.findByText('Showing 1–1 of 1')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Restore groceries item 02' }))
+    expect(await screen.findByText('groceries item 02 was restored.')).toBeInTheDocument()
+    expect(admin.liveProduct(2)).toBeDefined()
   })
 })
 
 describe('dashboard (EX-13, EX-15)', () => {
-  it('shows product, low-stock, out-of-stock and local-change counts', async () => {
+  it('shows product, user, low-stock, out-of-stock and order counts', async () => {
     signInAs('emilys')
-    useProductOverlayStore.getState().update(1, { priceCents: 1100 })
-    useProductOverlayStore.getState().remove(2)
+    admin.deleteProduct(2)
     await renderApp('/admin')
-    // "Products" is also the nav link, so pick the label that sits inside a stat card
+    // the labels also appear as nav links, so pick the one that sits inside a stat card
     const stat = (label: string) =>
       screen
         .getAllByText(label)
         .map((el) => el.closest('[data-slot="card"]'))
         .find((card): card is HTMLElement => card !== null)!
-    await screen.findByText('Local changes')
-    expect(within(stat('Products')).getByText('29')).toBeInTheDocument()
+    await waitFor(() => expect(within(stat('Products')).getByText('29')).toBeInTheDocument())
+    expect(within(stat('Users')).getByText('25')).toBeInTheDocument()
     expect(within(stat('Low stock')).getByText('1')).toBeInTheDocument() // id 6 has stock 4
     expect(within(stat('Out of stock')).getByText('1')).toBeInTheDocument() // id 3
-    expect(within(stat('Local changes')).getByText('2')).toBeInTheDocument()
   })
 
-  it('Reset demo data restores the original catalog and after confirming', async () => {
+  it('links to every lookup list', async () => {
     signInAs('emilys')
-    useProductOverlayStore.getState().remove(2)
-    useProductOverlayStore.getState().update(1, { priceCents: 9900 })
-    useUserOverlayStore.getState().remove('user-5')
     await renderApp('/admin')
-    await userEvent.click(await screen.findByRole('button', { name: 'Reset demo data' }))
-    expect(useProductOverlayStore.getState().deleted).toEqual([2]) // not yet
-
-    await userEvent.click(
-      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Reset' }),
+    expect(await screen.findByRole('link', { name: 'Brands' })).toHaveAttribute(
+      'href',
+      '/admin/lookups/brands',
     )
-    expect(await screen.findByText('Demo data was reset.')).toBeInTheDocument()
-    expect(useProductOverlayStore.getState()).toMatchObject({
-      created: {},
-      patched: {},
-      deleted: [],
-    })
-    expect(useUserOverlayStore.getState().deleted).toEqual([])
-    const cards = screen.getAllByText('Products').map((el) => el.closest('[data-slot="card"]'))
-    expect(
-      within(cards.find((c): c is HTMLElement => c !== null)!).getByText('30'),
-    ).toBeInTheDocument()
+  })
+})
+
+describe('lookup lists', () => {
+  it('lists, creates and deletes a brand', async () => {
+    signInAs('emilys')
+    await renderApp('/admin/lookups/brands')
+    expect(await screen.findByText('Brand 1')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'New' }))
+    await userEvent.type(await screen.findByLabelText('Name'), 'Acme')
+    await userEvent.click(screen.getByRole('button', { name: /Create|Save/ }))
+    await waitFor(() => expect(admin.lookups.brands.some((b) => b.slug === 'acme')).toBe(true))
+    expect(await screen.findByText('Acme')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete Acme' }))
+    await userEvent.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    )
+    await waitFor(() => expect(admin.lookups.brands.some((b) => b.slug === 'acme')).toBe(false))
   })
 })

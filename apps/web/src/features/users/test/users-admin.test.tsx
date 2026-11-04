@@ -1,14 +1,13 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { HttpResponse, http } from 'msw'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { useAuthStore } from '@/features/auth/store'
 import { signInAs } from '@/test/auth'
+import { admin } from '@/test/msw/handlers'
 import { server } from '@/test/msw/server'
-import { serverSession } from '@/test/msw/handlers'
 import { renderApp } from '@/test/render'
-
-import { useUserOverlayStore } from '../overlay-store'
 
 function recordRequests() {
   const seen: string[] = []
@@ -20,11 +19,12 @@ function recordRequests() {
   return seen
 }
 
+const writes = (requests: string[]) => requests.filter((r) => /^(PUT|POST|PATCH|DELETE)/.test(r))
+
 afterEach(() => server.events.removeAllListeners())
 
 const search = (router: { state: { location: { search: unknown } } }) =>
   router.state.location.search
-const overlay = () => useUserOverlayStore.getState()
 const rowOf = (text: string) => screen.getByText(text).closest('tr')!
 
 async function fillUser(values: {
@@ -37,6 +37,7 @@ async function fillUser(values: {
   await userEvent.type(screen.getByLabelText('First name'), values.first ?? 'Nina')
   await userEvent.type(screen.getByLabelText('Last name'), values.last ?? 'Novak')
   await userEvent.type(screen.getByLabelText('Email'), values.email ?? 'nina@example.com')
+  await userEvent.type(screen.getByLabelText('Initial password'), 'a-good-password')
 }
 
 describe('access', () => {
@@ -123,7 +124,8 @@ describe('create a user (USER-2)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Create user' }))
     expect(await screen.findByText('Enter a username of 3 to 30 characters.')).toBeInTheDocument()
     expect(screen.getByText('Enter a valid email address.')).toBeInTheDocument()
-    expect(requests.filter((r) => r.startsWith('POST'))).toEqual([])
+    expect(screen.getByText('Enter a password of 8 to 72 characters.')).toBeInTheDocument()
+    expect(writes(requests)).toEqual([])
   })
 
   it('refuses a username that is already taken, case-insensitively, as you type', async () => {
@@ -133,30 +135,19 @@ describe('create a user (USER-2)', () => {
     expect(await screen.findByText('That username is already taken.')).toBeInTheDocument()
   })
 
-  it('stores a local user (overlay only) that appears first and survives rehydrate', async () => {
+  it('creates the user on the server and lists it', async () => {
     signInAs('emilys')
-    const requests = recordRequests()
     const { router } = await renderApp('/admin/users/new')
     await screen.findByLabelText('Username')
     await fillUser({ username: 'nina' })
     await userEvent.click(screen.getByRole('button', { name: 'Create user' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/admin/users'))
-    expect(requests.filter((r) => /^(PUT|POST|DELETE)/.test(r))).toEqual([])
-    const created = Object.values(overlay().created)
-    expect(created).toHaveLength(1)
-    expect(created[0]).toMatchObject({
-      id: 'local-1',
-      username: 'nina',
-      role: 'user',
+    expect(admin.users.find((u) => u.username === 'nina')).toMatchObject({
       firstName: 'Nina',
+      role: 'user',
     })
-
     expect(await screen.findByText('Showing 1–20 of 26')).toBeInTheDocument()
-    expect(within(screen.getAllByRole('row')[1]!).getByText('Nina Novak')).toBeInTheDocument()
-
-    await useUserOverlayStore.persist.rehydrate()
-    expect(Object.keys(overlay().created)).toEqual(['local-1'])
   })
 
   it('creates an admin when the role is chosen', async () => {
@@ -167,14 +158,25 @@ describe('create a user (USER-2)', () => {
     await userEvent.click(screen.getByRole('combobox', { name: 'Role' }))
     await userEvent.click(await screen.findByRole('option', { name: 'Admin' }))
     await userEvent.click(screen.getByRole('button', { name: 'Create user' }))
-    await waitFor(() => expect(Object.values(overlay().created)[0]?.role).toBe('admin'))
+    await waitFor(() => expect(admin.users.find((u) => u.username === 'boss')?.role).toBe('admin'))
+  })
+
+  it('shows the server refusal when the email is already used', async () => {
+    signInAs('emilys')
+    const { router } = await renderApp('/admin/users/new')
+    await screen.findByLabelText('Username')
+    await fillUser({ username: 'someone', email: 'emilys@example.com' })
+    await userEvent.click(screen.getByRole('button', { name: 'Create user' }))
+    expect(
+      await screen.findByText('A user with that username or email already exists.'),
+    ).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/admin/users/new')
   })
 })
 
 describe('edit a user (USER-3)', () => {
-  it('pre-fills the form; saving a remote user stores a patch, role included', async () => {
+  it('pre-fills the form; saving updates the user on the server, role included', async () => {
     signInAs('emilys')
-    const requests = recordRequests()
     const { router } = await renderApp('/admin/users/user-16/edit')
     expect(await screen.findByLabelText('First name')).toHaveValue('Avery')
     expect(screen.getByLabelText('Username')).toHaveValue('averyp')
@@ -186,30 +188,11 @@ describe('edit a user (USER-3)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/admin/users'))
 
-    expect(requests.filter((r) => /^(PUT|POST|DELETE)/.test(r))).toEqual([])
-    expect(overlay().patched['user-16']).toMatchObject({ firstName: 'Averie', role: 'moderator' })
-    expect(await screen.findByText('Averie Perez')).toBeInTheDocument()
-  })
-
-  it('editing a locally created user makes no network request', async () => {
-    signInAs('emilys')
-    const local = overlay().create({
-      username: 'localo',
-      firstName: 'Loc',
-      lastName: 'Al',
-      email: 'l@x.com',
-      image: null,
-      role: 'user',
+    expect(admin.users.find((u) => u.id === 'user-16')).toMatchObject({
+      firstName: 'Averie',
+      role: 'moderator',
     })
-    const requests = recordRequests()
-    const { router } = await renderApp(`/admin/users/${local.id}/edit`)
-    const first = await screen.findByLabelText('First name')
-    await userEvent.clear(first)
-    await userEvent.type(first, 'Locke')
-    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/admin/users'))
-    expect(overlay().created[local.id]?.firstName).toBe('Locke')
-    expect(requests.filter((r) => /^(PUT|POST|DELETE)/.test(r))).toEqual([])
+    expect(await screen.findByText('Averie Perez')).toBeInTheDocument()
   })
 
   it('a user can keep their own username while editing, but not take another one', async () => {
@@ -244,7 +227,7 @@ describe('edit a user (USER-3)', () => {
       }),
     )
     await waitFor(() => expect(router.state.location.pathname).toBe('/admin/users'))
-    expect(overlay().patched['user-16']).toBeUndefined()
+    expect(admin.users.find((u) => u.id === 'user-16')?.firstName).toBe('Avery')
   })
 
   it('editing your own account updates the signed-in user (header) right away', async () => {
@@ -259,50 +242,48 @@ describe('edit a user (USER-3)', () => {
 })
 
 describe('delete a user (USER-4)', () => {
-  it('asks to confirm and hides the user', async () => {
+  it('asks to confirm, then deletes on the server', async () => {
     signInAs('emilys')
     const requests = recordRequests()
     await renderApp('/admin/users')
     await userEvent.click(await screen.findByRole('button', { name: 'Delete Avery Perez' }))
     const dialog = await screen.findByRole('alertdialog')
-    expect(requests.filter((r) => r.startsWith('DELETE'))).toEqual([])
+    expect(requests.filter((r) => r.startsWith('DELETE'))).toEqual([]) // nothing yet
     await userEvent.click(within(dialog).getByRole('button', { name: 'Delete' }))
 
     expect(await screen.findByText('Avery Perez was deleted.')).toBeInTheDocument()
-    expect(requests.filter((r) => r.startsWith('DELETE'))).toEqual([])
-    expect(overlay().deleted).toEqual(['user-16'])
+    expect(requests.filter((r) => r.startsWith('DELETE'))).toEqual(['DELETE /api/users/user-16'])
+    expect(admin.users.some((u) => u.id === 'user-16')).toBe(false)
     expect(await screen.findByText('Showing 1–20 of 24')).toBeInTheDocument()
   })
 
   it('cancel keeps the user', async () => {
     signInAs('emilys')
+    const requests = recordRequests()
     await renderApp('/admin/users')
     await userEvent.click(await screen.findByRole('button', { name: 'Delete Avery Perez' }))
     await userEvent.click(
       within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Cancel' }),
     )
-    expect(overlay().deleted).toEqual([])
+    expect(writes(requests)).toEqual([])
+    expect(admin.users).toHaveLength(25)
   })
 
-  it('deleting a locally created user makes no network request', async () => {
+  it('shows the server refusal when the delete fails', async () => {
     signInAs('emilys')
-    const local = overlay().create({
-      username: 'shortlived',
-      firstName: 'Short',
-      lastName: 'Lived',
-      email: 's@x.com',
-      image: null,
-      role: 'user',
-    })
-    const requests = recordRequests()
+    server.use(
+      http.delete('http://localhost/api/users/:id', () =>
+        HttpResponse.json({ code: 'last_admin', message: 'no' }, { status: 409 }),
+      ),
+    )
     await renderApp('/admin/users')
-    await userEvent.click(await screen.findByRole('button', { name: 'Delete Short Lived' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete Avery Perez' }))
     await userEvent.click(
       within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
     )
-    expect(await screen.findByText('Short Lived was deleted.')).toBeInTheDocument()
-    expect(overlay().created[local.id]).toBeUndefined()
-    expect(requests.filter((r) => /^(PUT|POST|DELETE)/.test(r))).toEqual([])
+    expect(
+      await screen.findByText('The last admin cannot be deleted or demoted.'),
+    ).toBeInTheDocument()
   })
 })
 
@@ -324,79 +305,14 @@ describe('guardrails (USER-5)', () => {
     expect(screen.getByText('You cannot delete or demote your own account.')).toBeInTheDocument()
   })
 
-  it('the last admin cannot be deleted or demoted', async () => {
-    signInAs('emilys')
-    overlay().update('user-1', { role: 'user' }) // only michaelw is an admin now; the session is still emilys
-    await renderApp('/admin/users')
-    const lastAdmin = await screen.findByRole('button', { name: 'Delete Michael Williams' })
-    expect(lastAdmin).toBeDisabled()
-    expect(lastAdmin).toHaveAttribute('title', 'The last admin cannot be deleted or demoted.')
-  })
-
-  it('the edit form locks the role of the last admin', async () => {
-    signInAs('emilys')
-    overlay().update('user-1', { role: 'user' })
-    await renderApp('/admin/users/user-2/edit')
-    await screen.findByLabelText('First name')
-    expect(screen.getByRole('combobox', { name: 'Role' })).toBeDisabled()
-    expect(screen.getByText('The last admin cannot be deleted or demoted.')).toBeInTheDocument()
-  })
-
-  it('an edit that would remove the last admin is refused and no request is sent', async () => {
-    signInAs('emilys')
-    overlay().update('user-1', { role: 'user' })
-    const requests = recordRequests()
-    // bypass the disabled select: the mutation itself must also refuse
-    const { useUpdateUser } = await import('../hooks/use-user-mutations')
-    const { renderHook } = await import('@testing-library/react')
-    const { QueryClient, QueryClientProvider } = await import('@tanstack/react-query')
-    const client = new QueryClient()
-    const { usersQueryOptions } = await import('../queries')
-    const { fixtureUserList } = await import('@/test/fixtures/users')
-    client.setQueryData(usersQueryOptions.queryKey, fixtureUserList)
-    const { result } = renderHook(() => useUpdateUser(), {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={client}>{children}</QueryClientProvider>
-      ),
+  it('the server refuses what the UI would not offer', () => {
+    expect(admin.deleteUser('user-1', 'user-1')).toMatchObject({ code: 'cannot_delete_self' })
+    expect(admin.updateUser('user-1', { role: 'user' }, 'user-1')).toMatchObject({
+      code: 'cannot_demote_self',
     })
-    await expect(
-      result.current.mutateAsync({ id: 'user-2', patch: { role: 'user' } }),
-    ).rejects.toMatchObject({
-      kind: 'forbidden',
-      message: 'last-admin',
+    admin.updateUser('user-1', { role: 'user' }, 'user-2')
+    expect(admin.updateUser('user-2', { role: 'user' }, 'user-5')).toMatchObject({
+      code: 'last_admin',
     })
-    expect(requests.filter((r) => r.startsWith('PUT'))).toEqual([])
-    expect(overlay().patched[2]).toBeUndefined()
-  })
-})
-
-describe('the session decides the role (USER-5)', () => {
-  it('a role granted in the overlay does not make a user an admin in the UI', async () => {
-    overlay().update('user-16', { role: 'admin' })
-    await useAuthStore.getState().login('averyp', 'averyppass')
-    expect(useAuthStore.getState().user?.role).toBe('user')
-  })
-
-  it('a role removed in the overlay does not hide the admin pages from an admin', async () => {
-    overlay().update('user-1', { role: 'user' })
-    const user = await useAuthStore.getState().login('emilys', 'emilyspass')
-    expect(user.role).toBe('admin')
-    const { router } = await renderApp('/admin')
-    expect(router.state.location.pathname).toBe('/admin')
-  })
-
-  it('a deleted user cannot sign in', async () => {
-    overlay().remove('user-16')
-    await expect(useAuthStore.getState().login('averyp', 'averyppass')).rejects.toMatchObject({
-      kind: 'unauthorized',
-    })
-    expect(useAuthStore.getState().user).toBeNull()
-  })
-
-  it('a restored session of a deleted user is ended', async () => {
-    overlay().remove('user-16')
-    serverSession.userId = 'user-16'
-    await useAuthStore.getState().bootstrap()
-    expect(useAuthStore.getState().status).toBe('anonymous')
   })
 })

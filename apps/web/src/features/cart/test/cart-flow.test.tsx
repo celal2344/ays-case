@@ -4,12 +4,10 @@ import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 
 import { signInAs } from '@/test/auth'
-import { productInput } from '@/test/fixtures/products'
+import { serveCatalog } from '@/test/catalog'
 import { shopping } from '@/test/msw/handlers'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
-
-import { useProductOverlayStore } from '@/features/products/overlay-store'
 
 /** The mocked server's cart for a user; the app writes to it through the API. */
 const cartOf = (userId: string) => shopping.cartOf(userId)
@@ -117,19 +115,6 @@ describe('cart (CART-1..4)', () => {
     expect(screen.getByRole('link', { name: 'Cart, 1 items' })).toBeInTheDocument()
   })
 
-  it('a product created in this browser cannot be added: the server does not know it', async () => {
-    signInAs('averyp')
-    const local = useProductOverlayStore
-      .getState()
-      .create(productInput({ title: 'Local gadget', stock: 5 }))
-    await renderApp(`/products/${local.id}`)
-    await userEvent.click((await screen.findAllByRole('button', { name: 'Add to cart' }))[0]!)
-    expect(
-      await screen.findByText("Products created in this browser can't be added to the cart yet."),
-    ).toBeInTheDocument()
-    expect(cartOf('user-16')).toEqual([])
-  })
-
   it('/cart is protected', async () => {
     const { router } = await renderApp('/cart')
     expect(router.state.location.pathname).toBe('/login')
@@ -189,7 +174,7 @@ describe('cart page', () => {
 
   it('drops lines whose product was deleted and tells the user once', async () => {
     seed('user-16', [2, 1], [4, 1])
-    useProductOverlayStore.getState().remove(2)
+    serveCatalog((products) => products.filter((p) => p.id !== 2))
     signInAs('averyp')
     await renderApp('/cart')
     expect(await screen.findByText('beauty item 04')).toBeInTheDocument()
@@ -197,11 +182,13 @@ describe('cart page', () => {
     expect(await screen.findAllByText(/no longer available and were removed/)).toHaveLength(1)
   })
 
-  it('reflects admin price and stock changes immediately', async () => {
+  it('reflects price and stock changes made in the catalog', async () => {
     seed('user-16', [2, 5])
-    useProductOverlayStore
-      .getState()
-      .update(2, { priceCents: 10000, discountPercentage: 0, stock: 2 })
+    serveCatalog((products) =>
+      products.map((p) =>
+        p.id === 2 ? { ...p, priceCents: 10000, discountPercentage: 0, stock: 2 } : p,
+      ),
+    )
     signInAs('averyp')
     await renderApp('/cart')
     expect(await screen.findByRole('textbox', { name: 'Quantity' })).toHaveValue('2') // 5 → stock 2
@@ -210,7 +197,6 @@ describe('cart page', () => {
 
   it('blocks checkout while a line is out of stock and excludes it from the total', async () => {
     seed('user-16', [1, 1], [3, 1])
-    useProductOverlayStore.getState().update(3, { stock: 0 })
     signInAs('averyp')
     await renderApp('/cart')
     expect(

@@ -31,13 +31,33 @@ Response and request types come from the API's routes (`AppType`) and the shared
 
 Demo accounts: `emilys` / `emilyspass` (admin), `averyp` / `averyppass` (user). Self sign-up is disabled.
 
+## Admin endpoints
+
+All of them require an admin session. Bodies are the schemas in `@ays/validators` (`productBodySchema`, `userCreateBodySchema`, ...); a failure body is `{ code, message }`.
+
+| Endpoint | Notes |
+| --- | --- |
+| `GET /api/admin/products` | Every product, soft-deleted ones included (`deletedAt`) |
+| `POST /api/products` | Create; `201` with the product detail. `409 duplicate` (sku or barcode), `422 unknown_reference` (category, brand, policy or tag) |
+| `PATCH /api/products/:id` | Partial update; `tagIds` and `images`, when sent, replace the old sets (one primary image, unique positions) |
+| `DELETE /api/products/:id` | Soft delete: hidden from the shop, removed from carts, favorites and recently viewed; order lines keep it. `204` |
+| `POST /api/products/:id/restore` | Brings a soft-deleted product back |
+| `GET/POST /api/admin/{categories,brands,tags,warranty-policies,shipping-policies,return-policies}` | List and create; the slug is made from the name when not given. `409 duplicate` |
+| `PATCH/DELETE /api/admin/<table>/:id` | Edit or delete a row; `409 in_use` while products still use it |
+| `GET /api/users` | All users |
+| `POST /api/users` | username, first and last name, email, role and an initial password (hashed by Better Auth) |
+| `PATCH /api/users/:id` | names, email, username, role |
+| `DELETE /api/users/:id` | `204`; the user's sessions stop working |
+
+User rules, all `409`: `cannot_delete_self`, `cannot_demote_self`, `last_admin`, `duplicate` (username or email).
+
 ## Rules
 
 1. **Cookie session, same origin.** No tokens in JS, no CORS, no `localStorage` for auth.
 2. **`call()`** wraps every RPC request: transport failures become `AppError('network')`, non-2xx answers become an `AppError` of the right `kind` from the `{ code, message }` body, and a 401 while signed in ends the session (toast, redirect to `/login`).
 3. **Derived figures stay on the server.** Rating, review count, histogram and availability are computed in SQL; the browser only formats them.
-4. **One type, cents everywhere.** The UI, the overlay, the cart and the tests use the types from `@ays/validators` directly. Money stays in integer cents and is formatted at render time (`formatMoney`); grams and millimetres are formatted by `formatWeight` and `formatDimensions`. The admin form collects dollars and converts once with `toCents` on submit.
-5. **No catalog writes yet.** Admin product and user changes live in the local overlay ([data-and-state.md](data-and-state.md)) until the API grows write endpoints.
+4. **One type, cents everywhere.** The UI, the cart and the tests use the types from `@ays/validators` directly. Money stays in integer cents and is formatted at render time (`formatMoney`); grams and millimetres are formatted by `formatWeight` and `formatDimensions`. The admin form collects dollars and converts once with `toCents` on submit.
+5. **Admin writes are server-side.** Every admin route answers 401 without a session and 403 for a non-admin. The server validates the limits shared in `@ays/validators` (`LIMITS`) and enforces uniqueness, the user guards and soft delete ([data-and-state.md](data-and-state.md)).
 
 ## Errors
 
@@ -45,4 +65,4 @@ Demo accounts: `emilys` / `emilyspass` (admin), `averyp` / `averyppass` (user). 
 
 ## Tests
 
-Vitest runs against MSW handlers at `http://localhost/api/...` that return the API's wire shapes from the shared fixtures (`src/test/fixtures`). The mocked server keeps the signed-in user in `serverSession` (Node's `fetch` has no cookie jar). Playwright specs use the same fixtures through `e2e/support/mock-api.ts`.
+Vitest runs against MSW handlers at `http://localhost/api/...` that return the API's wire shapes from the shared fixtures (`src/test/fixtures`). The mocked server keeps the signed-in user in `serverSession` (Node's `fetch` has no cookie jar). `FakeAdmin` (`src/test/fixtures/admin.ts`) gives the mocked server stateful admin products, lookups and users with the same guards as the real API; `serveCatalog` (`src/test/catalog.ts`) lets a test serve a changed catalog. Playwright specs use the same fixtures through `e2e/support/mock-api.ts`.

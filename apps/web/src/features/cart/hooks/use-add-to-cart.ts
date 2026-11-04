@@ -4,7 +4,6 @@ import { toast } from 'sonner'
 
 import { setPendingAction } from '@/features/auth/pending-action'
 import { selectUser, useAuthStore } from '@/features/auth/store'
-import { isLocal } from '@/features/products/overlay-store'
 import type { Product } from '@/features/products/schemas'
 
 import { useCart } from './use-cart'
@@ -27,10 +26,6 @@ export function useAddToCart() {
       setPendingAction({ type: 'add-to-cart', productId: product.id, quantity })
       toast.info(t('cart.signInToAdd'))
       void router.navigate({ to: '/login', search: { redirect: router.state.location.href } })
-      return false
-    }
-    if (isLocal(product.id)) {
-      toast.error(t('cart.localUnavailable'))
       return false
     }
     if (product.stock <= 0) {

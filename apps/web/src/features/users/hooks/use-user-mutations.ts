@@ -1,80 +1,33 @@
-import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import type { UserCreateBody, UserPatchBody } from '@ays/validators'
 
-import { useAuthStore } from '@/features/auth/store'
-import { AppError } from '@/lib/http-error'
+import type { AppError } from '@/lib/http-error'
 
-import { applyUserOverlay, isUsernameTaken } from '../catalog'
-import { demoteGuard, deleteGuard, type GuardReason } from '../guardrails'
-import { useUserOverlayStore, type UserInput, type UserPatch } from '../overlay-store'
-import { usersQueryOptions } from '../queries'
+import { createUser, deleteUser, updateUser } from '../api'
+import { userKeys } from '../queries'
 import type { User } from '../schemas'
-import { resolveSessionUser } from '../session'
 
-// The API has no user writes yet, so admin edits live in the browser overlay only. The guardrails
-// run first: a refused action changes nothing.
-
-/** Thrown for a refused action; `message` is the reason code the UI translates. */
-export class GuardrailError extends AppError {
-  readonly reason: GuardReason
-  constructor(reason: GuardReason) {
-    super('forbidden', reason)
-    this.reason = reason
-  }
-}
-
-function mergedUsers(queryClient: QueryClient): User[] {
-  const remote = queryClient.getQueryData(usersQueryOptions.queryKey) ?? []
-  const { created, patched, deleted } = useUserOverlayStore.getState()
-  return applyUserOverlay(remote, { created, patched, deleted })
-}
-
-export const currentUserId = () => useAuthStore.getState().user?.id
-
-/** Keeps the signed-in user's header/menu in step with edits made to their own account. */
-function syncSession(id: string) {
-  const { user } = useAuthStore.getState()
-  if (user?.id !== id) return
-  const merged = resolveSessionUser(user)
-  if (merged) useAuthStore.setState({ user: merged })
+// The server owns the rules (no deleting or demoting yourself, never the last admin, unique
+// username and email); these hooks only call it and refetch the list.
+function useRefresh() {
+  const queryClient = useQueryClient()
+  return () => queryClient.invalidateQueries({ queryKey: userKeys.all })
 }
 
 export function useCreateUser() {
-  const queryClient = useQueryClient()
-  return useMutation<User, AppError, UserInput>({
-    mutationFn: async (input) => {
-      if (isUsernameTaken(mergedUsers(queryClient), input.username)) {
-        throw new AppError('validation', 'admin.users.form.errors.usernameTaken')
-      }
-      return useUserOverlayStore.getState().create(input)
-    },
-  })
+  const refresh = useRefresh()
+  return useMutation<User, AppError, UserCreateBody>({ mutationFn: createUser, onSettled: refresh })
 }
 
 export function useUpdateUser() {
-  const queryClient = useQueryClient()
-  return useMutation<void, AppError, { id: string; patch: UserPatch }>({
-    mutationFn: async ({ id, patch }) => {
-      const users = mergedUsers(queryClient)
-      if (patch.username && isUsernameTaken(users, patch.username, id)) {
-        throw new AppError('validation', 'admin.users.form.errors.usernameTaken')
-      }
-      if (patch.role) {
-        const reason = demoteGuard(users, id, patch.role, currentUserId())
-        if (reason) throw new GuardrailError(reason)
-      }
-      useUserOverlayStore.getState().update(id, patch)
-      syncSession(id)
-    },
+  const refresh = useRefresh()
+  return useMutation<User, AppError, { id: string; patch: UserPatchBody }>({
+    mutationFn: ({ id, patch }) => updateUser(id, patch),
+    onSettled: refresh,
   })
 }
 
 export function useDeleteUser() {
-  const queryClient = useQueryClient()
-  return useMutation<void, AppError, string>({
-    mutationFn: async (id) => {
-      const reason = deleteGuard(mergedUsers(queryClient), id, currentUserId())
-      if (reason) throw new GuardrailError(reason)
-      useUserOverlayStore.getState().remove(id)
-    },
-  })
+  const refresh = useRefresh()
+  return useMutation<void, AppError, string>({ mutationFn: deleteUser, onSettled: refresh })
 }

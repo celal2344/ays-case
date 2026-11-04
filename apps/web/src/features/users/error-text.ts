@@ -1,13 +1,19 @@
-import type { ParseKeys, TFunction } from 'i18next'
+import type { TFunction } from 'i18next'
 
-import type { AppError } from '@/lib/http-error'
 import { errorMessageKey } from '@/lib/error-message'
+import type { AppError } from '@/lib/http-error'
 
-import { GuardrailError } from './hooks/use-user-mutations'
-
-/** One readable sentence for a failed user action (guardrail, duplicate username, API error). */
+/** One readable sentence for a failed user action: the API's error code, else the generic kind. */
 export function userErrorText(t: TFunction, error: AppError): string {
-  if (error instanceof GuardrailError) return t(`admin.users.guard.${error.reason}`)
-  if (error.message.startsWith('admin.')) return t(error.message as ParseKeys)
-  return error.kind === 'validation' ? error.message : t(errorMessageKey(error))
+  switch (error.code) {
+    case 'cannot_delete_self':
+    case 'cannot_demote_self':
+      return t('admin.users.guard.self')
+    case 'last_admin':
+      return t('admin.users.guard.last-admin')
+    case 'duplicate':
+      return t('admin.users.errors.duplicate')
+    default:
+      return t(errorMessageKey(error))
+  }
 }
