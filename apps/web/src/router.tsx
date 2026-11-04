@@ -20,7 +20,7 @@ export function createAppRouter(options?: {
     routeTree,
     history: options?.history,
     context: { queryClient, auth: authContext, ...options?.context },
-    defaultPreload: 'intent',
+    defaultPreload: false,
     defaultNotFoundComponent: NotFound,
     defaultErrorComponent: ({ error, reset }) => (
       <ErrorState message={error instanceof Error ? error.message : undefined} onRetry={reset} />
