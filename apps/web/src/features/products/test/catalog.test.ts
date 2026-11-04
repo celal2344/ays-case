@@ -2,11 +2,41 @@ import { describe, expect, it } from 'vitest'
 
 import { fixtureProducts } from '@/test/fixtures/products'
 
-import { applyOverlay, filterByCategory, filterByQuery, paginate, sortProducts } from '../catalog'
+import {
+  applyOverlay,
+  filterByCategory,
+  patchProduct,
+  filterByQuery,
+  paginate,
+  sortProducts,
+} from '../catalog'
 import type { Product } from '../schemas'
 
 const none = { created: {}, patched: {}, deleted: [] }
 const ids = (products: Product[]) => products.map((p) => p.id)
+
+describe('patchProduct', () => {
+  it('re-derives availability when stock changes, using the product threshold', () => {
+    const base = { ...fixtureProducts[0]!, lowStockThreshold: 5 }
+    expect(patchProduct(base, { stock: 0 }).availability).toBe('out')
+    expect(patchProduct(base, { stock: 5 }).availability).toBe('low')
+    expect(patchProduct(base, { stock: 6 }).availability).toBe('in')
+  })
+
+  it('leaves availability alone when stock is not patched', () => {
+    const base = { ...fixtureProducts[2]! }
+    expect(patchProduct(base, { title: 'x' }).availability).toBe('out')
+  })
+})
+
+describe('sortProducts by rating', () => {
+  it('puts unreviewed products last in both directions', () => {
+    const rated = (id: number, rating: number | null) => ({ ...fixtureProducts[0]!, id, rating })
+    const list = [rated(1, null), rated(2, 4), rated(3, 5)]
+    expect(ids(sortProducts(list, 'rating', 'asc'))).toEqual([2, 3, 1])
+    expect(ids(sortProducts(list, 'rating', 'desc'))).toEqual([3, 2, 1])
+  })
+})
 
 describe('applyOverlay', () => {
   it('returns the remote catalog untouched when the overlay is empty', () => {
@@ -16,11 +46,11 @@ describe('applyOverlay', () => {
   it('hides deleted products and applies patches', () => {
     const merged = applyOverlay(fixtureProducts, {
       created: {},
-      patched: { 2: { price: 1 } },
+      patched: { 2: { priceCents: 100 } },
       deleted: [1],
     })
     expect(merged.some((p) => p.id === 1)).toBe(false)
-    expect(merged.find((p) => p.id === 2)?.price).toBe(1)
+    expect(merged.find((p) => p.id === 2)?.priceCents).toBe(100)
   })
 
   it('puts created products first, newest first, and honours patches and deletes on them', () => {
@@ -60,7 +90,7 @@ describe('filterByQuery', () => {
   })
 
   it('is Turkish-safe: İ lowercases to i only in Turkish mode', () => {
-    const product = { ...fixtureProducts[0]!, title: 'İstanbul Çayı', brand: undefined, tags: [] }
+    const product = { ...fixtureProducts[0]!, title: 'İstanbul Çayı', brand: null, tags: [] }
     expect(filterByQuery([product], 'istanbul', 'tr')).toHaveLength(1)
     expect(filterByQuery([product], 'istanbul', 'en')).toHaveLength(0)
   })

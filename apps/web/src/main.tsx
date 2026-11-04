@@ -6,13 +6,17 @@ import { createRoot } from 'react-dom/client'
 
 import './i18n'
 import './index.css'
-import { useAuthStore } from './features/auth/store'
+import { setSessionExpiredHandler, useAuthStore } from './features/auth/store'
 import { queryClient } from './lib/query-client'
 import { storageKey } from './lib/storage'
 import { router } from './router'
 
-// Validate a persisted session in the background so public pages (header, nav) know who is signed in.
+// Ask the server who is signed in (the session cookie), so public pages (header, nav) know.
 void useAuthStore.getState().bootstrap()
+
+setSessionExpiredHandler(() => {
+  void router.navigate({ to: '/login', search: { redirect: router.state.location.href } })
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

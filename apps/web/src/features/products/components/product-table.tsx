@@ -55,19 +55,19 @@ export function ProductTable({ products }: { products: Product[] }) {
                   {product.title}
                 </Link>
                 {product.brand ? (
-                  <span className="text-xs text-muted-foreground">{product.brand}</span>
+                  <span className="text-xs text-muted-foreground">{product.brand.name}</span>
                 ) : null}
               </TableCell>
-              <TableCell className="capitalize">{product.category.replaceAll('-', ' ')}</TableCell>
+              <TableCell>{product.category.name}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <ProductPrice product={product} />
                   <DiscountBadge product={product} />
                 </div>
               </TableCell>
-              <TableCell>{product.rating.toFixed(1)}</TableCell>
+              <TableCell>{product.rating === null ? '–' : product.rating.toFixed(1)}</TableCell>
               <TableCell>
-                {product.stock > 5 ? product.stock : <StockBadge stock={product.stock} />}
+                {product.availability === 'in' ? product.stock : <StockBadge product={product} />}
               </TableCell>
               <TableCell className="flex items-center gap-1">
                 <FavoriteButton productId={product.id} title={product.title} />

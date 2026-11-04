@@ -20,7 +20,7 @@ export function Gallery({ images, title }: { images: string[]; title: string }) 
   return (
     <div className="flex flex-col gap-3 md:flex-row-reverse">
       {desktop ? (
-        <GalleryMain src={images[index] ?? ''} title={title} onOpen={() => setOpen(true)} />
+        <GalleryMain src={images[index] ?? null} title={title} onOpen={() => setOpen(true)} />
       ) : (
         <GalleryCarousel
           images={images}

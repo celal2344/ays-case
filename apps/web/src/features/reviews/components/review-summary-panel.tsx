@@ -9,9 +9,9 @@ export function ReviewSummaryPanel({ summary }: { summary: ReviewSummary }) {
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
       <div className="flex flex-col items-center gap-1 sm:w-40">
         <p className="text-4xl font-semibold" data-testid="review-average">
-          {summary.average.toFixed(1)}
+          {summary.average === null ? '–' : summary.average.toFixed(1)}
         </p>
-        <RatingStars rating={summary.average} />
+        <RatingStars rating={summary.average ?? 0} />
         <p className="text-sm text-muted-foreground">
           {t('reviews.count', { count: summary.count })}
         </p>

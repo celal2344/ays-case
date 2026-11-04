@@ -7,7 +7,7 @@ import type { LocalReview } from './schemas'
 
 export interface NewReview {
   productId: number
-  userId: number
+  userId: string
   authorName: string
   rating: number
   comment: string
@@ -15,7 +15,7 @@ export interface NewReview {
 
 interface ReviewsState {
   byProduct: Record<number, LocalReview[]>
-  /** Keys of seeded DummyJSON reviews an admin removed, per product. */
+  /** Keys of API reviews an admin removed, per product. */
   hidden: Record<number, string[]>
   /** One review per user per product: returns null when the user already has one. */
   add: (input: NewReview) => LocalReview | null

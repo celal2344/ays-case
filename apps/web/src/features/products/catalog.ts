@@ -13,12 +13,25 @@ export interface OverlaySnapshot {
 
 export const SHOP_PAGE_SIZE = 12
 
+/**
+ * Applies an admin patch. The API derives `availability` from stock; an overlay edit changes stock
+ * without a round trip, so it is re-derived here with the product's own threshold.
+ */
+export function patchProduct<T extends Product>(
+  product: T,
+  changes: Partial<Omit<Product, 'id'>> | undefined,
+): T {
+  if (!changes) return product
+  const merged = { ...product, ...changes }
+  if (changes.stock === undefined) return merged
+  const { stock, lowStockThreshold } = merged
+  const availability = stock <= 0 ? 'out' : stock <= lowStockThreshold ? 'low' : 'in'
+  return { ...merged, availability }
+}
+
 export function applyOverlay(remote: Product[], overlay: OverlaySnapshot): Product[] {
   const hidden = new Set(overlay.deleted)
-  const patch = (p: Product): Product => {
-    const changes = overlay.patched[p.id]
-    return changes ? { ...p, ...changes } : p
-  }
+  const patch = (p: Product): Product => patchProduct(p, overlay.patched[p.id])
   const local = Object.values(overlay.created)
     .filter((p) => !hidden.has(p.id))
     .map(patch)
@@ -36,14 +49,18 @@ export function filterByQuery(products: Product[], query: string | undefined, la
   const needle = normalize((query ?? '').trim(), language)
   if (!needle) return products
   return products.filter((p) =>
-    [p.title, p.brand ?? '', p.category, ...p.tags].some((field) =>
-      normalize(field, language).includes(needle),
-    ),
+    [
+      p.title,
+      p.brand?.name ?? '',
+      p.category.name,
+      p.category.slug,
+      ...p.tags.map((t) => t.slug),
+    ].some((field) => normalize(field, language).includes(needle)),
   )
 }
 
 export function filterByCategory(products: Product[], category: string | undefined) {
-  return category ? products.filter((p) => p.category === category) : products
+  return category ? products.filter((p) => p.category.slug === category) : products
 }
 
 export function sortProducts(
@@ -56,7 +73,15 @@ export function sortProducts(
   const direction = order === 'desc' ? -1 : 1
   const locale = language === 'tr' ? 'tr' : 'en'
   return [...products].sort((a, b) => {
-    const result = sort === 'title' ? a.title.localeCompare(b.title, locale) : a[sort] - b[sort] // price | rating
+    if (sort === 'rating') {
+      // unreviewed products have no rating: they go last in either direction
+      if (a.rating === null || b.rating === null) {
+        return a.rating === b.rating ? 0 : a.rating === null ? 1 : -1
+      }
+      return (a.rating - b.rating) * direction
+    }
+    const result =
+      sort === 'title' ? a.title.localeCompare(b.title, locale) : a.priceCents - b.priceCents
     return result * direction
   })
 }
@@ -101,21 +126,21 @@ export function filterByPrice(
 }
 
 export function filterByBrand(products: Product[], brand: string | undefined) {
-  return brand ? products.filter((p) => p.brand === brand) : products
+  return brand ? products.filter((p) => p.brand?.name === brand) : products
 }
 
 export function filterByMinRating(products: Product[], rating: number | undefined) {
-  return rating ? products.filter((p) => p.rating >= rating) : products
+  return rating ? products.filter((p) => (p.rating ?? 0) >= rating) : products
 }
 
 /** Distinct brands, alphabetical, for the filter panel. */
 export function brandsOf(products: Product[]): string[] {
-  return [...new Set(products.flatMap((p) => (p.brand ? [p.brand] : [])))].sort((a, b) =>
+  return [...new Set(products.flatMap((p) => (p.brand ? [p.brand.name] : [])))].sort((a, b) =>
     a.localeCompare(b),
   )
 }
 
 /** Products whose category belongs to a navigation group. */
 export function filterByGroup(products: Product[], group: GroupId | undefined) {
-  return group ? products.filter((p) => groupOf(p.category) === group) : products
+  return group ? products.filter((p) => groupOf(p.category.slug) === group) : products
 }

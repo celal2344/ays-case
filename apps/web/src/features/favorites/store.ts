@@ -5,10 +5,10 @@ import { storageKey } from '@/lib/storage'
 
 interface FavoritesState {
   /** Product ids per user id, newest first. Titles, prices and stock always come from the catalog. */
-  byUser: Record<number, number[]>
+  byUser: Record<string, number[]>
   /** Adds or removes; returns whether the product is a favorite afterwards. */
-  toggle: (userId: number, productId: number) => boolean
-  remove: (userId: number, productId: number) => void
+  toggle: (userId: string, productId: number) => boolean
+  remove: (userId: string, productId: number) => void
   /** A product an admin deleted disappears from everyone's favorites. */
   removeProductEverywhere: (productId: number) => void
   /** Every user's favorites (Reset demo data). */

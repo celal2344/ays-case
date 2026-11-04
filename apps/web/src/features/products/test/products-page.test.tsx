@@ -113,7 +113,9 @@ describe('shop list (PROD-1, PROD-6, EX-1..4, EX-12)', () => {
 
   it('NF-5: shows an error with Retry when the catalog fails', async () => {
     server.use(
-      http.get('https://dummyjson.com/products', () => HttpResponse.json({}, { status: 500 })),
+      http.get('http://localhost/api/products', () =>
+        HttpResponse.json({ code: 'server_error', message: 'boom' }, { status: 500 }),
+      ),
     )
     await renderApp('/products')
     expect(await screen.findByText('Something went wrong')).toBeInTheDocument()

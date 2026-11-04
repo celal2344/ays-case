@@ -14,7 +14,7 @@ export function getSuggestedTags(
   )
   const counts = new Map<string, number>()
   for (const product of products) {
-    for (const tag of new Set(product.tags.map((t) => t.trim().toLowerCase()))) {
+    for (const tag of new Set(product.tags.map((t) => t.slug.trim().toLowerCase()))) {
       if (tag && !skip.has(tag)) counts.set(tag, (counts.get(tag) ?? 0) + 1)
     }
   }
@@ -29,7 +29,10 @@ export function getBestDeals(products: readonly Product[], limit: number): Produ
   return products
     .filter((p) => p.stock > 0 && p.discountPercentage > 0)
     .sort(
-      (a, b) => b.discountPercentage - a.discountPercentage || b.rating - a.rating || a.id - b.id,
+      (a, b) =>
+        b.discountPercentage - a.discountPercentage ||
+        (b.rating ?? 0) - (a.rating ?? 0) ||
+        a.id - b.id,
     )
     .slice(0, limit)
 }

@@ -2,19 +2,19 @@ import { useMemo } from 'react'
 
 import type { Review } from '@/features/products/schemas'
 
-import type { ReviewItem, ReviewSort, ReviewSummary } from '../schemas'
+import { mergeReviews, sortReviews } from '../merge'
+import type { ReviewItem, ReviewSort } from '../schemas'
 import { useReviewsStore } from '../store'
-import { mergeReviews, sortReviews, summarize } from '../summary'
 
 const NONE: never[] = []
 
-/** Seeded DummyJSON reviews + reviews written here, summarized and sorted. */
+/** API reviews + reviews written here, merged and sorted. The averages come from the API. */
 export function useProductReviews(productId: number, seeded: Review[], sort: ReviewSort) {
   const local = useReviewsStore((s) => s.byProduct[productId]) ?? NONE
   const hidden = useReviewsStore((s) => s.hidden[productId]) ?? NONE
 
-  return useMemo<{ items: ReviewItem[]; summary: ReviewSummary }>(() => {
-    const merged = mergeReviews(seeded, local, hidden)
-    return { items: sortReviews(merged, sort), summary: summarize(merged) }
-  }, [seeded, local, hidden, sort])
+  return useMemo<ReviewItem[]>(
+    () => sortReviews(mergeReviews(seeded, local, hidden), sort),
+    [seeded, local, hidden, sort],
+  )
 }

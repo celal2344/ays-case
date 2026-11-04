@@ -1,12 +1,11 @@
 import { z } from 'zod'
 
-import { roleSchema, userSchema, type Role, type User } from '@/features/auth/schemas'
+import { roleSchema, type Role, type User } from '@/features/auth/schemas'
 
-// The user shape is the one `/auth/me` returns (derived by hand from dummyjson.json: User, UserList).
-export { roleSchema, userSchema }
+import type { UserInput } from './overlay-store'
+
+export { roleSchema }
 export type { Role, User }
-
-export const userListResponseSchema = z.object({ users: z.array(userSchema) })
 
 export const USER_ERRORS = {
   username: 'admin.users.form.errors.username',
@@ -17,8 +16,8 @@ export const USER_ERRORS = {
   usernameTaken: 'admin.users.form.errors.usernameTaken',
 } as const
 
-// Passwords are not managed here: sign-in always goes through DummyJSON's own accounts, and a
-// password typed in an admin form could never be checked, so the form does not ask for one.
+// Passwords are not managed here: accounts are provisioned on the server, and a password typed in
+// an admin form could never be applied, so the form does not ask for one.
 export const userFormSchema = z.object({
   username: z.string().trim().min(3, USER_ERRORS.username).max(30, USER_ERRORS.username),
   firstName: z.string().trim().min(1, USER_ERRORS.firstName).max(50, USER_ERRORS.firstName),
@@ -41,7 +40,7 @@ export const emptyUserForm: UserFormValues = {
 
 export function toUserFormValues(user: User): UserFormValues {
   return {
-    username: user.username,
+    username: user.username ?? '',
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
@@ -49,14 +48,14 @@ export function toUserFormValues(user: User): UserFormValues {
   }
 }
 
-export function toUserInput(values: UserFormValues): Omit<User, 'id'> {
+export function toUserInput(values: UserFormValues): UserInput {
   return {
     username: values.username.trim(),
     firstName: values.firstName.trim(),
     lastName: values.lastName.trim(),
     email: values.email.trim(),
     role: values.role,
-    image: '',
+    image: null,
   }
 }
 

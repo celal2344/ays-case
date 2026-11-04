@@ -1,26 +1,29 @@
 import { useTranslation } from 'react-i18next'
 
-import { categoryLabel } from '../../category'
+import { formatDimensions, formatWeight } from '@/lib/format'
+import { selectLanguage, usePreferencesStore } from '@/preferences/store'
+
 import type { ProductDetail } from '../../schemas'
 
 /** Attribute grid; local products only show the fields they actually have. */
 export function Specs({ product }: { product: ProductDetail }) {
   const { t } = useTranslation()
-  const { dimensions } = product
-  const rows: [string, string | undefined][] = [
-    [t('products.specs.brand'), product.brand],
-    [t('products.specs.category'), categoryLabel(product.category)],
+  const language = usePreferencesStore(selectLanguage)
+  const { widthMm, heightMm, depthMm, weightG } = product
+  const rows: [string, string | null | undefined][] = [
+    [t('products.specs.brand'), product.brand?.name],
+    [t('products.specs.category'), product.category.name],
     [t('products.specs.sku'), product.sku],
-    [t('products.specs.warranty'), product.warrantyInformation],
-    [t('products.specs.shipping'), product.shippingInformation],
-    [t('products.specs.returns'), product.returnPolicy],
+    [t('products.specs.warranty'), product.warranty?.label],
+    [t('products.specs.shipping'), product.shipping?.label],
+    [t('products.specs.returns'), product.returnPolicy?.label],
     [
       t('products.specs.dimensions'),
-      dimensions
-        ? `${dimensions.width} × ${dimensions.height} × ${dimensions.depth} cm`
-        : undefined,
+      widthMm === null || heightMm === null || depthMm === null
+        ? undefined
+        : formatDimensions({ widthMm, heightMm, depthMm }, language),
     ],
-    [t('products.specs.weight'), product.weight === undefined ? undefined : `${product.weight} kg`],
+    [t('products.specs.weight'), weightG === null ? undefined : formatWeight(weightG, language)],
   ]
   const present = rows.filter(([, value]) => value)
 

@@ -15,7 +15,7 @@ import type { Review } from '@/features/products/schemas'
 
 import { useProductReviews } from '../hooks/use-product-reviews'
 import { useVerifiedBuyer } from '../hooks/use-verified-buyer'
-import type { ReviewSort } from '../schemas'
+import type { ReviewSort, ReviewSummary } from '../schemas'
 import { useReviewsStore } from '../store'
 import { ReviewCard } from './review-card'
 import { ReviewForm } from './review-form'
@@ -23,7 +23,15 @@ import { ReviewSummaryPanel } from './review-summary-panel'
 
 const SORTS: ReviewSort[] = ['newest', 'highest', 'lowest']
 
-export function ReviewsTab({ productId, seeded }: { productId: number; seeded: Review[] }) {
+export function ReviewsTab({
+  productId,
+  seeded,
+  summary,
+}: {
+  productId: number
+  seeded: Review[]
+  summary: ReviewSummary
+}) {
   const { t } = useTranslation()
   const location = useLocation()
   const user = useAuthStore(selectUser)
@@ -34,7 +42,7 @@ export function ReviewsTab({ productId, seeded }: { productId: number; seeded: R
 
   const [sort, setSort] = useState<ReviewSort>('newest')
   const [editing, setEditing] = useState(false)
-  const { items, summary } = useProductReviews(productId, seeded, sort)
+  const items = useProductReviews(productId, seeded, sort)
 
   const own = user ? items.find((r) => r.local?.userId === user.id) : undefined
   const sortItems = SORTS.map((value) => ({ value, label: t(`reviews.sort.${value}`) }))

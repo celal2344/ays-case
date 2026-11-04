@@ -5,12 +5,11 @@ import { useTranslation } from 'react-i18next'
 
 import { ErrorState, NotFound, PageSkeleton } from '@/components/feedback/feedback'
 import { Button } from '@/components/ui/button'
-import { useProductReviews } from '@/features/reviews/hooks/use-product-reviews'
 import { RatingStars } from '@/features/reviews/components/rating-stars'
 import { ReviewsTab } from '@/features/reviews/components/reviews-tab'
 import { useMediaQuery } from '@/lib/use-media-query'
 
-import type { Review } from '../schemas'
+import type { ReviewSummary } from '@/features/reviews/schemas'
 import { useAddToCart, useBuyNow } from '@/features/cart/hooks/use-add-to-cart'
 import { FavoriteButton } from '@/features/favorites/components/favorite-button'
 import { useCatalog } from '../hooks/use-catalog'
@@ -31,7 +30,7 @@ import { StickyBar } from './detail/sticky-bar'
 import { DiscountBadge, StockBadge } from './product-badges'
 import { ProductPrice } from './product-price'
 
-const NO_REVIEWS: Review[] = []
+const NO_HISTOGRAM = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } as const
 
 const route = getRouteApi('/products/$productId')
 
@@ -52,11 +51,10 @@ export function ProductDetailPage() {
   const hash = useLocation({ select: (location) => location.hash })
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const { products: catalog } = useCatalog()
-  const { summary } = useProductReviews(id, product?.reviews ?? NO_REVIEWS, 'newest')
 
   const hasSimilar =
     product !== undefined &&
-    (catalog ?? []).some((p) => p.category === product.category && p.id !== id)
+    (catalog ?? []).some((p) => p.category.slug === product.category.slug && p.id !== id)
   const sectionIds = product
     ? ['details', 'description', 'reviews', ...(hasSimilar ? ['similar'] : [])]
     : []
@@ -77,7 +75,8 @@ export function ProductDetailPage() {
   if (!product) return <ErrorState onRetry={() => void query.refetch()} />
 
   const outOfStock = product.stock <= 0
-  const images = product.images.length > 0 ? product.images : [product.thumbnail]
+  const gallery = product.images.toSorted((a, b) => a.position - b.position).map((i) => i.url)
+  const images = gallery.length > 0 ? gallery : product.thumbnail ? [product.thumbnail] : []
   const goToSection = (section: string) => {
     setActiveSection(section)
     void navigate({
@@ -87,6 +86,12 @@ export function ProductDetailPage() {
       hashScrollIntoView: { behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' },
     })
     document.getElementById(`${section}-heading`)?.focus({ preventScroll: true })
+  }
+  // rating, count and histogram are computed by the API (SQL); nothing is derived here
+  const summary: ReviewSummary = {
+    average: product.rating,
+    count: product.reviewCount,
+    histogram: product.ratingHistogram ?? NO_HISTOGRAM,
   }
   const sections = [
     { id: 'details', label: t('products.tabs.info') },
@@ -105,7 +110,7 @@ export function ProductDetailPage() {
         <div className="space-y-4">
           <div>
             {product.brand ? (
-              <p className="text-sm text-muted-foreground">{product.brand}</p>
+              <p className="text-sm text-muted-foreground">{product.brand.name}</p>
             ) : null}
             <div className="flex items-start justify-between gap-2">
               <h1 className="text-2xl font-semibold">{product.title}</h1>
@@ -118,20 +123,24 @@ export function ProductDetailPage() {
             onClick={() => goToSection('reviews')}
             className="flex items-center gap-2 text-sm hover:underline"
           >
-            <RatingStars rating={summary.count > 0 ? summary.average : product.rating} />
-            <span className="font-medium">
-              {(summary.count > 0 ? summary.average : product.rating).toFixed(1)}
-            </span>
-            <span className="text-muted-foreground">
-              {t('reviews.count', { count: summary.count })}
-            </span>
+            <RatingStars rating={summary.average ?? 0} />
+            {summary.average === null ? (
+              <span className="text-muted-foreground">{t('reviews.none')}</span>
+            ) : (
+              <>
+                <span className="font-medium">{summary.average.toFixed(1)}</span>
+                <span className="text-muted-foreground">
+                  {t('reviews.count', { count: summary.count })}
+                </span>
+              </>
+            )}
           </button>
 
           <div className="space-y-3 rounded-lg border bg-card p-4">
             <div className="flex flex-wrap items-center gap-2">
               <ProductPrice product={product} large />
               <DiscountBadge product={product} />
-              <StockBadge stock={product.stock} />
+              <StockBadge product={product} />
             </div>
             <div className="flex flex-wrap items-center gap-3" ref={actionsRef}>
               <QuantityStepper
@@ -175,10 +184,10 @@ export function ProductDetailPage() {
           <p className="max-w-3xl text-muted-foreground">{product.description}</p>
         </DetailSection>
         <DetailSection id="reviews" title={t('products.tabs.reviews', { n: summary.count })}>
-          <ReviewsTab productId={id} seeded={product.reviews} />
+          <ReviewsTab productId={id} seeded={product.reviews} summary={summary} />
         </DetailSection>
         <div id="similar" className={SECTION_SCROLL_MARGIN}>
-          <SimilarProducts productId={id} category={product.category} />
+          <SimilarProducts productId={id} category={product.category.slug} />
         </div>
       </div>
       <RecentlyViewedStrip excludeId={id} />

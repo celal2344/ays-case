@@ -9,7 +9,7 @@ const NONE: number[] = []
 
 function useUserKey() {
   const user = useAuthStore(selectUser)
-  return user ? String(user.id) : 'guest'
+  return user ? user.id : 'guest'
 }
 
 /** The current visitor's recently viewed products, newest first, from the merged catalog. */

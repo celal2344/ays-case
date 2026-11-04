@@ -10,7 +10,6 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 
-import { categoryLabel } from '../../category'
 import type { Product } from '../../schemas'
 
 /** Home › category › product; the category crumb opens the shop list filtered by it. */
@@ -24,8 +23,10 @@ export function ProductBreadcrumb({ product }: { product: Pick<Product, 'categor
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink render={<Link to="/products" search={{ category: product.category }} />}>
-            {categoryLabel(product.category)}
+          <BreadcrumbLink
+            render={<Link to="/products" search={{ category: product.category.slug }} />}
+          >
+            {product.category.name}
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />

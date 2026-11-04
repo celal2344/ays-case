@@ -26,7 +26,7 @@ describe('search focus panel', () => {
 
   it('shows recently viewed and recent searches when there are some', async () => {
     signInAs('averyp')
-    useRecentlyViewedStore.getState().record('16', 1)
+    useRecentlyViewedStore.getState().record('user-16', 1)
     useSearchStore.getState().record('mascara')
     await renderApp('/orders')
     await userEvent.click(await box())

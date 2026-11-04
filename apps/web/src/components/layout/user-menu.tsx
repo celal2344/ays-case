@@ -37,7 +37,7 @@ export function UserMenu() {
         render={<Button variant="ghost" className="gap-2 px-2" aria-label={fullName} />}
       >
         <Avatar className="size-7">
-          <AvatarImage src={user.image} alt="" />
+          <AvatarImage src={user.image ?? undefined} alt="" />
           <AvatarFallback>
             <User className="size-4" aria-hidden="true" />
           </AvatarFallback>

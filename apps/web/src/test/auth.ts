@@ -1,14 +1,10 @@
 import { useAuthStore } from '@/features/auth/store'
 
-import { fixtureUsers, toPublicUser } from './msw/handlers'
+import { fixtureUsers, serverSession, toPublicUser } from './msw/handlers'
 
-/** Puts the store in the "signed in" state without going through the login form. */
+/** Puts the store and the mocked server in the "signed in" state without going through the form. */
 export function signInAs(username: 'emilys' | 'averyp') {
   const user = fixtureUsers[username]!
-  useAuthStore.setState({
-    accessToken: `access-${user.id}`,
-    refreshToken: `refresh-${user.id}`,
-    user: toPublicUser(user),
-    status: 'authenticated',
-  })
+  serverSession.userId = user.id
+  useAuthStore.setState({ user: toPublicUser(user), status: 'authenticated' })
 }

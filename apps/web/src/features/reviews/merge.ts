@@ -1,11 +1,9 @@
 import type { Review } from '@/features/products/schemas'
 
-import type { LocalReview, ReviewItem, ReviewSort, ReviewSummary } from './schemas'
+import type { LocalReview, ReviewItem, ReviewSort } from './schemas'
 
-/** Seeded reviews have no id, so date + email identifies one (used to hide it). */
-export function seededKey(review: Pick<Review, 'date' | 'reviewerEmail'>) {
-  return `${review.date}|${review.reviewerEmail}`
-}
+/** API reviews have a stable id, so it identifies one (used to hide it). */
+export const seededKey = (review: Pick<Review, 'id'>) => `api-${review.id}`
 
 export function mergeReviews(
   seeded: Review[],
@@ -19,8 +17,8 @@ export function mergeReviews(
       key: seededKey(r),
       rating: r.rating,
       comment: r.comment,
-      date: r.date,
-      authorName: r.reviewerName,
+      date: r.createdAt,
+      authorName: r.author.name,
     }))
   const fromLocal: ReviewItem[] = local.map((r) => ({
     key: r.id,
@@ -40,16 +38,4 @@ export function sortReviews(reviews: ReviewItem[], sort: ReviewSort): ReviewItem
     if (sort === 'lowest') return a.rating - b.rating || byNewest(a, b)
     return byNewest(a, b)
   })
-}
-
-export function summarize(reviews: Pick<ReviewItem, 'rating'>[]): ReviewSummary {
-  const histogram: ReviewSummary['histogram'] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-  let total = 0
-  for (const { rating } of reviews) {
-    const star = Math.min(5, Math.max(1, Math.round(rating))) as 1 | 2 | 3 | 4 | 5
-    histogram[star] += 1
-    total += rating
-  }
-  const count = reviews.length
-  return { count, average: count === 0 ? 0 : total / count, histogram }
 }

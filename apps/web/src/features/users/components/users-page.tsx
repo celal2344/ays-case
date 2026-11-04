@@ -100,7 +100,7 @@ function ActionsCell({ user }: { user: User }) {
     <div className="flex justify-end gap-1">
       <Link
         to="/admin/users/$userId/edit"
-        params={{ userId: String(user.id) }}
+        params={{ userId: user.id }}
         aria-label={t('admin.users.edit', { name })}
         className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
       >

@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/utils'
-import { formatPrice } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { selectLanguage, usePreferencesStore } from '@/preferences/store'
 
-import { salePriceCents, toCents } from '@ays/validators'
+import { salePriceCents } from '@ays/validators'
 import { hasDiscount } from '../pricing'
 import type { Product } from '../schemas'
 
@@ -14,7 +14,7 @@ export function ProductPrice({
   className,
   large = false,
 }: {
-  product: Pick<Product, 'price' | 'discountPercentage'>
+  product: Pick<Product, 'priceCents' | 'discountPercentage'>
   className?: string
   large?: boolean
 }) {
@@ -24,12 +24,12 @@ export function ProductPrice({
   return (
     <div className={cn('flex flex-wrap items-baseline gap-x-2', className)}>
       <span className={cn('font-bold text-brand-text', large ? 'text-3xl' : 'text-base')}>
-        {formatPrice(salePriceCents(product) / 100, language)}
+        {formatMoney(salePriceCents(product), language)}
       </span>
       {discounted ? (
         <span className={cn('text-muted-foreground line-through', large ? 'text-base' : 'text-sm')}>
           <span className="sr-only">{t('products.originalPrice')}</span>
-          {formatPrice(toCents(product.price) / 100, language)}
+          {formatMoney(product.priceCents, language)}
         </span>
       ) : null}
     </div>

@@ -1,6 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { HttpResponse, http } from 'msw'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { useCartStore } from '@/features/cart/store'
@@ -8,6 +7,7 @@ import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { useReviewsStore } from '@/features/reviews/store'
 import { useUserOverlayStore } from '@/features/users/overlay-store'
 import { signInAs } from '@/test/auth'
+import { cat, productInput, tags } from '@/test/fixtures/products'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
@@ -24,7 +24,6 @@ afterEach(() => server.events.removeAllListeners())
 
 const search = (router: { state: { location: { search: unknown } } }) =>
   router.state.location.search
-const rowOf = (title: string) => screen.getByText(title).closest('tr')!
 
 async function fillForm(values: {
   title: string
@@ -136,7 +135,7 @@ describe('create a product (PROD-3)', () => {
     expect(requests.filter((r) => r.startsWith('POST'))).toEqual([])
   })
 
-  it('sends POST /products/add, stores a local product and shows it first in the shop, then after reload', async () => {
+  it('stores a local product (overlay only, no request) and shows it first in the shop, then after reload', async () => {
     signInAs('emilys')
     const requests = recordRequests()
     const { router } = await renderApp('/admin/products/new')
@@ -144,14 +143,14 @@ describe('create a product (PROD-3)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Create product' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/admin/products'))
-    expect(requests.filter((r) => r === 'POST /products/add')).toHaveLength(1)
+    expect(requests.filter((r) => /^(PUT|POST|DELETE)/.test(r))).toEqual([])
 
     const created = Object.values(useProductOverlayStore.getState().created)
     expect(created).toHaveLength(1)
     expect(created[0]).toMatchObject({
       id: 100_000,
       title: 'Brand new gadget',
-      price: 49.9,
+      priceCents: 4990,
       stock: 12,
     })
 
@@ -164,21 +163,6 @@ describe('create a product (PROD-3)', () => {
     // survives a reload: the persisted overlay rehydrates
     await useProductOverlayStore.persist.rehydrate()
     expect(Object.keys(useProductOverlayStore.getState().created)).toEqual(['100000'])
-  })
-
-  it('shows the error and stores nothing when DummyJSON rejects the request', async () => {
-    signInAs('emilys')
-    server.use(
-      http.post('https://dummyjson.com/products/add', () =>
-        HttpResponse.json({ message: 'nope' }, { status: 400 }),
-      ),
-    )
-    const { router } = await renderApp('/admin/products/new')
-    await fillForm({ title: 'Rejected gadget', price: '5' })
-    await userEvent.click(screen.getByRole('button', { name: 'Create product' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('nope')
-    expect(router.state.location.pathname).toBe('/admin/products/new')
-    expect(Object.keys(useProductOverlayStore.getState().created)).toEqual([])
   })
 
   it('previews the thumbnail URL as you type', async () => {
@@ -196,7 +180,7 @@ describe('create a product (PROD-3)', () => {
 })
 
 describe('edit a product (PROD-4)', () => {
-  it('pre-fills the form; saving a remote product sends PUT and updates the shop and the detail page', async () => {
+  it('pre-fills the form; saving a remote product updates the shop and the detail page', async () => {
     signInAs('emilys')
     const requests = recordRequests()
     const { router } = await renderApp('/admin/products/1/edit')
@@ -208,8 +192,8 @@ describe('edit a product (PROD-4)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/admin/products'))
 
-    expect(requests.filter((r) => r === 'PUT /products/1')).toHaveLength(1)
-    expect(useProductOverlayStore.getState().patched[1]).toMatchObject({ price: 12.5 })
+    expect(requests.filter((r) => /^(PUT|POST|DELETE)/.test(r))).toEqual([])
+    expect(useProductOverlayStore.getState().patched[1]).toMatchObject({ priceCents: 1250 })
 
     await router.navigate({ to: '/products/$productId', params: { productId: '1' } })
     expect((await screen.findAllByText('$12.50')).length).toBeGreaterThan(0)
@@ -217,17 +201,18 @@ describe('edit a product (PROD-4)', () => {
 
   it('editing a locally created product makes no network request', async () => {
     signInAs('emilys')
-    const local = useProductOverlayStore.getState().create({
-      title: 'Local thing',
-      description: 'A product made by the admin earlier.',
-      category: 'beauty',
-      price: 5,
-      discountPercentage: 0,
-      rating: 0,
-      stock: 3,
-      thumbnail: '',
-      tags: ['beauty'],
-    })
+    const local = useProductOverlayStore.getState().create(
+      productInput({
+        title: 'Local thing',
+        description: 'A product made by the admin earlier.',
+        category: cat('beauty', 'Beauty'),
+        priceCents: 500,
+        discountPercentage: 0,
+        stock: 3,
+        thumbnail: null,
+        tags: tags('beauty'),
+      }),
+    )
     const requests = recordRequests()
     const { router } = await renderApp(`/admin/products/${local.id}/edit`)
     const title = await screen.findByLabelText('Title')
@@ -274,12 +259,12 @@ describe('edit a product (PROD-4)', () => {
 })
 
 describe('delete a product (PROD-5)', () => {
-  it('asks to confirm, sends DELETE, and removes the product from the shop, detail page, carts and reviews', async () => {
+  it('asks to confirm and removes the product from the shop, detail page, carts and reviews', async () => {
     signInAs('emilys')
-    useCartStore.getState().add(16, 2, 1, 50)
+    useCartStore.getState().add('user-16', 2, 1, 50)
     useReviewsStore.getState().add({
       productId: 2,
-      userId: 16,
+      userId: 'user-16',
       authorName: 'Avery Perez',
       rating: 4,
       comment: 'Quite good indeed.',
@@ -293,11 +278,11 @@ describe('delete a product (PROD-5)', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Delete' }))
 
     expect(await screen.findByText('groceries item 02 was deleted.')).toBeInTheDocument()
-    expect(requests.filter((r) => r === 'DELETE /products/2')).toHaveLength(1)
+    expect(requests.filter((r) => r.startsWith('DELETE'))).toEqual([])
     expect(screen.queryByText('Showing 1–20 of 30')).not.toBeInTheDocument()
     expect(await screen.findByText('Showing 1–20 of 29')).toBeInTheDocument()
     expect(useProductOverlayStore.getState().deleted).toEqual([2])
-    expect(useCartStore.getState().byUser[16]).toEqual([])
+    expect(useCartStore.getState().byUser['user-16']).toEqual([])
     expect(useReviewsStore.getState().byProduct[2]).toBeUndefined()
 
     await router.navigate({ to: '/products/$productId', params: { productId: '2' } })
@@ -317,17 +302,18 @@ describe('delete a product (PROD-5)', () => {
 
   it('deleting a locally created product makes no network request', async () => {
     signInAs('emilys')
-    const local = useProductOverlayStore.getState().create({
-      title: 'Short lived',
-      description: 'A product that will not last.',
-      category: 'beauty',
-      price: 5,
-      discountPercentage: 0,
-      rating: 0,
-      stock: 3,
-      thumbnail: '',
-      tags: ['beauty'],
-    })
+    const local = useProductOverlayStore.getState().create(
+      productInput({
+        title: 'Short lived',
+        description: 'A product that will not last.',
+        category: cat('beauty', 'Beauty'),
+        priceCents: 500,
+        discountPercentage: 0,
+        stock: 3,
+        thumbnail: null,
+        tags: tags('beauty'),
+      }),
+    )
     const requests = recordRequests()
     await renderApp('/admin/products')
     await userEvent.click(await screen.findByRole('button', { name: 'Delete Short lived' }))
@@ -338,29 +324,12 @@ describe('delete a product (PROD-5)', () => {
     expect(useProductOverlayStore.getState().created[local.id]).toBeUndefined()
     expect(requests.filter((r) => /^(PUT|POST|DELETE)/.test(r))).toEqual([])
   })
-
-  it('keeps the product and reports the error when DummyJSON fails', async () => {
-    signInAs('emilys')
-    server.use(
-      http.delete('https://dummyjson.com/products/2', () =>
-        HttpResponse.json({ message: 'boom' }, { status: 500 }),
-      ),
-    )
-    await renderApp('/admin/products')
-    await userEvent.click(await screen.findByRole('button', { name: 'Delete groceries item 02' }))
-    await userEvent.click(
-      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
-    )
-    expect(await screen.findByText('boom')).toBeInTheDocument()
-    expect(useProductOverlayStore.getState().deleted).toEqual([])
-    expect(rowOf('groceries item 02')).toBeInTheDocument()
-  })
 })
 
 describe('dashboard (EX-13, EX-15)', () => {
   it('shows product, low-stock, out-of-stock and local-change counts', async () => {
     signInAs('emilys')
-    useProductOverlayStore.getState().update(1, { price: 11 })
+    useProductOverlayStore.getState().update(1, { priceCents: 1100 })
     useProductOverlayStore.getState().remove(2)
     await renderApp('/admin')
     // "Products" is also the nav link, so pick the label that sits inside a stat card
@@ -371,7 +340,7 @@ describe('dashboard (EX-13, EX-15)', () => {
         .find((card): card is HTMLElement => card !== null)!
     await screen.findByText('Local changes')
     expect(within(stat('Products')).getByText('29')).toBeInTheDocument()
-    expect(within(stat('Low stock (≤ 5)')).getByText('1')).toBeInTheDocument() // id 6 has stock 4
+    expect(within(stat('Low stock')).getByText('1')).toBeInTheDocument() // id 6 has stock 4
     expect(within(stat('Out of stock')).getByText('1')).toBeInTheDocument() // id 3
     expect(within(stat('Local changes')).getByText('2')).toBeInTheDocument()
   })
@@ -379,12 +348,12 @@ describe('dashboard (EX-13, EX-15)', () => {
   it('Reset demo data restores the original catalog and clears reviews and carts, after confirming', async () => {
     signInAs('emilys')
     useProductOverlayStore.getState().remove(2)
-    useProductOverlayStore.getState().update(1, { price: 99 })
-    useUserOverlayStore.getState().remove(5)
-    useCartStore.getState().add(16, 4, 1, 50)
+    useProductOverlayStore.getState().update(1, { priceCents: 9900 })
+    useUserOverlayStore.getState().remove('user-5')
+    useCartStore.getState().add('user-16', 4, 1, 50)
     useReviewsStore.getState().add({
       productId: 4,
-      userId: 16,
+      userId: 'user-16',
       authorName: 'Avery Perez',
       rating: 4,
       comment: 'Quite good indeed.',

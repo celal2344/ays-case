@@ -41,7 +41,7 @@ describe('cart selectors', () => {
   })
 
   it('does not drift on float-unfriendly prices', () => {
-    const product = { ...fixtureProducts[0]!, id: 500, price: 0.1, discountPercentage: 0 }
+    const product = { ...fixtureProducts[0]!, id: 500, priceCents: 10, discountPercentage: 0 }
     const { items } = buildCartItems([line(500, 3)], [product])
     expect(cartTotals(items).totalCents).toBe(30)
   })

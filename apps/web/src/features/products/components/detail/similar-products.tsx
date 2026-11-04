@@ -13,7 +13,7 @@ export function SimilarProducts({ productId, category }: { productId: number; ca
   const similar = useMemo(
     () =>
       (products ?? [])
-        .filter((p) => p.category === category && p.id !== productId)
+        .filter((p) => p.category.slug === category && p.id !== productId)
         .slice(0, MAX_SIMILAR),
     [products, category, productId],
   )

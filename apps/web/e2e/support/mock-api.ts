@@ -4,8 +4,8 @@ import { fixtureCategories, fixtureDetail, fixtureProducts } from '../../src/tes
 import { fixtureUserList } from '../../src/test/fixtures/users'
 
 const accounts = {
-  emilys: { id: 1, password: 'emilyspass', role: 'admin' },
-  averyp: { id: 16, password: 'averyppass', role: 'user' },
+  emilys: { id: 'user-1', password: 'emilyspass' },
+  averyp: { id: 'user-16', password: 'averyppass' },
 } as const
 
 const PIXEL =
@@ -14,77 +14,68 @@ const PIXEL =
 const json = (route: Route, body: unknown, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
 
-/** Serves DummyJSON from the shared test fixtures, so the e2e specs never touch the network. */
+/** Serves the API from the shared test fixtures, so the e2e specs never touch a real backend. */
 export async function mockApi(page: Page) {
-  await page.route(/^https:\/\/(cdn\.)?dummyjson\.com\/(?!auth|products|users|carts).+/, (route) =>
+  let signedInAs: string | null = null
+
+  await page.route(/^https:\/\/(cdn\.)?dummyjson\.com\/.+/, (route) =>
     route.fulfill({ contentType: 'image/png', body: Buffer.from(PIXEL, 'base64') }),
   )
 
-  await page.route('https://dummyjson.com/**', async (route) => {
+  await page.route('**/api/**', async (route) => {
     const request = route.request()
     const { pathname } = new URL(request.url())
     const method = request.method()
-    const body = request.postDataJSON() as Record<string, unknown> | null
+    const user = fixtureUserList.find((u) => u.id === signedInAs)
 
-    if (pathname === '/auth/login' && method === 'POST') {
-      const username = String(body?.username)
-      const account = accounts[username as keyof typeof accounts]
-      if (!account || account.password !== body?.password) {
-        return json(route, { message: 'Invalid credentials' }, 400)
+    if (pathname === '/api/auth/sign-in/username' && method === 'POST') {
+      const body = request.postDataJSON() as { username: string; password: string }
+      const account = accounts[body.username as keyof typeof accounts]
+      if (!account || account.password !== body.password) {
+        return json(
+          route,
+          { code: 'INVALID_USERNAME_OR_PASSWORD', message: 'Invalid username or password' },
+          401,
+        )
       }
-      const user = fixtureUserList.find((u) => u.id === account.id)!
-      return json(route, {
-        ...user,
-        accessToken: `access-${account.id}`,
-        refreshToken: `refresh-${account.id}`,
-      })
+      signedInAs = account.id
+      return json(route, { redirect: false, token: 'token' })
     }
-    if (pathname === '/auth/me') {
-      const id = /^Bearer access-(\d+)$/.exec(request.headers().authorization ?? '')?.[1]
-      const user = fixtureUserList.find((u) => u.id === Number(id))
-      return user ? json(route, user) : json(route, { message: 'Token Expired!' }, 401)
+    if (pathname === '/api/auth/get-session') {
+      return json(
+        route,
+        user
+          ? {
+              session: { id: `session-${user.id}`, userId: user.id, token: 'token' },
+              user: { ...user, name: `${user.firstName} ${user.lastName}`, emailVerified: true },
+            }
+          : null,
+      )
     }
-    if (pathname === '/auth/refresh') {
-      const id = /^refresh-(\d+)$/.exec(String(body?.refreshToken))?.[1]
-      return id
-        ? json(route, { accessToken: `access-${id}`, refreshToken: `refresh-${id}` })
-        : json(route, { message: 'Invalid refresh token' }, 401)
+    if (pathname === '/api/auth/sign-out') {
+      signedInAs = null
+      return json(route, { success: true })
     }
 
-    if (pathname === '/products/categories') return json(route, fixtureCategories)
-    if (pathname === '/products/add') return json(route, { id: 195, ...body })
-    if (pathname === '/products') {
-      return json(route, {
-        products: fixtureProducts,
-        total: fixtureProducts.length,
-        skip: 0,
-        limit: 0,
-      })
+    if (pathname === '/api/categories') return json(route, { data: fixtureCategories })
+    if (pathname === '/api/products') {
+      return json(route, { data: fixtureProducts })
     }
-    const productId = /^\/products\/(\d+)$/.exec(pathname)?.[1]
+    const productId = /^\/api\/products\/(\d+)$/.exec(pathname)?.[1]
     if (productId) {
-      const id = Number(productId)
-      if (method === 'DELETE') {
-        return json(route, { id, isDeleted: true, deletedOn: new Date().toISOString() })
-      }
-      if (method === 'PUT') return json(route, { id, ...body })
-      const detail = fixtureDetail(id)
-      return detail ? json(route, detail) : json(route, { message: 'Not found' }, 404)
+      const detail = fixtureDetail(Number(productId))
+      return detail
+        ? json(route, { data: detail })
+        : json(route, { code: 'not_found', message: 'Product not found' }, 404)
     }
 
-    if (pathname === '/users') {
-      return json(route, {
-        users: fixtureUserList,
-        total: fixtureUserList.length,
-        skip: 0,
-        limit: 0,
-      })
-    }
-    if (pathname === '/carts/add') {
-      const products = (body?.products ?? []) as { id: number }[]
-      return json(route, { id: 209, userId: body?.userId, products })
+    if (pathname === '/api/users') {
+      if (!user) return json(route, { code: 'unauthorized', message: 'Sign in first' }, 401)
+      if (user.role !== 'admin')
+        return json(route, { code: 'forbidden', message: 'Admins only' }, 403)
+      return json(route, { data: fixtureUserList })
     }
 
-    return json(route, { message: `Unmocked ${method} ${pathname}` }, 404)
+    return json(route, { code: 'not_found', message: `Unmocked ${method} ${pathname}` }, 404)
   })
 }

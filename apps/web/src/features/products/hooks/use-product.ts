@@ -3,9 +3,29 @@ import { useMemo } from 'react'
 
 import { toAppError } from '@/lib/http-error'
 
+import { patchProduct } from '../catalog'
 import { isLocal, useProductOverlayStore } from '../overlay-store'
 import { productDetailQueryOptions } from '../queries'
-import type { ProductDetail } from '../schemas'
+import type { Product, ProductDetail } from '../schemas'
+
+/** A locally created product has no remote record: the detail-only fields are empty. */
+function toLocalDetail(product: Product): ProductDetail {
+  return {
+    ...product,
+    sku: '',
+    barcode: null,
+    images: [],
+    weightG: null,
+    widthMm: null,
+    heightMm: null,
+    depthMm: null,
+    warranty: null,
+    shipping: null,
+    returnPolicy: null,
+    ratingHistogram: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
+    reviews: [],
+  }
+}
 
 /**
  * One product for the detail page: remote detail (images, reviews, specs) with the admin patch on top.
@@ -20,8 +40,8 @@ export function useProduct(id: number) {
 
   const product = useMemo<ProductDetail | undefined>(() => {
     if (deleted) return undefined
-    if (local) return created ? { ...created, images: [], reviews: [] } : undefined
-    return query.data ? { ...query.data, ...patch } : undefined
+    if (local) return created ? toLocalDetail(created) : undefined
+    return query.data ? patchProduct(query.data, patch) : undefined
   }, [deleted, local, created, query.data, patch])
 
   const notFound =

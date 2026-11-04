@@ -1,17 +1,19 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 
 import { useProductOverlayStore } from '@/features/products/overlay-store'
-import { fixtureProducts, productInput } from '@/test/fixtures/products'
+import { cat, fixtureCategories, fixtureProducts, productInput } from '@/test/fixtures/products'
+import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
 import { GROUP_IDS, groupCategories, groupOf } from '@/features/products/category-groups'
 
 const search = (router: { state: { location: { search: unknown } } }) =>
   router.state.location.search
-const categories = (slugs: string[]) => slugs.map((slug) => ({ slug, name: slug, url: '' }))
-const product = (category: string) => ({ category })
+const categories = (slugs: string[]) => slugs.map((slug) => cat(slug))
+const product = (category: string) => ({ category: cat(category) })
 
 describe('groupCategories', () => {
   it('puts known slugs in their group, unknown ones in Other, in a fixed group order', () => {
@@ -77,9 +79,16 @@ describe('mega-menu navigation', () => {
   })
 
   it('a product in a category the map does not know shows up under Other, and counts follow admin edits', async () => {
+    server.use(
+      http.get('http://localhost/api/categories', () =>
+        HttpResponse.json({ data: [...fixtureCategories, cat('pet-toys', 'Pet Toys')] }),
+      ),
+    )
     useProductOverlayStore
       .getState()
-      .create(productInput({ title: 'Plush mouse', category: 'pet-toys', stock: 3 }))
+      .create(
+        productInput({ title: 'Plush mouse', category: cat('pet-toys', 'Pet Toys'), stock: 3 }),
+      )
     await renderApp('/products')
     const nav = await screen.findByRole('navigation', { name: 'Categories' })
     await userEvent.click(await within(nav).findByRole('button', { name: 'Other' }))
@@ -87,7 +96,7 @@ describe('mega-menu navigation', () => {
   })
 
   it('groups with no products are not rendered', async () => {
-    for (const p of fixtureProducts.filter((p) => p.category === 'groceries')) {
+    for (const p of fixtureProducts.filter((p) => p.category.slug === 'groceries')) {
       useProductOverlayStore.getState().remove(p.id)
     }
     await renderApp('/products')
