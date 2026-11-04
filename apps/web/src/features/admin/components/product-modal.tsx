@@ -4,7 +4,8 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { PageSkeleton, NotFound } from '@/components/feedback/feedback'
+import { NotFound } from '@/components/feedback/feedback'
+import { Skeleton } from '@/components/ui/skeleton'
 import { PendingButton } from '@/components/pending-button'
 import { SearchableSelect } from '@/components/searchable-select'
 import { UnsavedChangesDialog } from '@/components/unsaved-changes'
@@ -665,6 +666,34 @@ function ProductModalForm({
   )
 }
 
+/** What the modal shows while the product loads: the section menu and a few fields, padded like the form. */
+function ModalSkeleton() {
+  const { t } = useTranslation()
+  return (
+    <div
+      className="flex min-h-0 flex-1 flex-col md:flex-row"
+      aria-busy="true"
+      aria-label={t('feedback.loading')}
+    >
+      <div className="flex shrink-0 gap-2 border-b p-3 md:w-52 md:flex-col md:border-r md:border-b-0">
+        {Array.from({ length: 5 }, (_, i) => (
+          <Skeleton key={i} className="h-8 w-24 md:w-full" />
+        ))}
+      </div>
+      <div className="min-h-0 flex-1 space-y-4 p-4">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /**
  * The product form as a large modal, open while the URL says so (`?new=1` or `?edit=12`, optionally
  * `&section=images`). Closing goes back to the plain list; unsaved changes are asked about by the
@@ -691,7 +720,7 @@ export function ProductModal({
 
   let body: ReactNode = null
   if (open) {
-    if (editing && (isPending || tags.isPending)) body = <PageSkeleton />
+    if (editing && (isPending || tags.isPending)) body = <ModalSkeleton />
     else if (editing && (notFound || !product))
       body = (
         <div className="p-4">
