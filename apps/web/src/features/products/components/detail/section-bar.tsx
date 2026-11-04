@@ -22,7 +22,7 @@ export function SectionBar({
   onSelect,
   product,
   showBuy,
-  onAdd,
+  quantity,
 }: {
   barRef: React.RefObject<HTMLDivElement | null>
   sections: SectionLink[]
@@ -30,7 +30,7 @@ export function SectionBar({
   onSelect: (id: string) => void
   product: Product
   showBuy: boolean
-  onAdd: () => void
+  quantity: number
 }) {
   const { t } = useTranslation()
   const navRef = useRef<HTMLElement>(null)
@@ -74,7 +74,7 @@ export function SectionBar({
       {showBuy ? (
         <CompactBuy
           product={product}
-          onAdd={onAdd}
+          quantity={quantity}
           className="hidden max-w-md shrink-0 md:flex lg:max-w-lg"
         />
       ) : null}

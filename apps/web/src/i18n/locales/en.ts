@@ -243,6 +243,7 @@ export const en = {
     outOfStock: '{{title}} is out of stock.',
     added: '{{title}} was added to your cart.',
     maxReached: 'Only {{max}} of {{title}} available, so that is what is in your cart.',
+    maxInCart: 'Max in cart',
     removedMissing: 'Some items are no longer available and were removed from your cart.',
     unavailable: 'This product is out of stock. Remove it to continue.',
     remove: 'Remove {{title}}',

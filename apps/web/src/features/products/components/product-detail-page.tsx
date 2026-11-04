@@ -1,21 +1,19 @@
 import { getRouteApi, useLocation, useNavigate } from '@tanstack/react-router'
-import { ShoppingCart, Zap } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ErrorState, NotFound, PageSkeleton } from '@/components/feedback/feedback'
-import { Button } from '@/components/ui/button'
 import { RatingStars } from '@/features/reviews/components/rating-stars'
 import { ReviewsTab } from '@/features/reviews/components/reviews-tab'
 import { useMediaQuery } from '@/lib/use-media-query'
 
 import type { ReviewSummary } from '@/features/reviews/schemas'
-import { useAddToCart, useBuyNow } from '@/features/cart/hooks/use-add-to-cart'
 import { FavoriteButton } from '@/features/favorites/components/favorite-button'
 import { useCatalog } from '../hooks/use-catalog'
 import { useInView } from '../hooks/use-in-view'
 import { useProduct } from '../hooks/use-product'
 import { useScrollSpy } from '../hooks/use-scroll-spy'
+import { BuyActions } from './detail/buy-actions'
 import { DeliveryInfo } from './detail/delivery-info'
 import { DetailSection, SECTION_SCROLL_MARGIN } from './detail/detail-section'
 import { Gallery } from './detail/gallery'
@@ -39,8 +37,6 @@ export function ProductDetailPage() {
   const { productId } = route.useParams()
   const id = Number(productId)
   const { product, notFound, isPending, query } = useProduct(id)
-  const addToCart = useAddToCart()
-  const buyNow = useBuyNow()
 
   const [quantity, setQuantity] = useState(1)
   const actionsRef = useRef<HTMLDivElement>(null)
@@ -74,7 +70,6 @@ export function ProductDetailPage() {
   if (isPending) return <PageSkeleton />
   if (!product) return <ErrorState onRetry={() => void query.refetch()} />
 
-  const outOfStock = product.stock <= 0
   const gallery = product.images.toSorted((a, b) => a.position - b.position).map((i) => i.url)
   const images = gallery.length > 0 ? gallery : product.thumbnail ? [product.thumbnail] : []
   const goToSection = (section: string) => {
@@ -148,19 +143,7 @@ export function ProductDetailPage() {
                 max={Math.max(1, product.stock)}
                 onChange={setQuantity}
               />
-              <Button size="lg" disabled={outOfStock} onClick={() => addToCart(product, quantity)}>
-                <ShoppingCart className="size-4" />
-                {t('products.addToCart')}
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                disabled={outOfStock}
-                onClick={() => buyNow(product, quantity)}
-              >
-                <Zap className="size-4" />
-                {t('products.buyNow')}
-              </Button>
+              <BuyActions product={product} quantity={quantity} />
             </div>
           </div>
           <DeliveryInfo product={product} />
@@ -175,7 +158,7 @@ export function ProductDetailPage() {
           onSelect={goToSection}
           product={product}
           showBuy={!actionsVisible}
-          onAdd={() => addToCart(product, quantity)}
+          quantity={quantity}
         />
         <DetailSection id="details" title={t('products.tabs.info')}>
           <Specs product={product} />
@@ -192,11 +175,7 @@ export function ProductDetailPage() {
       </div>
       <RecentlyViewedStrip excludeId={id} />
 
-      <StickyBar
-        product={product}
-        visible={!actionsVisible}
-        onAdd={() => addToCart(product, quantity)}
-      />
+      <StickyBar product={product} visible={!actionsVisible} quantity={quantity} />
     </div>
   )
 }

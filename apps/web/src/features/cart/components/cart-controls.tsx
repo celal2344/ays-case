@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next'
 
 import { QuantityStepper } from '@/components/quantity-stepper'
 import { Button } from '@/components/ui/button'
+import { PendingButton } from '@/components/pending-button'
 import type { Product } from '@/features/products/schemas'
 
-import { useAddToCart } from '../hooks/use-add-to-cart'
+import { useAddButton } from '../hooks/use-add-to-cart'
 import { useCart } from '../hooks/use-cart'
 
 /**
@@ -14,21 +15,22 @@ import { useCart } from '../hooks/use-cart'
  */
 export function CartControls({ product }: { product: Product }) {
   const { t } = useTranslation()
-  const addToCart = useAddToCart()
+  const { add, pending } = useAddButton(product)
   const cart = useCart()
   const line = cart.lines.find((l) => l.productId === product.id)
 
   if (!line) {
     return (
-      <Button
+      <PendingButton
         className="w-full"
         size="sm"
+        pending={pending}
         disabled={product.stock <= 0}
-        onClick={() => addToCart(product)}
+        onClick={() => void add()}
       >
         <ShoppingCart className="size-4" />
         {t('products.addToCart')}
-      </Button>
+      </PendingButton>
     )
   }
 

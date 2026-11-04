@@ -18,6 +18,7 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Money } from '@/components/money'
+import { useInFlight } from '@/lib/in-flight'
 import { ProductImage } from '@/features/products/components/product-image'
 
 import { CheckoutSteps } from '@/features/orders/components/checkout-steps'
@@ -139,6 +140,7 @@ export function CartPage() {
   const { t } = useTranslation()
   const cart = useCartView()
   const router = useRouter()
+  const clearing = useInFlight('cart:clear')
 
   if (cart.isError) return <ErrorState onRetry={() => void cart.refetch()} />
   if (cart.isPending) return <PageSkeleton />
@@ -176,7 +178,11 @@ export function CartPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>{t('cart.clear.cancel')}</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={() => cart.clear()}>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={clearing}
+                onClick={() => void cart.clear()}
+              >
                 {t('cart.clear.confirm')}
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -193,7 +199,7 @@ export function CartPage() {
               onQuantity={(quantity) =>
                 cart.setQuantity(item.product.id, quantity, item.product.stock)
               }
-              onRemove={() => cart.remove(item.product.id)}
+              onRemove={() => void cart.remove(item.product.id)}
             />
           ))}
         </ul>

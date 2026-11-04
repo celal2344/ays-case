@@ -27,7 +27,7 @@ export function useCartView() {
   const { remove } = cart
   useEffect(() => {
     if (!missingKey) return
-    for (const id of missingKey.split(',')) remove(Number(id))
+    for (const id of missingKey.split(',')) void remove(Number(id))
     toast.warning(t('cart.removedMissing'))
   }, [missingKey, remove, t])
 
