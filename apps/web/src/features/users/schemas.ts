@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
-import { roleSchema, type Role, type User } from '@/features/auth/schemas'
+import type { UserCreateBody, UserPatchBody } from '@ays/validators'
 
-import type { UserInput } from './overlay-store'
+import { roleSchema, type Role, type User } from '@/features/auth/schemas'
 
 export { roleSchema }
 export type { Role, User }
@@ -14,6 +14,7 @@ export const USER_ERRORS = {
   email: 'admin.users.form.errors.email',
   role: 'admin.users.form.errors.role',
   usernameTaken: 'admin.users.form.errors.usernameTaken',
+  password: 'admin.users.form.errors.password',
 } as const
 
 // Passwords are not managed here: accounts are provisioned on the server, and a password typed in
@@ -27,7 +28,10 @@ export const userFormSchema = z.object({
     .trim()
     .refine((v) => z.email().safeParse(v).success, USER_ERRORS.email),
   role: roleSchema,
+  password: z.string(),
 })
+/** The initial password is only asked for when creating; its length is checked by that field. */
+export const PASSWORD_LIMITS = { min: 8, max: 72 } as const
 export type UserFormValues = z.infer<typeof userFormSchema>
 
 export const emptyUserForm: UserFormValues = {
@@ -36,6 +40,7 @@ export const emptyUserForm: UserFormValues = {
   lastName: '',
   email: '',
   role: 'user',
+  password: '',
 }
 
 export function toUserFormValues(user: User): UserFormValues {
@@ -45,21 +50,22 @@ export function toUserFormValues(user: User): UserFormValues {
     lastName: user.lastName,
     email: user.email,
     role: user.role,
+    password: '',
   }
 }
 
-export function toUserInput(values: UserFormValues): UserInput {
+export function toUserInput(values: UserFormValues): UserCreateBody {
   return {
     username: values.username.trim(),
     firstName: values.firstName.trim(),
     lastName: values.lastName.trim(),
     email: values.email.trim(),
     role: values.role,
-    image: null,
+    password: values.password,
   }
 }
 
-export function toUserPatch(values: UserFormValues): Partial<Omit<User, 'id'>> {
+export function toUserPatch(values: UserFormValues): UserPatchBody {
   return {
     username: values.username.trim(),
     firstName: values.firstName.trim(),

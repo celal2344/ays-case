@@ -47,7 +47,6 @@ import { selectLanguage, usePreferencesStore } from '@/preferences/store'
 
 import { filterUsers } from '../catalog'
 import { userErrorText } from '../error-text'
-import { deleteGuard, type GuardReason } from '../guardrails'
 import { useDeleteUser } from '../hooks/use-user-mutations'
 import { useUsers } from '../hooks/use-users'
 import { roleSchema, USER_PAGE_SIZE, type User, type UserSearch } from '../schemas'
@@ -63,7 +62,7 @@ const features = tableFeatures({
 interface RowActions {
   requestDelete: (user: User) => void
   /** Why this user cannot be deleted, if so (yourself, the last admin). */
-  blocked: (user: User) => GuardReason | null
+  blocked: (user: User) => 'self' | null
 }
 const Actions = createContext<RowActions>({ requestDelete: () => undefined, blocked: () => null })
 
@@ -189,9 +188,9 @@ export function UsersPage() {
   const actions = useMemo<RowActions>(
     () => ({
       requestDelete: setToDelete,
-      blocked: (user) => (users ? deleteGuard(users, user.id, currentUserId) : null),
+      blocked: (user) => (user.id === currentUserId ? 'self' : null),
     }),
-    [users, currentUserId],
+    [currentUserId],
   )
 
   const confirmDelete = () => {

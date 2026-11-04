@@ -1,21 +1,6 @@
 import type { Language } from '@/lib/format'
 
-import type { UserOverlaySnapshot } from './overlay-store'
 import type { Role, User } from './schemas'
-
-export function applyUserOverlay(remote: User[], overlay: UserOverlaySnapshot): User[] {
-  const hidden = new Set(overlay.deleted)
-  const patch = (u: User): User => {
-    const changes = overlay.patched[u.id]
-    return changes ? { ...u, ...changes } : u
-  }
-  const local = Object.values(overlay.created)
-    .filter((u) => !hidden.has(u.id))
-    .map(patch)
-    .sort((a, b) => b.id.localeCompare(a.id, 'en', { numeric: true })) // newest local user first
-  const merged = remote.filter((u) => !hidden.has(u.id)).map(patch)
-  return [...local, ...merged]
-}
 
 function normalize(value: string, language: Language) {
   return language === 'tr' ? value.toLocaleLowerCase('tr') : value.toLowerCase()

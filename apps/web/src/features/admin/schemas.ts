@@ -1,18 +1,22 @@
-import { toCents } from '@ays/validators'
+import { LIMITS, toCents, type ProductBody } from '@ays/validators'
 import { z } from 'zod'
 
-import type { Category, Product } from '@/features/products/schemas'
+import type { ProductDetail } from '@/features/products/schemas'
 
 // Form fields are strings (that is what inputs hold). Messages are i18n keys, translated where shown.
 export const FORM_ERRORS = {
   title: 'admin.form.errors.title',
   description: 'admin.form.errors.description',
+  sku: 'admin.form.errors.sku',
+  barcode: 'admin.form.errors.barcode',
   category: 'admin.form.errors.category',
-  brand: 'admin.form.errors.brand',
   price: 'admin.form.errors.price',
   discount: 'admin.form.errors.discount',
   stock: 'admin.form.errors.stock',
-  thumbnail: 'admin.form.errors.thumbnail',
+  moq: 'admin.form.errors.moq',
+  threshold: 'admin.form.errors.threshold',
+  measure: 'admin.form.errors.measure',
+  imageUrl: 'admin.form.errors.imageUrl',
 } as const
 
 function isHttpUrl(value: string) {
@@ -24,15 +28,34 @@ function isHttpUrl(value: string) {
   }
 }
 
+/** Empty, or a positive number with at most `places` decimals. */
+const optionalMeasure = (places: number) =>
+  z
+    .string()
+    .trim()
+    .refine(
+      (v) => v === '' || (new RegExp(`^\\d+(\\.\\d{1,${places}})?$`).test(v) && Number(v) > 0),
+      FORM_ERRORS.measure,
+    )
+
 export const productFormSchema = z.object({
-  title: z.string().trim().min(2, FORM_ERRORS.title).max(100, FORM_ERRORS.title),
+  title: z
+    .string()
+    .trim()
+    .min(LIMITS.title.min, FORM_ERRORS.title)
+    .max(LIMITS.title.max, FORM_ERRORS.title),
   description: z
     .string()
     .trim()
-    .min(10, FORM_ERRORS.description)
-    .max(1000, FORM_ERRORS.description),
-  category: z.string().min(1, FORM_ERRORS.category),
-  brand: z.string().trim().max(50, FORM_ERRORS.brand),
+    .min(LIMITS.description.min, FORM_ERRORS.description)
+    .max(LIMITS.description.max, FORM_ERRORS.description),
+  sku: z.string().trim().min(LIMITS.sku.min, FORM_ERRORS.sku).max(LIMITS.sku.max, FORM_ERRORS.sku),
+  barcode: z.string().trim().max(LIMITS.barcode.max, FORM_ERRORS.barcode),
+  categoryId: z.string().min(1, FORM_ERRORS.category),
+  brandId: z.string(),
+  warrantyPolicyId: z.string(),
+  shippingPolicyId: z.string(),
+  returnPolicyId: z.string(),
   price: z
     .string()
     .trim()
@@ -41,103 +64,139 @@ export const productFormSchema = z.object({
     .string()
     .trim()
     .refine(
-      (v) => /^\d+(\.\d+)?$/.test(v) && Number(v) >= 0 && Number(v) <= 90,
+      (v) => /^\d+(\.\d+)?$/.test(v) && Number(v) >= 0 && Number(v) <= 100,
       FORM_ERRORS.discount,
     ),
   stock: z
     .string()
     .trim()
     .refine((v) => /^\d+$/.test(v), FORM_ERRORS.stock),
-  thumbnail: z
+  minimumOrderQuantity: z
     .string()
     .trim()
-    .refine((v) => v === '' || isHttpUrl(v), FORM_ERRORS.thumbnail),
+    .refine((v) => /^\d+$/.test(v) && Number(v) >= 1, FORM_ERRORS.moq),
+  lowStockThreshold: z
+    .string()
+    .trim()
+    .refine((v) => /^\d+$/.test(v), FORM_ERRORS.threshold),
+  weightKg: optionalMeasure(3),
+  widthCm: optionalMeasure(1),
+  heightCm: optionalMeasure(1),
+  depthCm: optionalMeasure(1),
+  tagIds: z.array(z.string()),
+  /** The image list: the array order is the position. */
+  images: z.array(
+    z.object({
+      url: z
+        .string()
+        .trim()
+        .refine((v) => isHttpUrl(v), FORM_ERRORS.imageUrl),
+    }),
+  ),
+  /** Index of the primary image in `images`. */
+  primaryImage: z.number().int().min(0),
 })
 export type ProductFormValues = z.infer<typeof productFormSchema>
 
 export const emptyProductForm: ProductFormValues = {
   title: '',
   description: '',
-  category: '',
-  brand: '',
+  sku: '',
+  barcode: '',
+  categoryId: '',
+  brandId: '',
+  warrantyPolicyId: '',
+  shippingPolicyId: '',
+  returnPolicyId: '',
   price: '',
   discountPercentage: '0',
   stock: '0',
-  thumbnail: '',
+  minimumOrderQuantity: '1',
+  lowStockThreshold: '5',
+  weightKg: '',
+  widthCm: '',
+  heightCm: '',
+  depthCm: '',
+  tagIds: [],
+  images: [],
+  primaryImage: 0,
 }
 
-export function toFormValues(product: Product): ProductFormValues {
+const text = (id: number | null | undefined) => (id === null || id === undefined ? '' : String(id))
+const fromMeasure = (value: number | null, divisor: number) =>
+  value === null ? '' : String(value / divisor)
+
+/** `tagIdBySlug` maps the detail's tag slugs back to ids (the detail carries slug and name only). */
+export function toFormValues(
+  product: ProductDetail,
+  tagIdBySlug: ReadonlyMap<string, number>,
+): ProductFormValues {
+  const images = product.images.toSorted((a, b) => a.position - b.position)
   return {
     title: product.title,
     description: product.description,
-    category: product.category.slug,
-    brand: product.brand?.name ?? '',
+    sku: product.sku,
+    barcode: product.barcode ?? '',
+    categoryId: text(product.category.id),
+    brandId: text(product.brand?.id),
+    warrantyPolicyId: text(product.warranty?.id),
+    shippingPolicyId: text(product.shipping?.id),
+    returnPolicyId: text(product.returnPolicy?.id),
+    // the one place cents become dollars for a form field
     price: String(product.priceCents / 100),
     discountPercentage: String(product.discountPercentage),
     stock: String(product.stock),
-    thumbnail: product.thumbnail ?? '',
+    minimumOrderQuantity: String(product.minimumOrderQuantity),
+    lowStockThreshold: String(product.lowStockThreshold),
+    weightKg: fromMeasure(product.weightG, 1000),
+    widthCm: fromMeasure(product.widthMm, 10),
+    heightCm: fromMeasure(product.heightMm, 10),
+    depthCm: fromMeasure(product.depthMm, 10),
+    tagIds: product.tags.flatMap((tag) => {
+      const id = tagIdBySlug.get(tag.slug)
+      return id === undefined ? [] : [String(id)]
+    }),
+    images: images.map((image) => ({ url: image.url })),
+    primaryImage: Math.max(
+      0,
+      images.findIndex((image) => image.isPrimary),
+    ),
   }
 }
 
-/** Same default as the database column; the API derives `availability` from it. */
-const DEFAULT_LOW_STOCK_THRESHOLD = 5
-
-const slugify = (value: string) => value.trim().toLowerCase().replaceAll(/s+/g, '-')
-
-/** The form holds a slug; the product carries the whole category, like the API's. */
-function categoryOf(slug: string, categories: readonly Category[]) {
-  return categories.find((c) => c.slug === slug) ?? { id: 0, slug, name: slug }
-}
-
-/** A typed brand name becomes a brand object (id 0: it only exists in this browser). */
-function brandOf(name: string) {
-  const trimmed = name.trim()
-  return trimmed ? { id: 0, slug: slugify(trimmed), name: trimmed } : null
-}
+const toId = (value: string) => (value === '' ? null : Number(value))
+const toMeasure = (value: string, factor: number) =>
+  value.trim() === '' ? null : Math.round(Number(value) * factor)
 
 /**
- * Everything a new product needs; fields the form does not edit get neutral defaults. The form
- * collects dollars; this is the one place they become cents.
+ * The request body. The form collects dollars, kilograms and centimetres; this is the one place they
+ * become cents, grams and millimetres.
  */
-export function toNewProduct(
-  values: ProductFormValues,
-  categories: readonly Category[],
-): Omit<Product, 'id'> {
-  const stock = Number(values.stock)
-  const category = categoryOf(values.category, categories)
-  const now = new Date().toISOString()
+export function toProductBody(values: ProductFormValues): ProductBody {
   return {
     title: values.title.trim(),
     description: values.description.trim(),
-    category,
-    brand: brandOf(values.brand),
+    sku: values.sku.trim(),
+    barcode: values.barcode.trim() === '' ? null : values.barcode.trim(),
+    categoryId: Number(values.categoryId),
+    brandId: toId(values.brandId),
     priceCents: toCents(Number(values.price)),
     discountPercentage: Number(values.discountPercentage),
-    rating: null,
-    reviewCount: 0,
-    stock,
-    thumbnail: values.thumbnail.trim() || null,
-    lowStockThreshold: DEFAULT_LOW_STOCK_THRESHOLD,
-    availability: stock <= 0 ? 'out' : stock <= DEFAULT_LOW_STOCK_THRESHOLD ? 'low' : 'in',
-    minimumOrderQuantity: 1,
-    tags: [{ slug: category.slug, name: category.name }],
-    createdAt: now,
-    updatedAt: now,
-  }
-}
-
-/** Only the fields the form edits. An emptied brand is stored as null, which survives JSON. */
-export function toProductPatch(values: ProductFormValues, categories: readonly Category[]) {
-  const stock = Number(values.stock)
-  return {
-    title: values.title.trim(),
-    description: values.description.trim(),
-    category: categoryOf(values.category, categories),
-    brand: brandOf(values.brand),
-    priceCents: toCents(Number(values.price)),
-    discountPercentage: Number(values.discountPercentage),
-    stock,
-    thumbnail: values.thumbnail.trim() || null,
+    stock: Number(values.stock),
+    minimumOrderQuantity: Number(values.minimumOrderQuantity),
+    lowStockThreshold: Number(values.lowStockThreshold),
+    weightG: toMeasure(values.weightKg, 1000),
+    widthMm: toMeasure(values.widthCm, 10),
+    heightMm: toMeasure(values.heightCm, 10),
+    depthMm: toMeasure(values.depthCm, 10),
+    warrantyPolicyId: toId(values.warrantyPolicyId),
+    shippingPolicyId: toId(values.shippingPolicyId),
+    returnPolicyId: toId(values.returnPolicyId),
+    tagIds: values.tagIds.map(Number),
+    images: values.images.map((image, index) => ({
+      url: image.url.trim(),
+      isPrimary: index === values.primaryImage,
+    })),
   }
 }
 
@@ -152,5 +211,7 @@ export const adminProductSearchSchema = z.object({
   sort: z.enum(ADMIN_SORTS).optional().catch(undefined),
   order: z.enum(['asc', 'desc']).optional().catch(undefined),
   page: z.coerce.number().int().min(2).optional().catch(undefined),
+  /** Show soft-deleted products too (and nothing else when `only`). */
+  deleted: z.enum(['include', 'only']).optional().catch(undefined),
 })
 export type AdminProductSearch = z.infer<typeof adminProductSearchSchema>

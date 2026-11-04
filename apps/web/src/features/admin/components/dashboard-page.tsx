@@ -1,39 +1,16 @@
 import { Link } from '@tanstack/react-router'
-import {
-  Package,
-  PackageX,
-  Pencil,
-  Plus,
-  Receipt,
-  RotateCcw,
-  TriangleAlert,
-  Users,
-} from 'lucide-react'
+import { Package, PackageX, Plus, Receipt, TriangleAlert, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 
 import { ErrorState, PageSkeleton } from '@/components/feedback/feedback'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useCatalog } from '@/features/products/hooks/use-catalog'
-import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { useOrders } from '@/features/orders/hooks/use-orders'
-import { useUserOverlayStore } from '@/features/users/overlay-store'
+import { useAdminProducts } from '@/features/products/hooks/use-admin-products'
 import { useUsers } from '@/features/users/hooks/use-users'
 
-import { resetDemoData } from '../reset'
+import { LOOKUP_KINDS } from '../lookups'
 
 function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
   return (
@@ -53,20 +30,11 @@ function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: n
 
 export function DashboardPage() {
   const { t } = useTranslation()
-  const catalog = useCatalog()
+  const catalog = useAdminProducts()
   const userList = useUsers()
-  const { products } = catalog
-  const isError = catalog.isError || userList.isError
-  const isPending = catalog.isPending || userList.isPending
-  const created = useProductOverlayStore((s) => s.created)
-  const patched = useProductOverlayStore((s) => s.patched)
-  const deleted = useProductOverlayStore((s) => s.deleted)
   const orderCount = useOrders().orders.length
-  const userChanges = useUserOverlayStore(
-    (s) => Object.keys(s.created).length + Object.keys(s.patched).length + s.deleted.length,
-  )
 
-  if (isError)
+  if (catalog.isError || userList.isError) {
     return (
       <ErrorState
         onRetry={() => {
@@ -75,17 +43,12 @@ export function DashboardPage() {
         }}
       />
     )
-  if (isPending || !products) return <PageSkeleton />
-
-  const lowStock = products.filter((p) => p.availability === 'low').length
-  const outOfStock = products.filter((p) => p.availability === 'out').length
-  const localChanges =
-    Object.keys(created).length + Object.keys(patched).length + deleted.length + userChanges
-
-  const reset = () => {
-    resetDemoData()
-    toast.success(t('admin.dashboard.resetDone'))
   }
+  if (catalog.isPending || userList.isPending || !catalog.products) return <PageSkeleton />
+
+  const active = catalog.products.filter((p) => p.deletedAt === null)
+  const lowStock = active.filter((p) => p.availability === 'low').length
+  const outOfStock = active.filter((p) => p.availability === 'out').length
 
   return (
     <div className="space-y-6">
@@ -111,7 +74,7 @@ export function DashboardPage() {
         <Stat
           icon={<Package className="size-4" />}
           label={t('admin.dashboard.total')}
-          value={products.length}
+          value={active.length}
         />
         <Stat
           icon={<Users className="size-4" />}
@@ -133,37 +96,23 @@ export function DashboardPage() {
           label={t('admin.dashboard.orders')}
           value={orderCount}
         />
-        <Stat
-          icon={<Pencil className="size-4" />}
-          label={t('admin.dashboard.changes')}
-          value={localChanges}
-        />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('admin.dashboard.demoData')}</CardTitle>
+          <CardTitle>{t('admin.lookups.title')}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-wrap items-center justify-between gap-3">
-          <p className="max-w-xl text-sm text-muted-foreground">{t('admin.dashboard.resetBody')}</p>
-          <AlertDialog>
-            <AlertDialogTrigger render={<Button variant="destructive" />}>
-              <RotateCcw className="size-4" />
-              {t('admin.dashboard.reset')}
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t('admin.dashboard.confirm.title')}</AlertDialogTitle>
-                <AlertDialogDescription>{t('admin.dashboard.confirm.body')}</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t('admin.dashboard.confirm.cancel')}</AlertDialogCancel>
-                <AlertDialogAction variant="destructive" onClick={reset}>
-                  {t('admin.dashboard.confirm.confirm')}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+        <CardContent className="flex flex-wrap gap-2">
+          {LOOKUP_KINDS.map((kind) => (
+            <Link
+              key={kind.id}
+              to="/admin/lookups/$kind"
+              params={{ kind: kind.id }}
+              className={buttonVariants({ variant: 'outline' })}
+            >
+              {t(`admin.lookups.kinds.${kind.id}`)}
+            </Link>
+          ))}
         </CardContent>
       </Card>
     </div>

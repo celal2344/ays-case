@@ -4,48 +4,18 @@ import { groupOf, type GroupId } from './category-groups'
 import { salePriceCents } from '@ays/validators'
 import type { Product, ProductSort, SortOrder } from './schemas'
 
-/** Admin changes layered over the remote catalog. See docs/data-and-state.md. */
-export interface OverlaySnapshot {
-  created: Record<number, Product>
-  patched: Record<number, Partial<Omit<Product, 'id'>>>
-  deleted: number[]
-}
-
 export const SHOP_PAGE_SIZE = 12
-
-/**
- * Applies an admin patch. The API derives `availability` from stock; an overlay edit changes stock
- * without a round trip, so it is re-derived here with the product's own threshold.
- */
-export function patchProduct<T extends Product>(
-  product: T,
-  changes: Partial<Omit<Product, 'id'>> | undefined,
-): T {
-  if (!changes) return product
-  const merged = { ...product, ...changes }
-  if (changes.stock === undefined) return merged
-  const { stock, lowStockThreshold } = merged
-  const availability = stock <= 0 ? 'out' : stock <= lowStockThreshold ? 'low' : 'in'
-  return { ...merged, availability }
-}
-
-export function applyOverlay(remote: Product[], overlay: OverlaySnapshot): Product[] {
-  const hidden = new Set(overlay.deleted)
-  const patch = (p: Product): Product => patchProduct(p, overlay.patched[p.id])
-  const local = Object.values(overlay.created)
-    .filter((p) => !hidden.has(p.id))
-    .map(patch)
-    .sort((a, b) => b.id - a.id) // newest local product first
-  const merged = remote.filter((p) => !hidden.has(p.id)).map(patch)
-  return [...local, ...merged]
-}
 
 export function normalize(value: string, language: Language) {
   // Turkish-safe lowercasing only when the UI language is Turkish (dotted/dotless i).
   return language === 'tr' ? value.toLocaleLowerCase('tr') : value.toLowerCase()
 }
 
-export function filterByQuery(products: Product[], query: string | undefined, language: Language) {
+export function filterByQuery<T extends Product>(
+  products: T[],
+  query: string | undefined,
+  language: Language,
+): T[] {
   const needle = normalize((query ?? '').trim(), language)
   if (!needle) return products
   return products.filter((p) =>
@@ -59,7 +29,10 @@ export function filterByQuery(products: Product[], query: string | undefined, la
   )
 }
 
-export function filterByCategory(products: Product[], category: string | undefined) {
+export function filterByCategory<T extends Product>(
+  products: T[],
+  category: string | undefined,
+): T[] {
   return category ? products.filter((p) => p.category.slug === category) : products
 }
 

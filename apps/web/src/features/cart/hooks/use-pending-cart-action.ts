@@ -5,8 +5,6 @@ import { toast } from 'sonner'
 
 import { consumePendingAction, hasPendingAction } from '@/features/auth/pending-action'
 import { selectUser, useAuthStore } from '@/features/auth/store'
-import { applyOverlay } from '@/features/products/catalog'
-import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { catalogQueryOptions } from '@/features/products/queries'
 
 import { useCart } from './use-cart'
@@ -26,10 +24,7 @@ export function usePendingCartAction() {
     if (!user || !data) return
     const action = consumePendingAction('add-to-cart')
     if (!action) return
-    const { created, patched, deleted } = useProductOverlayStore.getState()
-    const product = applyOverlay(data, { created, patched, deleted }).find(
-      (p) => p.id === action.productId,
-    )
+    const product = data.find((p) => p.id === action.productId)
     if (!product || product.stock <= 0) return
     void add(product.id, action.quantity, product.stock, product.title).then(
       () => toast.success(t('cart.added', { title: product.title })),

@@ -1,38 +1,55 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import type { ProductBody, ProductPatchBody } from '@ays/validators'
 
-import {
-  useProductOverlayStore,
-  type ProductInput,
-  type ProductPatch,
-} from '@/features/products/overlay-store'
 import { productKeys } from '@/features/products/query-keys'
-import type { Product } from '@/features/products/schemas'
+import type { ProductDetail } from '@/features/products/schemas'
 import type { AppError } from '@/lib/http-error'
 
-// The API has no product writes yet, so admin edits live in the browser overlay only.
+import { createProduct, deleteProduct, restoreProduct, updateProduct } from '../api'
+
+/** After any product write, the shop, the detail pages and the admin list are refetched. */
+function useRefresh() {
+  const queryClient = useQueryClient()
+  return () => queryClient.invalidateQueries({ queryKey: productKeys.all })
+}
 
 export function useCreateProduct() {
-  return useMutation<Product, AppError, ProductInput>({
-    mutationFn: async (input) => {
-      return useProductOverlayStore.getState().create(input)
-    },
+  const refresh = useRefresh()
+  return useMutation<ProductDetail, AppError, ProductBody>({
+    mutationFn: createProduct,
+    onSettled: refresh,
   })
 }
 
 export function useUpdateProduct() {
-  return useMutation<void, AppError, { id: number; patch: ProductPatch }>({
-    mutationFn: async ({ id, patch }) => {
-      useProductOverlayStore.getState().update(id, patch)
-    },
+  const refresh = useRefresh()
+  return useMutation<ProductDetail, AppError, { id: number; patch: ProductPatchBody }>({
+    mutationFn: ({ id, patch }) => updateProduct(id, patch),
+    onSettled: refresh,
   })
 }
 
 export function useDeleteProduct() {
+  const refresh = useRefresh()
   const queryClient = useQueryClient()
   return useMutation<void, AppError, number>({
-    mutationFn: async (id) => {
-      useProductOverlayStore.getState().remove(id)
-      queryClient.removeQueries({ queryKey: productKeys.detail(id) })
+    mutationFn: deleteProduct,
+    // carts, favorites and recently viewed lose the product on the server, so they refetch too
+    onSettled: async () => {
+      await refresh()
+      await Promise.all(
+        ['cart', 'favorites', 'recently-viewed'].map((key) =>
+          queryClient.invalidateQueries({ queryKey: [key] }),
+        ),
+      )
     },
+  })
+}
+
+export function useRestoreProduct() {
+  const refresh = useRefresh()
+  return useMutation<ProductDetail, AppError, number>({
+    mutationFn: restoreProduct,
+    onSettled: refresh,
   })
 }
