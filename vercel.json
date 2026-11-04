@@ -7,7 +7,7 @@
       "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
       "buildCommand": "cd ../.. && pnpm turbo run build --filter=@ays/web",
       "outputDirectory": "dist",
-      "rewrites": [{ "source": "/((?!.*\.[^/]+$).*)", "destination": "/index.html" }]
+      "rewrites": [{ "source": "/((?!.*\\.[^/]+$).*)", "destination": "/index.html" }]
     },
     "api": {
       "root": "apps/api",
