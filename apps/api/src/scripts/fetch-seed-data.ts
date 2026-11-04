@@ -16,3 +16,7 @@ async function download(path: string, file: string) {
 
 await download('/products?limit=0', 'products.json')
 await download('/products/categories', 'categories.json')
+await download(
+  '/users?limit=0&select=id,username,firstName,lastName,email,role,image',
+  'users.json',
+)

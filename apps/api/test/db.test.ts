@@ -139,11 +139,11 @@ describe.skipIf(!url)('database (migrations, seed, constraints, rating view)', (
       comment,
     })
 
-    await expect(db.insert(reviews).values(review('u1', 6))).rejects.toThrow()
-    await expect(db.insert(reviews).values(review('u1', 0))).rejects.toThrow()
-    await expect(db.insert(reviews).values(review('u1', 3, 'too short'))).rejects.toThrow()
-    await db.insert(reviews).values(review('u1', 5))
-    await expect(db.insert(reviews).values(review('u1', 4))).rejects.toThrow()
+    await expect(db.insert(reviews).values(review('user-1', 6))).rejects.toThrow()
+    await expect(db.insert(reviews).values(review('user-1', 0))).rejects.toThrow()
+    await expect(db.insert(reviews).values(review('user-1', 3, 'too short'))).rejects.toThrow()
+    await db.insert(reviews).values(review('user-1', 5))
+    await expect(db.insert(reviews).values(review('user-1', 4))).rejects.toThrow()
   })
 
   it('computes rating average, count and histogram in SQL, null without reviews', async () => {
@@ -154,9 +154,9 @@ describe.skipIf(!url)('database (migrations, seed, constraints, rating view)', (
     const productId = withReviews?.id ?? 0
     const comment = 'A long enough comment'
     await db.insert(reviews).values([
-      { productId, userId: 'a', rating: 5, comment },
-      { productId, userId: 'b', rating: 4, comment },
-      { productId, userId: 'c', rating: 4, comment },
+      { productId, userId: 'user-2', rating: 5, comment },
+      { productId, userId: 'user-3', rating: 4, comment },
+      { productId, userId: 'user-4', rating: 4, comment },
     ])
 
     const [stats] = await db

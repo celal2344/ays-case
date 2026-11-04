@@ -1,10 +1,12 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
+import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core'
 import postgres from 'postgres'
 
 import { env } from '../utils/env'
 import * as schema from './schema'
 
-export type Database = ReturnType<typeof createDb>['db']
+/** Any Drizzle Postgres driver (postgres-js in production, PGlite in tests). */
+export type Database = PgDatabase<PgQueryResultHKT, typeof schema>
 
 /** Prepared statements are off: the transaction pooler (port 6543) does not support them. */
 export function createDb(url: string, options: { searchPath?: string; max?: number } = {}) {
@@ -20,7 +22,13 @@ let shared: Database | undefined
 
 /** The runtime connection (transaction pooler), created on first use so `/health` needs no database. */
 export function getDb(): Database {
+  if (shared) return shared
   if (!env.DATABASE_URL) throw new Error('DATABASE_URL is not set')
-  shared ??= createDb(env.DATABASE_URL).db
+  shared = createDb(env.DATABASE_URL).db
   return shared
+}
+
+/** Tests inject their own database. */
+export function setDb(db: Database | undefined) {
+  shared = db
 }

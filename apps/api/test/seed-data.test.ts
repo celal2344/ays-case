@@ -13,6 +13,8 @@ describe('seed data', () => {
     expect(data.shipping).toHaveLength(6)
     expect(data.returns).toHaveLength(5)
     expect(data.tags).toHaveLength(138)
+    expect(data.users).toHaveLength(208)
+    expect(data.reviews).toHaveLength(582)
   })
 
   it('keeps DummyJSON ids and stores money as integer cents', () => {
@@ -50,6 +52,32 @@ describe('seed data', () => {
 
   it('converts units: kilograms to grams, centimetres to millimetres', () => {
     expect(data.products[0]).toMatchObject({ weightG: 4000, widthMm: 151, heightMm: 131 })
+  })
+})
+
+describe('seeded users and reviews', () => {
+  const data = loadSeedData()
+
+  it('keeps the DummyJSON roles', () => {
+    const count = (role: string) => data.users.filter((u) => u.role === role).length
+    expect([count('admin'), count('moderator'), count('user')]).toEqual([5, 10, 193])
+    expect(data.users.find((u) => u.username === 'emilys')?.role).toBe('admin')
+    expect(data.users.find((u) => u.username === 'averyp')?.role).toBe('user')
+  })
+
+  it('assigns each product at most one review per user, to existing users', () => {
+    const ids = new Set(data.users.map((u) => u.id))
+    const pairs = new Set(data.reviews.map((r) => `${r.productId}:${r.userId}`))
+    expect(pairs.size).toBe(data.reviews.length)
+    expect(data.reviews.every((r) => ids.has(r.userId))).toBe(true)
+  })
+
+  it('keeps rating, comment and date of the original reviews', () => {
+    expect(data.reviews[0]).toMatchObject({
+      productId: 1,
+      rating: 3,
+      comment: 'Would not recommend!',
+    })
   })
 })
 
