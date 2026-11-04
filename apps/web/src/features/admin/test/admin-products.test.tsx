@@ -14,7 +14,9 @@ import { renderApp } from '@/test/render'
 function recordRequests() {
   const seen: string[] = []
   server.events.on('request:start', ({ request }) => {
-    seen.push(`${request.method} ${new URL(request.url).pathname}`)
+    const { pathname } = new URL(request.url)
+    // recording a product view is a normal side effect of opening a page, not an admin write
+    if (!pathname.startsWith('/api/recently-viewed')) seen.push(`${request.method} ${pathname}`)
   })
   return seen
 }
