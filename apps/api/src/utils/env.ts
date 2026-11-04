@@ -14,6 +14,7 @@ export const env = createEnv({
     // Vercel system variables, used to derive the public origin on previews and production
     VERCEL_ENV: z.enum(['development', 'preview', 'production']).optional(),
     VERCEL_URL: z.string().min(1).optional(),
+    VERCEL_BRANCH_URL: z.string().min(1).optional(),
     VERCEL_PROJECT_PRODUCTION_URL: z.string().min(1).optional(),
   },
   runtimeEnv: process.env,

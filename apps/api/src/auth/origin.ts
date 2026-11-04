@@ -2,6 +2,7 @@ type OriginEnv = {
   BETTER_AUTH_URL?: string | undefined
   VERCEL_ENV?: string | undefined
   VERCEL_URL?: string | undefined
+  VERCEL_BRANCH_URL?: string | undefined
   VERCEL_PROJECT_PRODUCTION_URL?: string | undefined
 }
 
@@ -22,9 +23,13 @@ export function resolveOrigins(env: OriginEnv) {
     LOCAL_ORIGIN
   const trustedOrigins = [
     ...new Set(
-      [baseURL, fromVercel(env.VERCEL_URL), fromVercel(env.VERCEL_PROJECT_PRODUCTION_URL)].filter(
-        (origin): origin is string => Boolean(origin),
-      ),
+      [
+        baseURL,
+        fromVercel(env.VERCEL_URL),
+        // a preview opened through its branch alias sends that host as the Origin
+        fromVercel(env.VERCEL_BRANCH_URL),
+        fromVercel(env.VERCEL_PROJECT_PRODUCTION_URL),
+      ].filter((origin): origin is string => Boolean(origin)),
     ),
   ]
   return { baseURL, trustedOrigins }

@@ -7,11 +7,12 @@ import * as schema from '../db/schema'
 import { env } from '../utils/env'
 import { resolveOrigins } from './origin'
 
-// Used only outside production, so local dev and tests work without a secret.
+// Used only outside production and outside Vercel, so local dev and tests work without a secret.
 const DEV_SECRET = 'development-only-secret-do-not-use-in-production'
 
 export function createAuth(db: Database) {
-  if (env.NODE_ENV === 'production' && !env.BETTER_AUTH_SECRET) {
+  // any hosted deployment (production or preview) must have a real secret
+  if ((env.NODE_ENV === 'production' || env.VERCEL_ENV) && !env.BETTER_AUTH_SECRET) {
     throw new Error('BETTER_AUTH_SECRET is not set')
   }
   const { baseURL, trustedOrigins } = resolveOrigins(env)
