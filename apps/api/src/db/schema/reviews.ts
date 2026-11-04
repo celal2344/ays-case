@@ -11,6 +11,7 @@ import {
   unique,
 } from 'drizzle-orm/pg-core'
 
+import { user } from './auth'
 import { products } from './products'
 
 export const reviews = pgTable(
@@ -20,8 +21,9 @@ export const reviews = pgTable(
     productId: integer('product_id')
       .notNull()
       .references(() => products.id, { onDelete: 'cascade' }),
-    // Better Auth user ids are strings; the foreign key is added with the auth tables.
-    userId: text('user_id').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
     rating: smallint('rating').notNull(),
     comment: text('comment').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

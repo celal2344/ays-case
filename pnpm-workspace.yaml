@@ -3,4 +3,19 @@ packages:
   - packages/*
 
 allowBuilds:
+  '@prisma/client': false
+  better-sqlite3: false
   esbuild: false
+
+minimumReleaseAgeExclude:
+  - '@better-auth/core@1.7.16'
+  - '@better-auth/drizzle-adapter@1.7.16'
+  - '@better-auth/kysely-adapter@1.7.16'
+  - '@better-auth/memory-adapter@1.7.16'
+  - '@better-auth/mongo-adapter@1.7.16'
+  - '@better-auth/prisma-adapter@1.7.16'
+  - '@better-auth/telemetry@1.7.16'
+  - better-auth@1.7.16
+  - better-call@1.4.5
+  - '@electric-sql/pglite@0.5.15'
+  - auth@1.7.16

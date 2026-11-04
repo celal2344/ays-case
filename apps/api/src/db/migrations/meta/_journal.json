@@ -8,6 +8,13 @@
       "when": 1793779560489,
       "tag": "0000_wealthy_screwball",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793782606042,
+      "tag": "0001_clever_sersi",
+      "breakpoints": true
     }
   ]
 }

@@ -25,7 +25,7 @@ Node 24+ and pnpm 11+. The repo is a pnpm + Turborepo workspace; the web app liv
 
 One Vercel project using [Services](https://vercel.com/docs/services) (Beta), configured in the root `vercel.json`: the web app (`apps/web`) is served at `/` and the API (`apps/api`, Hono) at `/api`, on the same domain. That means first-party cookies, no CORS, and every preview deployment of the web app talks to the matching preview API. In dev, Vite proxies `/api` to the local API, so relative paths are identical to production.
 
-API environment variables (names only, values live in the Vercel dashboard): `DATABASE_URL`, `DATABASE_URL_SESSION`, `LOG_LEVEL`. Locally they go in `apps/api/.env.development`.
+API environment variables (names only, values live in the Vercel dashboard): `DATABASE_URL`, `DATABASE_URL_SESSION`, `BETTER_AUTH_SECRET`, `LOG_LEVEL`. Better Auth derives its base URL and trusted origins from Vercel's system variables, so previews work; `BETTER_AUTH_URL` is only needed to override that. Locally they go in `apps/api/.env.development`.
 
 ## Demo accounts
 

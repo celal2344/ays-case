@@ -4,12 +4,23 @@ import { secureHeaders } from 'hono/secure-headers'
 import { openAPIRouteHandler } from 'hono-openapi'
 
 import { notFound, onError } from './middlewares/error-handler'
+import { getAuth } from './auth'
 import { requestLogger } from './middlewares/request-logger'
+import { categoryRoutes, productRoutes } from './modules/catalog/routes'
 import { healthRoutes } from './modules/health/routes'
+import { userRoutes } from './modules/users/routes'
 import { openApiDocumentation } from './utils/openapi'
 
 // Chained so `AppType` carries every route for the RPC client.
-const app = new Hono().use(requestLogger).use(secureHeaders()).route('/health', healthRoutes)
+const app = new Hono()
+  .use(requestLogger)
+  .use(secureHeaders())
+  // Better Auth serves /api/auth/* itself (sign-in, session, sign-out, admin plugin).
+  .on(['GET', 'POST'], '/auth/*', (c) => getAuth().handler(c.req.raw))
+  .route('/health', healthRoutes)
+  .route('/products', productRoutes)
+  .route('/categories', categoryRoutes)
+  .route('/users', userRoutes)
 
 app.onError(onError)
 app.notFound(notFound)
