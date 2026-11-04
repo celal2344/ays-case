@@ -6,8 +6,11 @@ import { openAPIRouteHandler } from 'hono-openapi'
 import { notFound, onError } from './middlewares/error-handler'
 import { getAuth } from './auth'
 import { requestLogger } from './middlewares/request-logger'
+import { cartRoutes } from './modules/cart/routes'
 import { categoryRoutes, productRoutes } from './modules/catalog/routes'
+import { favoriteRoutes } from './modules/favorites/routes'
 import { healthRoutes } from './modules/health/routes'
+import { recentlyViewedRoutes } from './modules/recently-viewed/routes'
 import { userRoutes } from './modules/users/routes'
 import { openApiDocumentation } from './utils/openapi'
 
@@ -21,6 +24,9 @@ const app = new Hono()
   .route('/products', productRoutes)
   .route('/categories', categoryRoutes)
   .route('/users', userRoutes)
+  .route('/cart', cartRoutes)
+  .route('/favorites', favoriteRoutes)
+  .route('/recently-viewed', recentlyViewedRoutes)
 
 app.onError(onError)
 app.notFound(notFound)

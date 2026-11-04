@@ -4,6 +4,7 @@ import type { User } from '@/features/auth/schemas'
 
 import { fixtureUserList } from '../fixtures/users'
 import { fixtureCategories, fixtureDetail, fixtureProducts } from '../fixtures/products'
+import { FakeShopping } from '../fixtures/shopping'
 
 const BASE = 'http://localhost/api'
 
@@ -78,4 +79,49 @@ export const userHandlers = [
   }),
 ]
 
-export const handlers = [...authHandlers, ...productHandlers, ...userHandlers]
+/** The mocked server's cart, favorites and recently viewed (reset before every test in `setup.ts`). */
+export const shopping = new FakeShopping()
+
+type Reply = { status: number; body?: unknown }
+const reply = ({ status, body }: Reply) =>
+  body === undefined ? new HttpResponse(null, { status }) : HttpResponse.json(body, { status })
+const needSession = <T>(run: (userId: string) => T) => {
+  const user = sessionUser()
+  return user
+    ? run(user.id)
+    : HttpResponse.json({ code: 'unauthorized', message: 'Sign in required' }, { status: 401 })
+}
+
+export const shoppingHandlers = [
+  http.get(`${BASE}/cart`, () => needSession((id) => reply(shopping.getCart(id)))),
+  http.post(`${BASE}/cart/items`, async ({ request }) => {
+    const body = (await request.json()) as { productId: number; quantity: number }
+    return needSession((id) => reply(shopping.addToCart(id, body.productId, body.quantity)))
+  }),
+  http.put(`${BASE}/cart/items/:productId`, async ({ params, request }) => {
+    const body = (await request.json()) as { quantity: number }
+    return needSession((id) =>
+      reply(shopping.setCartQuantity(id, Number(params.productId), body.quantity)),
+    )
+  }),
+  http.delete(`${BASE}/cart/items/:productId`, ({ params }) =>
+    needSession((id) => reply(shopping.removeFromCart(id, Number(params.productId)))),
+  ),
+  http.delete(`${BASE}/cart`, () => needSession((id) => reply(shopping.clearCart(id)))),
+  http.get(`${BASE}/favorites`, () => needSession((id) => reply(shopping.getFavorites(id)))),
+  http.put(`${BASE}/favorites/:productId`, ({ params }) =>
+    needSession((id) => reply(shopping.addFavorite(id, Number(params.productId)))),
+  ),
+  http.delete(`${BASE}/favorites/:productId`, ({ params }) =>
+    needSession((id) => reply(shopping.removeFavorite(id, Number(params.productId)))),
+  ),
+  http.get(`${BASE}/recently-viewed`, () => needSession((id) => reply(shopping.getViewed(id)))),
+  http.put(`${BASE}/recently-viewed/:productId`, ({ params }) =>
+    needSession((id) => reply(shopping.recordView(id, Number(params.productId)))),
+  ),
+  http.delete(`${BASE}/recently-viewed`, () =>
+    needSession((id) => reply(shopping.clearViewed(id))),
+  ),
+]
+
+export const handlers = [...authHandlers, ...productHandlers, ...userHandlers, ...shoppingHandlers]

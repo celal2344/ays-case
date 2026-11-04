@@ -1,6 +1,7 @@
 import type { Page, Route } from '@playwright/test'
 
 import { fixtureCategories, fixtureDetail, fixtureProducts } from '../../src/test/fixtures/products'
+import { FakeShopping } from '../../src/test/fixtures/shopping'
 import { fixtureUserList } from '../../src/test/fixtures/users'
 
 const accounts = {
@@ -17,6 +18,7 @@ const json = (route: Route, body: unknown, status = 200) =>
 /** Serves the API from the shared test fixtures, so the e2e specs never touch a real backend. */
 export async function mockApi(page: Page) {
   let signedInAs: string | null = null
+  const shopping = new FakeShopping()
 
   await page.route(/^https:\/\/(cdn\.)?dummyjson\.com\/.+/, (route) =>
     route.fulfill({ contentType: 'image/png', body: Buffer.from(PIXEL, 'base64') }),
@@ -74,6 +76,43 @@ export async function mockApi(page: Page) {
       if (user.role !== 'admin')
         return json(route, { code: 'forbidden', message: 'Admins only' }, 403)
       return json(route, { data: fixtureUserList })
+    }
+
+    const productParam = Number(/\/(\d+)$/.exec(pathname)?.[1])
+    const reply = (r: { status: number; body?: unknown }) =>
+      r.body === undefined ? route.fulfill({ status: r.status }) : json(route, r.body, r.status)
+    if (/^\/api\/(cart|favorites|recently-viewed)/.test(pathname)) {
+      if (!user) return json(route, { code: 'unauthorized', message: 'Sign in required' }, 401)
+      const body = (method === 'GET' || method === 'DELETE' ? null : request.postDataJSON()) as {
+        productId?: number
+        quantity?: number
+      } | null
+      const id = user.id
+      if (pathname === '/api/cart') {
+        return reply(method === 'DELETE' ? shopping.clearCart(id) : shopping.getCart(id))
+      }
+      if (pathname === '/api/cart/items') {
+        return reply(shopping.addToCart(id, body?.productId ?? 0, body?.quantity ?? 1))
+      }
+      if (pathname.startsWith('/api/cart/items/')) {
+        return reply(
+          method === 'DELETE'
+            ? shopping.removeFromCart(id, productParam)
+            : shopping.setCartQuantity(id, productParam, body?.quantity ?? 1),
+        )
+      }
+      if (pathname === '/api/favorites') return reply(shopping.getFavorites(id))
+      if (pathname.startsWith('/api/favorites/')) {
+        return reply(
+          method === 'DELETE'
+            ? shopping.removeFavorite(id, productParam)
+            : shopping.addFavorite(id, productParam),
+        )
+      }
+      if (pathname === '/api/recently-viewed') {
+        return reply(method === 'DELETE' ? shopping.clearViewed(id) : shopping.getViewed(id))
+      }
+      return reply(shopping.recordView(id, productParam))
     }
 
     return json(route, { code: 'not_found', message: `Unmocked ${method} ${pathname}` }, 404)

@@ -8,5 +8,10 @@ try {
 }
 
 export default defineConfig({
-  test: { include: ['test/**/*.test.ts', 'src/**/test/**/*.test.ts'], testTimeout: 30_000 },
+  test: {
+    include: ['test/**/*.test.ts', 'src/**/test/**/*.test.ts'],
+    testTimeout: 30_000,
+    // each PGlite test file boots an in-memory Postgres and seeds it; several at once are slow
+    hookTimeout: 60_000,
+  },
 })

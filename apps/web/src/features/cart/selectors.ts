@@ -1,7 +1,6 @@
-import { salePriceCents } from '@ays/validators'
-import type { Product } from '@/features/products/schemas'
+import { salePriceCents, type CartItem as CartLine } from '@ays/validators'
 
-import type { CartLine } from './store'
+import type { Product } from '@/features/products/schemas'
 
 export interface CartItem {
   product: Product
@@ -20,6 +19,7 @@ export interface CartTotals {
   totalCents: number
 }
 
+export type { CartLine }
 export const selectCount = (lines: CartLine[]) => lines.reduce((sum, l) => sum + l.quantity, 0)
 
 /** Joins lines with the merged catalog; lines whose product is gone are returned as `missing`. */

@@ -2,7 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { selectUser, useAuthStore } from '@/features/auth/store'
 import { buildCartItems, cartTotals } from '@/features/cart/selectors'
-import { useCartStore } from '@/features/cart/store'
+import { clearCart } from '@/features/cart/api'
+import { cartKeys } from '@/features/cart/queries'
+import type { CartLine } from '@/features/cart/selectors'
 import { applyOverlay } from '@/features/products/catalog'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { catalogQueryOptions } from '@/features/products/queries'
@@ -26,7 +28,7 @@ export class CheckoutError extends AppError {
 }
 
 /**
- * The purchase (docs/data-and-state.md, "Checkout sequence"). Everything is read fresh from the stores,
+ * The purchase (docs/data-and-state.md, "Checkout sequence"). Everything is read fresh from the cart cache and the stores,
  * and orders live in the browser until the API has a checkout, so nothing leaves the client.
  */
 export function usePlaceOrder() {
@@ -36,7 +38,7 @@ export function usePlaceOrder() {
   return useMutation<Order, AppError, Shipping>({
     mutationFn: async (shipping) => {
       if (!user) throw new AppError('unauthorized', 'Not signed in')
-      const lines = useCartStore.getState().byUser[user.id] ?? []
+      const lines = queryClient.getQueryData<CartLine[]>(cartKeys.all) ?? []
       if (lines.length === 0) throw new CheckoutError('empty')
 
       const remote = queryClient.getQueryData(catalogQueryOptions.queryKey) ?? []
@@ -67,7 +69,10 @@ export function usePlaceOrder() {
         .decrementStock(
           items.map((i) => ({ id: i.product.id, quantity: i.quantity, stock: i.product.stock })),
         )
-      useCartStore.getState().clear(user.id)
+      // the order is already recorded; if emptying the server cart fails, the refetch shows it
+      queryClient.setQueryData<CartLine[]>(cartKeys.all, [])
+      await clearCart().catch(() => undefined)
+      void queryClient.invalidateQueries({ queryKey: cartKeys.all })
       return order
     },
   })

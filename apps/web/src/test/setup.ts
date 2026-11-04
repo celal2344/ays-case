@@ -4,9 +4,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest'
 
 import '@/i18n'
 import { useAuthStore } from '@/features/auth/store'
-import { useCartStore } from '@/features/cart/store'
-import { useFavoritesStore } from '@/features/favorites/store'
-import { useRecentlyViewedStore } from '@/features/recently-viewed/store'
+import { useGuestViewedStore } from '@/features/recently-viewed/guest-store'
 import { useOrdersStore } from '@/features/orders/store'
 import { useSearchStore } from '@/features/search/store'
 import { useUserOverlayStore } from '@/features/users/overlay-store'
@@ -14,7 +12,7 @@ import { useReviewsStore } from '@/features/reviews/store'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { usePreferencesStore } from '@/preferences/store'
 
-import { serverSession } from './msw/handlers'
+import { serverSession, shopping } from './msw/handlers'
 import { server } from './msw/server'
 
 // jsdom has no matchMedia; next-themes reads it to resolve the "system" theme.
@@ -55,9 +53,8 @@ beforeEach(() => {
   useProductOverlayStore.getState().reset()
   useReviewsStore.getState().reset()
   useUserOverlayStore.getState().reset()
-  useCartStore.setState({ byUser: {} })
-  useFavoritesStore.setState({ byUser: {} })
-  useRecentlyViewedStore.setState({ byUser: {} })
+  shopping.reset()
+  useGuestViewedStore.setState({ ids: [] })
   useOrdersStore.setState({ orders: [] })
   useSearchStore.setState({ recent: [] })
 })

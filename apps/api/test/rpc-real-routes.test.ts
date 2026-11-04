@@ -2,7 +2,7 @@
  * The RPC canary on the real routes: `hc<AppType>` with base URL /api must infer the request
  * input and a typed response per status for the catalog endpoints. Enforced by `tsc --noEmit`.
  */
-import type { Category, Product, ProductDetail } from '@ays/validators'
+import type { CartItem, Category, Product, ProductDetail } from '@ays/validators'
 import { hc, type ClientResponse } from 'hono/client'
 import { describe, expectTypeOf, it } from 'vitest'
 
@@ -35,5 +35,37 @@ describe('hc<AppType> on the real routes', () => {
 
   it('exposes the admin-only users list', () => {
     expectTypeOf(client.users.$get).toBeFunction()
+  })
+
+  it('types the cart: body in, per-status responses out', () => {
+    type Add = typeof client.cart.items.$post
+    expectTypeOf<Parameters<Add>[0]>().toMatchTypeOf<{
+      json: { productId: number; quantity: number }
+    }>()
+    type Res = Awaited<ReturnType<Add>>
+    expectTypeOf<Extract<Res, { status: 200 }>>().toEqualTypeOf<
+      ClientResponse<{ data: CartItem }, 200, 'json'>
+    >()
+    expectTypeOf<Extract<Res, { status: 409 }>>().toEqualTypeOf<
+      ClientResponse<
+        { readonly code: 'out_of_stock'; readonly message: 'This product is out of stock' },
+        409,
+        'json'
+      >
+    >()
+    type List = Awaited<ReturnType<typeof client.cart.$get>>
+    expectTypeOf<Extract<List, { status: 200 }>>().toEqualTypeOf<
+      ClientResponse<{ data: CartItem[] }, 200, 'json'>
+    >()
+  })
+
+  it('types favorites and recently viewed as id lists with a product id param', () => {
+    type Favorites = Awaited<ReturnType<typeof client.favorites.$get>>
+    expectTypeOf<Extract<Favorites, { status: 200 }>>().toEqualTypeOf<
+      ClientResponse<{ data: number[] }, 200, 'json'>
+    >()
+    type Put = (typeof client.favorites)[':productId']['$put']
+    expectTypeOf<Parameters<Put>[0]>().toEqualTypeOf<{ param: { productId: string } }>()
+    expectTypeOf(client['recently-viewed'].$get).toBeFunction()
   })
 })

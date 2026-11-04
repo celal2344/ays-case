@@ -9,7 +9,7 @@ import { applyOverlay } from '@/features/products/catalog'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { catalogQueryOptions } from '@/features/products/queries'
 
-import { useCartStore } from '../store'
+import { useCart } from './use-cart'
 
 /**
  * Applies an "add to cart" that was clicked while signed out, once the user is signed in and the catalog
@@ -18,6 +18,7 @@ import { useCartStore } from '../store'
 export function usePendingCartAction() {
   const { t } = useTranslation()
   const user = useAuthStore(selectUser)
+  const { add } = useCart()
   const pending = user ? hasPendingAction('add-to-cart') : false
   const { data } = useQuery({ ...catalogQueryOptions, enabled: pending })
 
@@ -30,7 +31,11 @@ export function usePendingCartAction() {
       (p) => p.id === action.productId,
     )
     if (!product || product.stock <= 0) return
-    useCartStore.getState().add(user.id, product.id, action.quantity, product.stock)
-    toast.success(t('cart.added', { title: product.title }))
+    void add(product.id, action.quantity, product.stock, product.title).then(
+      () => toast.success(t('cart.added', { title: product.title })),
+      () => undefined, // the cart already rolled back and showed why
+    )
+    // `add` changes with the cart contents; the action is consumed once, so it must not re-run
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, data, t])
 }
