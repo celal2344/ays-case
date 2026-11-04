@@ -29,6 +29,20 @@ describe('auth flow (AUTH-1..7)', () => {
     expect(useAuthStore.getState().user?.role).toBe('admin')
   })
 
+  it('an external ?redirect= is dropped: signing in lands on the default page', async () => {
+    const { router } = await renderApp('/login?redirect=%2F%2Fevil.com')
+    expect(router.state.location.search).toEqual({})
+    await userEvent.click(screen.getByRole('button', { name: 'Fill user' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await waitFor(() => expect(pathname(router)).toBe('/products'))
+  })
+
+  it('an already signed-in visitor with an external ?redirect= is sent to the default page', async () => {
+    signInAs('user')
+    const { router } = await renderApp('/login?redirect=https%3A%2F%2Fevil.com')
+    await waitFor(() => expect(pathname(router)).toBe('/products'))
+  })
+
   it('a malformed ?redirect= is ignored instead of crashing the page', async () => {
     const { router } = await renderApp('/login?redirect=123')
     expect(pathname(router)).toBe('/login')
