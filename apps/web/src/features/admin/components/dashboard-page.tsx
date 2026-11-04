@@ -12,9 +12,32 @@ import { useUsers } from '@/features/users/hooks/use-users'
 
 import { LOOKUP_KINDS } from '../lookups'
 
-function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
+/** A stat card; the whole card is a link to the page that lists the numbers behind it. */
+function Stat({
+  icon,
+  label,
+  value,
+  to,
+}: {
+  icon: ReactNode
+  label: string
+  value: number
+  to: '/admin/products' | '/admin/users' | '/orders'
+}) {
   return (
-    <Card size="sm">
+    <Link
+      to={to}
+      aria-label={`${label}: ${value}`}
+      className="rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      <StatCard icon={icon} label={label} value={value} />
+    </Link>
+  )
+}
+
+function StatCard({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
+  return (
+    <Card size="sm" className="transition-colors hover:bg-muted/50">
       <CardHeader className="flex-row items-center justify-between gap-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
         <span className="text-muted-foreground" aria-hidden="true">
@@ -63,7 +86,7 @@ export function DashboardPage() {
             <Package className="size-4" />
             {t('admin.dashboard.manageProducts')}
           </Link>
-          <Link to="/admin/products/new" className={buttonVariants({})}>
+          <Link to="/admin/products" search={{ new: 1 }} className={buttonVariants({})}>
             <Plus className="size-4" />
             {t('admin.products.new')}
           </Link>
@@ -74,26 +97,31 @@ export function DashboardPage() {
         <Stat
           icon={<Package className="size-4" />}
           label={t('admin.dashboard.total')}
+          to="/admin/products"
           value={active.length}
         />
         <Stat
           icon={<Users className="size-4" />}
           label={t('admin.dashboard.users')}
+          to="/admin/users"
           value={userList.users?.length ?? 0}
         />
         <Stat
           icon={<TriangleAlert className="size-4" />}
           label={t('admin.dashboard.low')}
+          to="/admin/products"
           value={lowStock}
         />
         <Stat
           icon={<PackageX className="size-4" />}
           label={t('admin.dashboard.out')}
+          to="/admin/products"
           value={outOfStock}
         />
         <Stat
           icon={<Receipt className="size-4" />}
           label={t('admin.dashboard.orders')}
+          to="/orders"
           value={orderCount}
         />
       </div>
