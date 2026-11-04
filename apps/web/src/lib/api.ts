@@ -13,9 +13,10 @@ type OkBody<R> = Extract<R, { status: 200 }> extends { json: () => Promise<infer
  * Runs an RPC call and returns the typed body of its 200 answer. Transport failures and non-2xx
  * answers become `AppError`, so callers and `queryOptions` deal with one error type.
  */
-export async function call<R extends { status: number; ok: boolean; json: () => Promise<unknown> }>(
-  request: Promise<R>,
-): Promise<OkBody<R>> {
+type Settled = { status: number; ok: boolean }
+
+/** Sends the request; failures and non-2xx answers become `AppError`. Returns the raw response. */
+async function send<R extends Settled>(request: Promise<R>): Promise<R> {
   let res: R
   try {
     res = await request
@@ -27,5 +28,21 @@ export async function call<R extends { status: number; ok: boolean; json: () => 
     if (res.status === 401) useAuthStore.getState().expire()
     throw await errorFromResponse(res as unknown as Response)
   }
+  return res
+}
+
+/**
+ * Runs an RPC call and returns the typed body of its 200 answer. Transport failures and non-2xx
+ * answers become `AppError`, so callers and `queryOptions` deal with one error type.
+ */
+export async function call<R extends Settled & { json: () => Promise<unknown> }>(
+  request: Promise<R>,
+): Promise<OkBody<R>> {
+  const res = await send(request)
   return (await res.json()) as OkBody<R>
+}
+
+/** Like `call`, for answers without a body (204). */
+export async function callNoContent(request: Promise<Settled>): Promise<void> {
+  await send(request)
 }

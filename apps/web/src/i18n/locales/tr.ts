@@ -243,6 +243,7 @@ export const tr = {
     signInToAdd: 'Sepete ürün eklemek için giriş yap.',
     outOfStock: '{{title}} tükendi.',
     added: '{{title}} sepetine eklendi.',
+    localUnavailable: 'Bu tarayıcıda oluşturulan ürünler henüz sepete eklenemez.',
     maxReached: '{{title}} için yalnızca {{max}} adet var, sepetinde o kadar var.',
     removedMissing: 'Bazı ürünler artık mevcut değil ve sepetinden çıkarıldı.',
     unavailable: 'Bu ürün tükendi. Devam etmek için kaldır.',

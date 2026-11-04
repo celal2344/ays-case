@@ -14,7 +14,8 @@ Our API serves the catalog and users read-only; it has no product or user writes
 | Reviews written in the app                               | `useReviewsStore` (Zustand)               | yes                                            | `ays-case:v1:reviews`         |
 | Remote users (admin list)                                | TanStack Query `userKeys.list()`          | no                                             | —                             |
 | Current user (the session cookie is owned by the server) | `useAuthStore`                            | no, restored by `bootstrap()`                  | —                             |
-| Cart                                                     | `useCartStore`                            | yes, per user                                  | `ays-case:v1:cart`            |
+| Cart, favorites, recently viewed (signed in) | TanStack Query (`cartKeys`, `favoriteKeys`, `recentlyViewedKeys`) | no, on the server per user | — |
+| Recently viewed (signed out) | `useGuestViewedStore` (Zustand) | no, memory only | — |
 | Orders                                                   | `useOrdersStore`                          | yes, per user                                  | `ays-case:v1:orders`          |
 | Theme, language, shop view (grid/table)                  | `usePreferencesStore`                     | yes                                            | `ays-case:v1:prefs`           |
 | List filters (q, category, sort, order, page)            | URL search params (TanStack Router)       | in URL                                         | —                             |
@@ -78,7 +79,6 @@ Detail page: `useProduct(id)` → local product if `isLocal(id)`; else `useQuery
 | Update local  | none (would 404)                                  | `update(id, patch)`                      | —                                            |
 | Delete remote | `DELETE /products/{id}`                           | `remove(id)`                             | `removeQueries(detail(id))`                  |
 | Delete local  | none                                              | `remove(id)` (also drops from `created`) | —                                            |
-| Delete (any)  | —                                                 | `cartStore.removeProductEverywhere(id)`  | —                                            |
 
 Admin mutations write the overlay only; no request is sent. When the API gains write endpoints, the mutation hooks call them first and write the overlay after they succeed.
 
@@ -116,7 +116,7 @@ export function applyUserOverlay(
 - `useUsers()` = `useQuery(GET /users?limit=0)` + overlay → `useMemo(applyUserOverlay)`; search / role filter / pagination run client-side like the catalog.
 - On login (and bootstrap) the overlay patch for the user's id is applied on top of `/auth/me`, so an admin's role edit affects that user on this browser. The auth store keeps the merged user.
 - Guardrails (in the mutation hooks, tested): cannot delete or demote yourself; cannot delete or demote the last admin (counted over the merged list).
-- Deleting a user also calls `cart.clear(userId)`; orders remain.
+- Deleting a user in the overlay changes nothing on the server; the database cascade removes a real user's cart, favorites and recently viewed. Orders remain.
 - Usernames are unique case-insensitively across the merged list.
 
 ## Reviews
@@ -144,33 +144,23 @@ export const selectIsAdmin = (s: AuthState) => s.user?.role === "admin";
 
 Nothing is persisted: the session is an HttpOnly cookie, and `bootstrap()` asks the server who is signed in (`status` always starts `idle`). Login is by username through `authClient`.
 
-## Cart store
+## Cart, favorites and recently viewed (server)
+
+These live in the database per user and are read through TanStack Query (`features/cart`, `features/favorites`, `features/recently-viewed`, each with `api.ts`, `queries.ts` and hooks). Every endpoint needs a session and is scoped to it: no user id is ever sent. Signed-out visitors see an empty cart and favorites and the existing "sign in" prompts; a click while signed out is remembered (`pending-action`) and applied after login.
 
 ```ts
-interface CartLine {
-  productId: number;
-  quantity: number;
-  addedAt: string;
-}
-interface CartState {
-  byUser: Record<number, CartLine[]>;
-  add(userId: number, productId: number, qty: number, stock: number): number; // capped at stock, returns the new line quantity
-  setQuantity(
-    userId: number,
-    productId: number,
-    qty: number,
-    stock: number,
-  ): number; // clamped to 1…stock
-  remove(userId: number, productId: number): void;
-  clear(userId: number): void;
-  removeProductEverywhere(productId: number): void;
-}
+// cart line: ids and a quantity only; prices and titles come from useCatalog() at render time
+interface CartLine { productId: number; quantity: number; addedAt: string }
 ```
 
-- Lines store only id + quantity; price/title come from `useCatalog()` at render time, so admin price edits show in the cart. Lines whose product no longer exists are dropped by a selector and a toast tells the user once.
-- Quantity clamp: `1 ≤ qty ≤ product.stock` (current merged stock).
-- Hooks `useCart()` bind the current `user.id` so components never pass it.
-- Totals selector: subtotal, discount (`discountPercentage`), total — computed with integer cents to avoid float drift.
+- `useCart()` returns `lines`, `count`, `add`, `setQuantity`, `remove`, `clear`. `useFavorites()` / `useToggleFavorite()` and `useRecentlyViewed()` / `useRecordView()` keep their shape.
+- **Optimistic updates** (`lib/optimistic.ts`): the cached list changes at once, is rolled back with a toast if the request fails, and is refetched when the last in-flight mutation on that key settles.
+- Quantity rule: a whole number from 1 to the stock. The server caps an add and clamps a set; the UI computes the same value locally for the optimistic update and uses the merged stock (admin edits).
+- Lines whose product no longer exists in the merged catalog are removed (server delete) and a toast tells the user once.
+- Products created in the admin overlay have no server record, so they cannot be added to the cart yet (a toast says so).
+- Recently viewed keeps the newest 12 per user (`MAX_RECENTLY_VIEWED`). Signed out, a small in-memory store keeps the list; it is never persisted or merged on login.
+- Checkout reads the cart from the query cache and empties it on the server after the (still local) order is recorded.
+- Totals selector: subtotal, discount (`discountPercentage`), total, in integer cents.
 
 ## Orders store
 
@@ -222,4 +212,4 @@ Factory pattern copied from StokMate `packages/domain/src/query-keys.ts`.
 
 ## Reset demo data (EX-15)
 
-Admin dashboard button → `overlay.reset()`, `userOverlay.reset()`, `reviews.reset()`, `orders.reset()`, all carts cleared → confirm dialog first.
+Admin dashboard button → `overlay.reset()`, `userOverlay.reset()`, `reviews.reset()`, `orders.reset()`, the server-side cart, favorites and recently viewed are not touched → confirm dialog first.

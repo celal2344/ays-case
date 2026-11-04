@@ -14,7 +14,8 @@ import { useCart } from './use-cart'
 export function useCartView() {
   const cart = useCart()
   const { t } = useTranslation()
-  const { products, isPending, isError, refetch } = useCatalog()
+  const catalog = useCatalog()
+  const { products } = catalog
 
   const { items, missing } = useMemo(
     () => (products ? buildCartItems(cart.lines, products) : { items: [], missing: [] }),
@@ -34,9 +35,12 @@ export function useCartView() {
     items,
     totals,
     count: cart.count,
-    isPending,
-    isError,
-    refetch,
+    isPending: catalog.isPending || cart.isPending,
+    isError: catalog.isError || cart.isError,
+    refetch: () => {
+      void catalog.refetch()
+      void cart.refetch()
+    },
     hasUnavailable: items.some((i) => !i.available),
     setQuantity: cart.setQuantity,
     remove: cart.remove,

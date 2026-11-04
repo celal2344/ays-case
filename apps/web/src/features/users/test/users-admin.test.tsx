@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { useAuthStore } from '@/features/auth/store'
-import { useCartStore } from '@/features/cart/store'
 import { signInAs } from '@/test/auth'
 import { server } from '@/test/msw/server'
 import { serverSession } from '@/test/msw/handlers'
@@ -258,9 +257,8 @@ describe('edit a user (USER-3)', () => {
 })
 
 describe('delete a user (USER-4)', () => {
-  it('asks to confirm, hides the user and clears their cart', async () => {
+  it('asks to confirm and hides the user', async () => {
     signInAs('emilys')
-    useCartStore.getState().add('user-16', 2, 1, 50)
     const requests = recordRequests()
     await renderApp('/admin/users')
     await userEvent.click(await screen.findByRole('button', { name: 'Delete Avery Perez' }))
@@ -271,7 +269,6 @@ describe('delete a user (USER-4)', () => {
     expect(await screen.findByText('Avery Perez was deleted.')).toBeInTheDocument()
     expect(requests.filter((r) => r.startsWith('DELETE'))).toEqual([])
     expect(overlay().deleted).toEqual(['user-16'])
-    expect(useCartStore.getState().byUser['user-16']).toEqual([])
     expect(await screen.findByText('Showing 1–20 of 24')).toBeInTheDocument()
   })
 

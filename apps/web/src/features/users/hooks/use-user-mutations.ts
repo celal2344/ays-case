@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query'
 
 import { useAuthStore } from '@/features/auth/store'
-import { useCartStore } from '@/features/cart/store'
 import { AppError } from '@/lib/http-error'
 
 import { applyUserOverlay, isUsernameTaken } from '../catalog'
@@ -76,7 +75,6 @@ export function useDeleteUser() {
       const reason = deleteGuard(mergedUsers(queryClient), id, currentUserId())
       if (reason) throw new GuardrailError(reason)
       useUserOverlayStore.getState().remove(id)
-      useCartStore.getState().clear(id) // their cart goes; their past orders stay as history
     },
   })
 }

@@ -3,11 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
 import { buildCartItems, cartTotals } from '@/features/cart/selectors'
-import { useCartStore } from '@/features/cart/store'
+import { shopping } from '@/test/msw/handlers'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { useReviewsStore } from '@/features/reviews/store'
 import { signInAs } from '@/test/auth'
-import { fixtureProducts, productInput } from '@/test/fixtures/products'
+import { fixtureProducts } from '@/test/fixtures/products'
 import { renderApp } from '@/test/render'
 
 import { buildOrder } from '../build-order'
@@ -25,8 +25,10 @@ async function fillShipping() {
 describe('checkout (CART-5)', () => {
   it('buys the cart: order with snapshot prices, stock down, cart empty', async () => {
     signInAs('averyp')
-    useCartStore.getState().add('user-16', 2, 2, 50) // 20 − 10% = 18.00 each
-    useCartStore.getState().add('user-16', 5, 1, 50) // 50.00
+    shopping.seedCart('user-16', [
+      { productId: 2, quantity: 2 }, // 20 − 10% = 18.00 each
+      { productId: 5, quantity: 1 }, // 50.00
+    ])
     const { router } = await renderApp('/checkout')
 
     expect(await screen.findByTestId('checkout-total')).toHaveTextContent('$86.00')
@@ -47,12 +49,12 @@ describe('checkout (CART-5)', () => {
     ])
     expect(useProductOverlayStore.getState().patched[2]?.stock).toBe(48)
     expect(useProductOverlayStore.getState().patched[5]?.stock).toBe(49)
-    expect(useCartStore.getState().byUser['user-16']).toEqual([])
+    await waitFor(() => expect(shopping.cartOf('user-16')).toEqual([]))
   })
 
   it('past orders keep their prices after an admin edit', async () => {
     signInAs('averyp')
-    useCartStore.getState().add('user-16', 2, 1, 50)
+    shopping.seedCart('user-16', [{ productId: 2, quantity: 1 }])
     const { router } = await renderApp('/checkout')
     await screen.findByTestId('checkout-total')
     await fillShipping()
@@ -68,14 +70,14 @@ describe('checkout (CART-5)', () => {
 
   it('shows what to fix and creates nothing when the shipping details are invalid', async () => {
     signInAs('averyp')
-    useCartStore.getState().add('user-16', 2, 1, 50)
+    shopping.seedCart('user-16', [{ productId: 2, quantity: 1 }])
     await renderApp('/checkout')
     await screen.findByTestId('checkout-total')
     await userEvent.click(screen.getByRole('button', { name: 'Place order' }))
     expect(await screen.findByText('Enter your full name (2–80 characters).')).toBeInTheDocument()
     expect(screen.getByText('Enter a valid phone number.')).toBeInTheDocument()
     expect(orders()).toEqual([])
-    expect(useCartStore.getState().byUser['user-16']).toHaveLength(1)
+    expect(shopping.cartOf('user-16')).toHaveLength(1)
   })
 
   it('an empty cart goes back to the cart page', async () => {
@@ -86,7 +88,7 @@ describe('checkout (CART-5)', () => {
 
   it('refuses when stock dropped below the cart quantity, touching nothing', async () => {
     signInAs('averyp')
-    useCartStore.getState().add('user-16', 2, 5, 50)
+    shopping.seedCart('user-16', [{ productId: 2, quantity: 5 }])
     await renderApp('/checkout')
     await screen.findByTestId('checkout-total')
     useProductOverlayStore.getState().update(2, { stock: 2 }) // an admin lowered it meanwhile
@@ -96,28 +98,12 @@ describe('checkout (CART-5)', () => {
       await screen.findByText('Not enough stock for groceries item 02. Review your cart.'),
     ).toBeInTheDocument()
     expect(orders()).toEqual([])
-    expect(useCartStore.getState().byUser['user-16']?.[0]?.quantity).toBe(5)
-  })
-
-  it('a cart of only local products is bought without touching the server', async () => {
-    signInAs('averyp')
-    const local = useProductOverlayStore
-      .getState()
-      .create(
-        productInput({ title: 'Local gadget', priceCents: 1000, discountPercentage: 0, stock: 5 }),
-      )
-    useCartStore.getState().add('user-16', local.id, 2, 5)
-    const { router } = await renderApp('/checkout')
-    await screen.findByTestId('checkout-total')
-    await fillShipping()
-    await userEvent.click(screen.getByRole('button', { name: 'Place order' }))
-    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/orders\/.+/))
-    expect(useProductOverlayStore.getState().created[local.id]?.stock).toBe(3)
+    expect(shopping.cartOf('user-16')[0]?.quantity).toBe(5)
   })
 
   it('Cart → Checkout and the cart summary lead to the checkout page', async () => {
     signInAs('averyp')
-    useCartStore.getState().add('user-16', 2, 1, 50)
+    shopping.seedCart('user-16', [{ productId: 2, quantity: 1 }])
     const { router } = await renderApp('/cart')
     const checkout = (await screen.findAllByRole('button', { name: 'Checkout' }))[0]!
     await userEvent.click(checkout)

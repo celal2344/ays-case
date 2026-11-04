@@ -1,8 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { useCartStore } from '@/features/cart/store'
-import { useFavoritesStore } from '@/features/favorites/store'
-import { useRecentlyViewedStore } from '@/features/recently-viewed/store'
 import {
   useProductOverlayStore,
   type ProductInput,
@@ -36,9 +33,6 @@ export function useDeleteProduct() {
   return useMutation<void, AppError, number>({
     mutationFn: async (id) => {
       useProductOverlayStore.getState().remove(id)
-      useCartStore.getState().removeProductEverywhere(id)
-      useFavoritesStore.getState().removeProductEverywhere(id)
-      useRecentlyViewedStore.getState().removeProductEverywhere(id)
       useReviewsStore.getState().removeProduct(id)
       queryClient.removeQueries({ queryKey: productKeys.detail(id) })
     },

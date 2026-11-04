@@ -241,6 +241,7 @@ export const en = {
     signInToAdd: 'Sign in to add items to your cart.',
     outOfStock: '{{title}} is out of stock.',
     added: '{{title}} was added to your cart.',
+    localUnavailable: "Products created in this browser can't be added to the cart yet.",
     maxReached: 'Only {{max}} of {{title}} available, so that is what is in your cart.',
     removedMissing: 'Some items are no longer available and were removed from your cart.',
     unavailable: 'This product is out of stock. Remove it to continue.',

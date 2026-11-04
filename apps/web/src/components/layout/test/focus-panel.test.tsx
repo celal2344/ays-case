@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
-import { useRecentlyViewedStore } from '@/features/recently-viewed/store'
+import { shopping } from '@/test/msw/handlers'
 import { useSearchStore } from '@/features/search/store'
 import { signInAs } from '@/test/auth'
 import { renderApp } from '@/test/render'
@@ -26,7 +26,7 @@ describe('search focus panel', () => {
 
   it('shows recently viewed and recent searches when there are some', async () => {
     signInAs('averyp')
-    useRecentlyViewedStore.getState().record('user-16', 1)
+    shopping.seedViewed('user-16', [1])
     useSearchStore.getState().record('mascara')
     await renderApp('/orders')
     await userEvent.click(await box())

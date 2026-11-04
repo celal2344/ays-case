@@ -19,6 +19,9 @@ Response and request types come from the API's routes (`AppType`) and the shared
 | `GET /api/products/:id`           | public | adds images, sku, weight (g), dimensions (mm), warranty/shipping/return policy, reviews and the 1 to 5 `ratingHistogram`; 404 `{ code, message }` |
 | `GET /api/categories`             | public |                                                                                                                                                   |
 | `GET /api/users`                  | admin  | 401 without a session, 403 for other roles                                                                                                        |
+| `GET/POST/PUT/DELETE /api/cart…` | session | `GET /cart`, `POST /cart/items` `{ productId, quantity }` (adds, capped at stock), `PUT /cart/items/:productId` `{ quantity }` (clamped to 1..stock), `DELETE /cart/items/:productId`, `DELETE /cart`; 404 unknown or deleted product, 409 `out_of_stock`, 422 quantity below 1 |
+| `GET /api/favorites`, `PUT/DELETE /api/favorites/:productId` | session | product ids, newest first; PUT and DELETE are idempotent (204) |
+| `GET /api/recently-viewed`, `PUT /api/recently-viewed/:productId`, `DELETE /api/recently-viewed` | session | product ids, newest first; a PUT trims the list to the newest 12 |
 | `POST /api/auth/sign-in/username` | public | `{ username, password }`, sets the session cookie                                                                                                 |
 | `GET /api/auth/get-session`       | cookie | the session user, including `role`                                                                                                                |
 | `POST /api/auth/sign-out`         | cookie |                                                                                                                                                   |
@@ -31,7 +34,7 @@ Demo accounts: `emilys` / `emilyspass` (admin), `averyp` / `averyppass` (user). 
 2. **`call()`** wraps every RPC request: transport failures become `AppError('network')`, non-2xx answers become an `AppError` of the right `kind` from the `{ code, message }` body, and a 401 while signed in ends the session (toast, redirect to `/login`).
 3. **Derived figures stay on the server.** Rating, review count, histogram and availability are computed in SQL; the browser only formats them.
 4. **One type, cents everywhere.** The UI, the overlay, the cart and the tests use the types from `@ays/validators` directly. Money stays in integer cents and is formatted at render time (`formatMoney`); grams and millimetres are formatted by `formatWeight` and `formatDimensions`. The admin form collects dollars and converts once with `toCents` on submit.
-5. **No writes yet.** Admin product and user changes live in the local overlay ([data-and-state.md](data-and-state.md)) until the API grows write endpoints.
+5. **No catalog writes yet.** Admin product and user changes live in the local overlay ([data-and-state.md](data-and-state.md)) until the API grows write endpoints.
 
 ## Errors
 
