@@ -138,6 +138,7 @@ describe('products', () => {
       { weightG: 0 },
       { sku: '' },
       { images: [{ url: 'javascript:alert(1)' }] },
+      { images: [{ url: 'http://a.test/1.png' }] },
       {
         images: [
           { url: 'https://a.test/1.png', isPrimary: true },

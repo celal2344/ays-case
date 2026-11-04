@@ -30,13 +30,12 @@ const slug = z
   .max(LIMITS.slug.max)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'slug')
 
-const httpUrl = z
-  .url()
-  .refine((value) => value.startsWith('http://') || value.startsWith('https://'), 'url')
+/** https only: the page's CSP (`img-src`) blocks plain http images. */
+const httpsUrl = z.url().refine((value) => value.startsWith('https://'), 'url')
 
 /** Images are URLs. The array order is the position; at most one is flagged primary (default: the first). */
 export const productImageInputSchema = z.object({
-  url: httpUrl,
+  url: httpsUrl,
   isPrimary: z.boolean().optional(),
 })
 

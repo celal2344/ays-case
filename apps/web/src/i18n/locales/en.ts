@@ -431,7 +431,7 @@ export const en = {
         moq: 'Enter a whole number, 1 or more.',
         threshold: 'Enter a whole number, 0 or more.',
         measure: 'Leave empty or enter a number above 0.',
-        imageUrl: 'Enter a valid http(s) URL.',
+        imageUrl: 'Enter a valid https URL.',
         price: 'Enter a price above 0 with at most 2 decimals.',
         discount: 'Enter a discount between 0 and 100.',
         stock: 'Enter a whole number, 0 or more.',

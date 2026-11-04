@@ -19,10 +19,9 @@ export const FORM_ERRORS = {
   imageUrl: 'admin.form.errors.imageUrl',
 } as const
 
-function isHttpUrl(value: string) {
+function isHttpsUrl(value: string) {
   try {
-    const { protocol } = new URL(value)
-    return protocol === 'http:' || protocol === 'https:'
+    return new URL(value).protocol === 'https:'
   } catch {
     return false
   }
@@ -90,7 +89,7 @@ export const productFormSchema = z.object({
       url: z
         .string()
         .trim()
-        .refine((v) => isHttpUrl(v), FORM_ERRORS.imageUrl),
+        .refine((v) => isHttpsUrl(v), FORM_ERRORS.imageUrl),
     }),
   ),
   /** Index of the primary image in `images`. */

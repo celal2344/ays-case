@@ -432,7 +432,7 @@ export const tr = {
         moq: '1 veya daha büyük bir tam sayı gir.',
         threshold: '0 veya daha büyük bir tam sayı gir.',
         measure: 'Boş bırak veya 0’dan büyük bir sayı gir.',
-        imageUrl: 'Geçerli bir http(s) adresi gir.',
+        imageUrl: 'Geçerli bir https adresi gir.',
         price: "0'dan büyük, en fazla 2 ondalıklı bir fiyat gir.",
         discount: '0 ile 100 arasında bir indirim gir.',
         stock: '0 veya daha büyük bir tam sayı gir.',

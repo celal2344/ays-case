@@ -88,8 +88,9 @@ describe('productFormSchema', () => {
     expect(issues({ widthCm: '1.25' })).toEqual(['widthCm'])
   })
 
-  it('image URLs must be http(s)', () => {
+  it('image URLs must be https', () => {
     expect(issues({ images: [{ url: 'not a url' }] })).toEqual(['images'])
+    expect(issues({ images: [{ url: 'http://img.test/a.webp' }] })).toEqual(['images'])
     expect(issues({ images: [{ url: 'javascript:alert(1)' }] })).toEqual(['images'])
   })
 })
