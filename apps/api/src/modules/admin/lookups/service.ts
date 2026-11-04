@@ -1,4 +1,4 @@
-import { asc, eq, sql } from 'drizzle-orm'
+import { asc, eq, getTableColumns, sql } from 'drizzle-orm'
 
 import { getDb, type Database } from '../../../db/client'
 import {
@@ -170,9 +170,20 @@ export const brandService = lookupService<typeof brands.$inferSelect, SluggedCre
   inUse: (db, id) => used(db.select({ n: countOf }).from(products).where(eq(products.brandId, id))),
 })
 
-export const tagService = lookupService<typeof tags.$inferSelect, SluggedCreate, SluggedPatch>({
+export const tagService = lookupService<
+  typeof tags.$inferSelect & { productCount?: number },
+  SluggedCreate,
+  SluggedPatch
+>({
   what: 'Tag',
-  list: (db) => db.select().from(tags).orderBy(asc(tags.name)),
+  list: (db) =>
+    db
+      .select({
+        ...getTableColumns(tags),
+        productCount: sql<number>`(select count(*)::int from ${productTags} where ${productTags.tagId} = ${tags.id})`,
+      })
+      .from(tags)
+      .orderBy(asc(tags.name)),
   create: async (db, input) => {
     const [row] = await db
       .insert(tags)
