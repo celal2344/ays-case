@@ -7,7 +7,6 @@ import {
 } from '@/features/products/overlay-store'
 import { productKeys } from '@/features/products/query-keys'
 import type { Product } from '@/features/products/schemas'
-import { useReviewsStore } from '@/features/reviews/store'
 import type { AppError } from '@/lib/http-error'
 
 // The API has no product writes yet, so admin edits live in the browser overlay only.
@@ -33,7 +32,6 @@ export function useDeleteProduct() {
   return useMutation<void, AppError, number>({
     mutationFn: async (id) => {
       useProductOverlayStore.getState().remove(id)
-      useReviewsStore.getState().removeProduct(id)
       queryClient.removeQueries({ queryKey: productKeys.detail(id) })
     },
   })

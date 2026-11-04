@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { ShoppingBag } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { EmptyState } from '@/components/feedback/feedback'
+import { EmptyState, ErrorState, PageSkeleton } from '@/components/feedback/feedback'
 import { Money } from '@/components/money'
 import { buttonVariants } from '@/components/ui/button'
 import { formatDate } from '@/lib/format'
@@ -13,7 +13,10 @@ import { useOrders } from '../hooks/use-orders'
 export function OrdersPage() {
   const { t } = useTranslation()
   const language = usePreferencesStore(selectLanguage)
-  const orders = useOrders()
+  const { orders, isPending, isError, refetch } = useOrders()
+
+  if (isError) return <ErrorState onRetry={() => void refetch()} />
+  if (isPending) return <PageSkeleton />
 
   return (
     <div className="space-y-4">

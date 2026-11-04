@@ -2,7 +2,7 @@ import { Link, getRouteApi } from '@tanstack/react-router'
 import { CircleCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { NotFound } from '@/components/feedback/feedback'
+import { ErrorState, NotFound, PageSkeleton } from '@/components/feedback/feedback'
 import { Money } from '@/components/money'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,10 +21,12 @@ export function OrderDetailPage() {
   const language = usePreferencesStore(selectLanguage)
   const { orderId } = route.useParams()
   const { placed } = route.useSearch()
-  const order = useOrder(orderId)
+  const { order, isPending, notFound, refetch } = useOrder(orderId)
 
+  if (isPending) return <PageSkeleton />
   // someone else's order id is indistinguishable from one that does not exist
-  if (!order) return <NotFound />
+  if (notFound) return <NotFound />
+  if (!order) return <ErrorState onRetry={() => void refetch()} />
 
   return (
     <div className="space-y-4">
@@ -51,18 +53,22 @@ export function OrderDetailPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <ul className="space-y-3">
-          {order.lines.map((line) => (
-            <li key={line.productId} className="flex gap-3 rounded-lg border p-3">
+          {order.lines.map((line, index) => (
+            <li key={`${index}-${line.productId}`} className="flex gap-3 rounded-lg border p-3">
               <ProductImage src={line.thumbnail} alt="" className="size-16 shrink-0 rounded-md" />
               <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <Link
-                    to="/products/$productId"
-                    params={{ productId: String(line.productId) }}
-                    className="line-clamp-2 font-medium hover:underline"
-                  >
-                    {line.title}
-                  </Link>
+                  {line.productId === null ? (
+                    <p className="line-clamp-2 font-medium">{line.title}</p>
+                  ) : (
+                    <Link
+                      to="/products/$productId"
+                      params={{ productId: String(line.productId) }}
+                      className="line-clamp-2 font-medium hover:underline"
+                    >
+                      {line.title}
+                    </Link>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     {t('orders.line', { n: line.quantity })} · <Money cents={line.unitCents} />
                   </p>

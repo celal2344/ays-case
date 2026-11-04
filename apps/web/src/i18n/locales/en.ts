@@ -199,6 +199,7 @@ export const en = {
       submit: 'Submit review',
       save: 'Save changes',
       cancel: 'Cancel',
+      exists: 'You have already reviewed this product.',
       added: 'Thanks, your review was added.',
       updated: 'Your review was updated.',
     },

@@ -5,10 +5,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest'
 import '@/i18n'
 import { useAuthStore } from '@/features/auth/store'
 import { useGuestViewedStore } from '@/features/recently-viewed/guest-store'
-import { useOrdersStore } from '@/features/orders/store'
 import { useSearchStore } from '@/features/search/store'
 import { useUserOverlayStore } from '@/features/users/overlay-store'
-import { useReviewsStore } from '@/features/reviews/store'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { usePreferencesStore } from '@/preferences/store'
 
@@ -51,11 +49,9 @@ beforeEach(() => {
   serverSession.userId = null
   useAuthStore.setState({ user: null, status: 'idle' })
   useProductOverlayStore.getState().reset()
-  useReviewsStore.getState().reset()
   useUserOverlayStore.getState().reset()
   shopping.reset()
   useGuestViewedStore.setState({ ids: [] })
-  useOrdersStore.setState({ orders: [] })
   useSearchStore.setState({ recent: [] })
 })
 

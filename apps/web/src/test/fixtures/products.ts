@@ -79,6 +79,7 @@ export function fixtureDetail(id: number): ProductDetail | undefined {
               createdAt: NOW,
               updatedAt: NOW,
               author: { id: 'user-5', name: 'Eleanor Collins' },
+              verifiedBuyer: false,
             },
           ]
         : [],

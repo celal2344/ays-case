@@ -18,7 +18,7 @@ export function ReviewSummaryPanel({ summary }: { summary: ReviewSummary }) {
       </div>
       <ul className="flex-1 space-y-1.5" aria-label={t('reviews.histogram')}>
         {([5, 4, 3, 2, 1] as const).map((star) => {
-          const count = summary.histogram[star]
+          const count = summary.histogram[String(star) as '1' | '2' | '3' | '4' | '5']
           const percent = summary.count === 0 ? 0 : (count / summary.count) * 100
           return (
             <li key={star} className="flex items-center gap-2 text-sm">

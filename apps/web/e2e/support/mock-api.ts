@@ -61,13 +61,13 @@ export async function mockApi(page: Page) {
 
     if (pathname === '/api/categories') return json(route, { data: fixtureCategories })
     if (pathname === '/api/products') {
-      return json(route, { data: fixtureProducts })
+      return json(route, { data: fixtureProducts.map((p) => shopping.withStock(p)) })
     }
     const productId = /^\/api\/products\/(\d+)$/.exec(pathname)?.[1]
     if (productId) {
       const detail = fixtureDetail(Number(productId))
       return detail
-        ? json(route, { data: detail })
+        ? json(route, { data: shopping.withReviews(detail) })
         : json(route, { code: 'not_found', message: 'Product not found' }, 404)
     }
 
@@ -79,6 +79,7 @@ export async function mockApi(page: Page) {
     }
 
     const productParam = Number(/\/(\d+)$/.exec(pathname)?.[1])
+    const productIdOf = (path: string) => Number(/\/products\/(\d+)\//.exec(path)?.[1])
     const reply = (r: { status: number; body?: unknown }) =>
       r.body === undefined ? route.fulfill({ status: r.status }) : json(route, r.body, r.status)
     if (/^\/api\/(cart|favorites|recently-viewed)/.test(pathname)) {
@@ -113,6 +114,27 @@ export async function mockApi(page: Page) {
         return reply(method === 'DELETE' ? shopping.clearViewed(id) : shopping.getViewed(id))
       }
       return reply(shopping.recordView(id, productParam))
+    }
+
+    // checkout and reviews: the same rules as the API, from the shared in-memory copy
+    if (pathname.startsWith('/api/orders') || /\/reviews(\/|$)/.test(pathname)) {
+      if (!user) return json(route, { code: 'unauthorized', message: 'Sign in required' }, 401)
+      const payload = method === 'GET' || method === 'DELETE' ? null : request.postDataJSON()
+      const last = pathname.split('/').pop() ?? ''
+      if (pathname === '/api/orders' && method === 'POST') {
+        return reply(shopping.placeOrder(user.id, (payload as { shipping: never }).shipping))
+      }
+      if (pathname === '/api/orders') return reply(shopping.getOrders(user.id))
+      if (pathname.startsWith('/api/orders/')) return reply(shopping.getOrder(user.id, last))
+      if (pathname.startsWith('/api/products/') && method === 'POST') {
+        return reply(shopping.createReview(user.id, productIdOf(pathname), payload as never))
+      }
+      if (pathname.startsWith('/api/reviews/') && method === 'PATCH') {
+        return reply(shopping.patchReview(user.id, Number(last), payload as never))
+      }
+      if (pathname.startsWith('/api/reviews/') && method === 'DELETE') {
+        return reply(shopping.deleteReview(user.id, user.role === 'admin', Number(last)))
+      }
     }
 
     return json(route, { code: 'not_found', message: `Unmocked ${method} ${pathname}` }, 404)

@@ -23,14 +23,12 @@ import { RatingStars } from './rating-stars'
 
 export function ReviewCard({
   review,
-  verified,
   canEdit,
   canDelete,
   onEdit,
   onDelete,
 }: {
   review: ReviewItem
-  verified: boolean
   canEdit: boolean
   canDelete: boolean
   onEdit: () => void
@@ -47,7 +45,7 @@ export function ReviewCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-medium">{review.authorName}</span>
-            {verified ? (
+            {review.verifiedBuyer ? (
               <Badge variant="secondary" className="gap-1">
                 <BadgeCheck className="size-3.5" />
                 {t('reviews.verified')}

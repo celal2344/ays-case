@@ -1,5 +1,7 @@
 import { http, HttpResponse } from 'msw'
 
+import type { Shipping } from '@ays/validators'
+
 import type { User } from '@/features/auth/schemas'
 
 import { fixtureUserList } from '../fixtures/users'
@@ -60,10 +62,12 @@ export const productHandlers = [
   http.get(`${BASE}/products/:id`, ({ params }) => {
     const detail = fixtureDetail(Number(params.id))
     return detail
-      ? HttpResponse.json({ data: detail })
+      ? HttpResponse.json({ data: shopping.withReviews(detail) })
       : HttpResponse.json({ code: 'not_found', message: 'Product not found' }, { status: 404 })
   }),
-  http.get(`${BASE}/products`, () => HttpResponse.json({ data: fixtureProducts })),
+  http.get(`${BASE}/products`, () =>
+    HttpResponse.json({ data: fixtureProducts.map((p) => shopping.withStock(p)) }),
+  ),
 ]
 
 export const userHandlers = [
@@ -124,4 +128,38 @@ export const shoppingHandlers = [
   ),
 ]
 
-export const handlers = [...authHandlers, ...productHandlers, ...userHandlers, ...shoppingHandlers]
+export const orderHandlers = [
+  http.post(`${BASE}/orders`, async ({ request }) => {
+    const body = (await request.json()) as { shipping: Shipping }
+    return needSession((id) => reply(shopping.placeOrder(id, body.shipping)))
+  }),
+  http.get(`${BASE}/orders`, () => needSession((id) => reply(shopping.getOrders(id)))),
+  http.get(`${BASE}/orders/:id`, ({ params }) =>
+    needSession((id) => reply(shopping.getOrder(id, String(params.id)))),
+  ),
+]
+
+export const reviewHandlers = [
+  http.post(`${BASE}/products/:id/reviews`, async ({ params, request }) => {
+    const body = (await request.json()) as { rating: number; comment: string }
+    return needSession((id) => reply(shopping.createReview(id, Number(params.id), body)))
+  }),
+  http.patch(`${BASE}/reviews/:id`, async ({ params, request }) => {
+    const body = (await request.json()) as { rating?: number; comment?: string }
+    return needSession((id) => reply(shopping.patchReview(id, Number(params.id), body)))
+  }),
+  http.delete(`${BASE}/reviews/:id`, ({ params }) =>
+    needSession((id) =>
+      reply(shopping.deleteReview(id, sessionUser()?.role === 'admin', Number(params.id))),
+    ),
+  ),
+]
+
+export const handlers = [
+  ...authHandlers,
+  ...productHandlers,
+  ...userHandlers,
+  ...shoppingHandlers,
+  ...orderHandlers,
+  ...reviewHandlers,
+]

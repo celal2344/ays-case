@@ -11,11 +11,11 @@ export type PlaceOrderResult =
 
 /** Thrown inside the transaction to roll everything back with a reason the route can answer. */
 class CheckoutRefused extends Error {
-  constructor(
-    readonly code: 'product_unavailable' | 'insufficient_stock',
-    message: string,
-  ) {
+  readonly code: 'product_unavailable' | 'insufficient_stock'
+
+  constructor(code: 'product_unavailable' | 'insufficient_stock', message: string) {
     super(message)
+    this.code = code
   }
 }
 

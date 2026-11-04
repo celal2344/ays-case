@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { useProductOverlayStore } from '@/features/products/overlay-store'
-import { useReviewsStore } from '@/features/reviews/store'
 import { useUserOverlayStore } from '@/features/users/overlay-store'
 import { signInAs } from '@/test/auth'
 import { cat, productInput, tags } from '@/test/fixtures/products'
@@ -260,15 +259,8 @@ describe('edit a product (PROD-4)', () => {
 })
 
 describe('delete a product (PROD-5)', () => {
-  it('asks to confirm and removes the product from the shop, detail page and reviews', async () => {
+  it('asks to confirm and removes the product from the shop and the detail page', async () => {
     signInAs('emilys')
-    useReviewsStore.getState().add({
-      productId: 2,
-      userId: 'user-16',
-      authorName: 'Avery Perez',
-      rating: 4,
-      comment: 'Quite good indeed.',
-    })
     const requests = recordRequests()
     const { router } = await renderApp('/admin/products')
     await userEvent.click(await screen.findByRole('button', { name: 'Delete groceries item 02' }))
@@ -282,7 +274,6 @@ describe('delete a product (PROD-5)', () => {
     expect(screen.queryByText('Showing 1–20 of 30')).not.toBeInTheDocument()
     expect(await screen.findByText('Showing 1–20 of 29')).toBeInTheDocument()
     expect(useProductOverlayStore.getState().deleted).toEqual([2])
-    expect(useReviewsStore.getState().byProduct[2]).toBeUndefined()
 
     await router.navigate({ to: '/products/$productId', params: { productId: '2' } })
     expect(await screen.findByText('Page not found')).toBeInTheDocument()
@@ -344,18 +335,11 @@ describe('dashboard (EX-13, EX-15)', () => {
     expect(within(stat('Local changes')).getByText('2')).toBeInTheDocument()
   })
 
-  it('Reset demo data restores the original catalog and clears reviews, after confirming', async () => {
+  it('Reset demo data restores the original catalog and after confirming', async () => {
     signInAs('emilys')
     useProductOverlayStore.getState().remove(2)
     useProductOverlayStore.getState().update(1, { priceCents: 9900 })
     useUserOverlayStore.getState().remove('user-5')
-    useReviewsStore.getState().add({
-      productId: 4,
-      userId: 'user-16',
-      authorName: 'Avery Perez',
-      rating: 4,
-      comment: 'Quite good indeed.',
-    })
     await renderApp('/admin')
     await userEvent.click(await screen.findByRole('button', { name: 'Reset demo data' }))
     expect(useProductOverlayStore.getState().deleted).toEqual([2]) // not yet
@@ -370,7 +354,6 @@ describe('dashboard (EX-13, EX-15)', () => {
       deleted: [],
     })
     expect(useUserOverlayStore.getState().deleted).toEqual([])
-    expect(useReviewsStore.getState().byProduct).toEqual({})
     const cards = screen.getAllByText('Products').map((el) => el.closest('[data-slot="card"]'))
     expect(
       within(cards.find((c): c is HTMLElement => c !== null)!).getByText('30'),

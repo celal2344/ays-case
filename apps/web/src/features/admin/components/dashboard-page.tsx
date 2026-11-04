@@ -29,7 +29,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCatalog } from '@/features/products/hooks/use-catalog'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
-import { useOrdersStore } from '@/features/orders/store'
+import { useOrders } from '@/features/orders/hooks/use-orders'
 import { useUserOverlayStore } from '@/features/users/overlay-store'
 import { useUsers } from '@/features/users/hooks/use-users'
 
@@ -61,7 +61,7 @@ export function DashboardPage() {
   const created = useProductOverlayStore((s) => s.created)
   const patched = useProductOverlayStore((s) => s.patched)
   const deleted = useProductOverlayStore((s) => s.deleted)
-  const orderCount = useOrdersStore((s) => s.orders.length)
+  const orderCount = useOrders().orders.length
   const userChanges = useUserOverlayStore(
     (s) => Object.keys(s.created).length + Object.keys(s.patched).length + s.deleted.length,
   )
