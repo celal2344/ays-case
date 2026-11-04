@@ -20,7 +20,7 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 | shadcn `components/ui` untouched, `cn()` in `lib/utils.ts` | `components/ui`, `lib/utils.ts` | same |
 | URL-synced list state (search/filter/sort/page) | product list | same, Zod-validated search params |
 | Loading / error / empty states on every list | README features | same ([routes-and-pages](routes-and-pages.md)) |
-| i18next TR/EN + translation-parity script | `scripts/check-translation-parity.mjs` | same, run in CI |
+| i18next TR/EN + translation-parity script | `apps/web/scripts/check-translation-parity.mjs` | same, run in CI |
 | Light/dark/system theme + language controls | `preferences.tsx`, `preferences-controls.tsx` | Zustand `preferences` store |
 | `AGENTS.md` + `docs/` for agents | repo root | same |
 | README: screenshots, AI workflow, setup, test account, features | `README.md` | same structure |
@@ -44,7 +44,7 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 ## TypeScript
 - `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` off (pain with forms).
 - No `any`, no non-null `!` except in tests. `satisfies` for config objects.
-- Path alias `@/` → `src/`.
+- Path alias `@/` → `apps/web/src/`.
 
 ## React
 - Routes are thin: validate search, prefetch in `loader` (`queryClient.query`), render a page component from `features/`.
@@ -61,7 +61,7 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 ## Git
 - Conventional commits: `feat(cart): quantity stepper`, `fix(auth): refresh loop`, `docs:`, `test:`, `chore:`.
 - One gate = one PR (or a small set of commits on main if working solo); every gate ends green on lint, typecheck, test.
-- Never commit `.env*` except `.env.example`.
+- Never commit `.env*` except `apps/web/.env.example`.
 
 ## Tooling notes (from G0)
 - **TypeScript is pinned to 6.x**: `typescript-eslint` does not support TS 7 yet, and ESLint is required by the lint setup. Revisit when it does.
@@ -74,7 +74,7 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 - **Search params use `.catch(undefined)`** so a malformed URL falls back to defaults; `undefined` always means default and is stripped from the URL (`search-state.ts`).
 - **Session bootstrap runs at startup** (`main.tsx`, non-blocking) so public pages know the signed-in user after a reload; guards still await it on protected routes.
 - **Product page extras:** the first breadcrumb crumb is "Products" (the shop list is the home page); the verified-buyer badge reads the orders store (an order containing the product); admins can hide seeded DummyJSON reviews (stored as hidden keys), local reviews can be edited and deleted by their author.
-- **Tests stub `ResizeObserver` / `IntersectionObserver` / `scrollIntoView`** in `src/test/setup.ts` (jsdom has none); the sticky-bar test swaps in a controllable observer.
+- **Tests stub `ResizeObserver` / `IntersectionObserver` / `scrollIntoView`** in `apps/web/src/test/setup.ts` (jsdom has none); the sticky-bar test swaps in a controllable observer.
 - **Cart behaviour:** the shop card shows "Add to cart" until the product is in the cart, then a quantity stepper (clamped to stock) and a remove button; the cart page rows show only the line total (no "unit × quantity" line). A signed-out "Add to cart" is stored as a pending action and applied after sign-in by `usePendingCartAction` (mounted in the app shell). "Buy now" adds and opens `/checkout`.
 - **`QuantityStepper`** (`components/quantity-stepper.tsx`) keeps a typed draft, so the field can be emptied while typing; the value shown is always the clamped one.
 - **TanStack Table is v9** (`useTable`, `tableFeatures`, `createSortedRowModel`, `table.FlexRender`), not the v8 API most examples show; the admin table registers sorting + pagination, keeps columns at module scope and lets the URL own both states.
@@ -85,7 +85,7 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 
 - **Checkout / orders (G6):** `usePlaceOrder` reads cart, catalog and overlay fresh from the stores, refuses (touching nothing) if any line exceeds current stock, calls `POST /carts/add` for remote ids only (skipped when the cart holds only local products), and only then writes the order, decrements stock and clears the cart. A failed receipt call keeps cart and stock. Orders store money as integer cents and freeze title, thumbnail and prices. `/checkout` redirects an empty cart to `/cart`; another user's order id renders the 404 page. Shipping details are not stored anywhere but in the order.
 
-- **A11y / polish (G7):** the shop card's image link and the cart row's image link are `aria-hidden` and not focusable (the title link next to them is the one link per item). Language toggle names start with the visible code ("TR Türkçe") so voice-control users can say what they see. Light-mode toast colours and `--destructive` are darkened in `index.css` to reach 4.5:1; `src/components/ui/*` stays as generated. The e2e folder has its own `tsconfig.e2e.json` and is linted; `@axe-core/playwright` is a dev dependency for the a11y spec.
+- **A11y / polish (G7):** the shop card's image link and the cart row's image link are `aria-hidden` and not focusable (the title link next to them is the one link per item). Language toggle names start with the visible code ("TR Türkçe") so voice-control users can say what they see. Light-mode toast colours and `--destructive` are darkened in `index.css` to reach 4.5:1; `apps/web/src/components/ui/*` stays as generated. The e2e folder has its own `tsconfig.e2e.json` and is linted; `@axe-core/playwright` is a dev dependency for the a11y spec.
 
 - **Marketplace design (issue #14):** light is the first-visit default (dark and system stay available). Tokens live in `index.css`; extra tokens `brand` (decorative orange: logo, underline), `brand-text` (orange text, AA), `brand-soft`, `success`, `star`. Deviations from the issue table, all for WCAG AA (checked by the axe e2e spec in light **and** dark): `primary` is the strong orange `#c2530a` with white text, `muted-foreground` is `#666`, `success` is `#17794a`, prices use `brand-text`. Font is Inter (`@fontsource-variable/inter`, replaces Geist). The header search is the only shop search box (it filters live on `/products`); the list has a left filter panel (category, price, brand, rating; a sheet below lg) whose state is in the URL (`minPrice`, `maxPrice`, `brand`, `rating`) with removable chips. "Free shipping" is a display tag from $50 sale price, not a real shipping rule.
 

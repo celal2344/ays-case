@@ -1,7 +1,7 @@
 # Agent rules — ays-case
 
 ## Read first
-1. `docs/implementation-plan.md` — work only on the gate you were given.
+1. The GitHub issue you were given — work only on that scope.
 2. `docs/conventions.md`, `docs/data-and-state.md`, `docs/api.md`.
 3. Relevant ADRs in `docs/decisions/`.
 
@@ -15,7 +15,7 @@
 - Exact dependency versions; no new dependency without saying why in the handoff.
 - No `any`, no `console.log`, no commented-out code, no TODOs left in a finished gate.
 - Don't edit `docs/` unless the gate says so. If the docs are wrong or block you, stop and report.
-- Don't edit `src/components/ui/*` (shadcn) except via the shadcn CLI.
+- Don't edit `apps/web/src/components/ui/*` (shadcn) except via the shadcn CLI.
 
 ## Before handing off
 ```bash
@@ -30,4 +30,4 @@ One PR per gate from `gate/gN-name`. When the gate is green, open the PR and **s
 Conventional commits (`feat(cart): …`). Small, one topic each.
 
 ## Tests
-- Tests go in a `test/` folder inside the feature (or lib/component group) they cover, e.g. `src/features/cart/test/store.test.ts`; shared helpers live in `src/test/`. See `docs/testing.md`.
+- Tests go in a `test/` folder inside the feature (or lib/component group) they cover, e.g. `apps/web/src/features/cart/test/store.test.ts`; shared helpers live in `apps/web/src/test/`. See `docs/testing.md`.

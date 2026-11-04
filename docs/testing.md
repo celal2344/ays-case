@@ -3,12 +3,12 @@
 ## Layers
 | Layer | Tool | What | Where |
 |---|---|---|---|
-| Unit | Vitest | Pure functions: `applyOverlay`, filter/sort/paginate pipeline, cart totals, quantity clamp, search param schema, storage migrations | `src/<area>/test/*.test.ts` |
-| Store | Vitest | Zustand stores: overlay create/update/remove/reset, cart add/merge/clamp/remove-everywhere, auth login/logout/bootstrap | `src/features/<feature>/test/store.test.ts` |
-| Integration | Vitest + RTL + MSW | Pages with mocked DummyJSON: login, shop list filters, add to cart, admin create/edit/delete, checkout | `src/<area>/test/*.test.tsx` |
-| E2E | Playwright (Chromium, + mobile viewport) | Full flows against the dev server, DummyJSON mocked with `page.route` for stability | `e2e/*.spec.ts` |
+| Unit | Vitest | Pure functions: `applyOverlay`, filter/sort/paginate pipeline, cart totals, quantity clamp, search param schema, storage migrations | `apps/web/src/<area>/test/*.test.ts` |
+| Store | Vitest | Zustand stores: overlay create/update/remove/reset, cart add/merge/clamp/remove-everywhere, auth login/logout/bootstrap | `apps/web/src/features/<feature>/test/store.test.ts` |
+| Integration | Vitest + RTL + MSW | Pages with mocked DummyJSON: login, shop list filters, add to cart, admin create/edit/delete, checkout | `apps/web/src/<area>/test/*.test.tsx` |
+| E2E | Playwright (Chromium, + mobile viewport) | Full flows against the dev server, DummyJSON mocked with `page.route` for stability | `apps/web/e2e/*.spec.ts` |
 
-MSW handlers in `src/test/msw/handlers.ts` mirror [api.md](api.md) with fixtures from a trimmed real response (`src/test/fixtures/products.json`, 20 items). Tests never hit the real network (`onUnhandledRequest: "error"`).
+MSW handlers in `apps/web/src/test/msw/handlers.ts` mirror [api.md](api.md) with fixtures from a trimmed real response (`apps/web/src/test/fixtures/products.json`, 20 items). Tests never hit the real network (`onUnhandledRequest: "error"`).
 
 Test helper `renderWithProviders(ui, { route, authState })` creates a fresh QueryClient (retry off), router, and resets all Zustand stores + localStorage between tests.
 
@@ -40,10 +40,10 @@ Test helper `renderWithProviders(ui, { route, authState })` creates a fresh Quer
 5. `a11y.spec.ts` — axe-core (WCAG 2.0/2.1 A and AA) on every main page, light and dark.
 6. `responsive.spec.ts` — no horizontal scroll on any page at desktop and Pixel 7 viewports.
 
-DummyJSON is served from the shared unit-test fixtures by `e2e/support/mock-api.ts` (`page.route`), so the specs never touch the network. Runs: `pnpm e2e` (Chromium desktop + Pixel 7; starts `pnpm dev` and reuses a running one locally). CI has a separate `e2e` job that uploads the HTML report.
+DummyJSON is served from the shared unit-test fixtures by `apps/web/e2e/support/mock-api.ts` (`page.route`), so the specs never touch the network. Runs: `pnpm e2e` (Chromium desktop + Pixel 7; starts `pnpm dev` and reuses a running one locally). CI has a separate `e2e` job that uploads the HTML report.
 
 ## Coverage target
-Lines ≥ 80% on `src/features/**` and `src/lib/**` (report only, not a CI gate — pure functions should be ~100%).
+Lines ≥ 80% on `apps/web/src/features/**` and `apps/web/src/lib/**` (report only, not a CI gate — pure functions should be ~100%).
 
 ## Manual QA checklist (run before submitting)
 - [ ] 360px / 768px / 1280px: no horizontal scroll, nav sheet works, tables scroll
@@ -57,4 +57,4 @@ Lines ≥ 80% on `src/features/**` and `src/lib/**` (report only, not a CI gate 
 - [ ] No console errors/warnings
 
 ## Test location
-Tests live in a dedicated `test/` folder next to the code they cover, never beside the source file: `src/features/<feature>/test/`, `src/lib/test/`, `src/components/<group>/test/`, `src/preferences/test/`. Shared helpers (MSW handlers and server, `renderApp`, setup) stay in `src/test/`. Tests import the unit under test with `../`.
+Tests live in a dedicated `test/` folder next to the code they cover, never beside the source file: `apps/web/src/features/<feature>/test/`, `apps/web/src/lib/test/`, `apps/web/src/components/<group>/test/`, `apps/web/src/preferences/test/`. Shared helpers (MSW handlers and server, `renderApp`, setup) stay in `apps/web/src/test/`. Tests import the unit under test with `../`.
