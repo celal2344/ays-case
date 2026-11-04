@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { ShoppingCart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
+import { PendingButton } from '@/components/pending-button'
 import {
   Table,
   TableBody,
@@ -12,16 +12,32 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-import { useAddToCart } from '@/features/cart/hooks/use-add-to-cart'
+import { useAddButton } from '@/features/cart/hooks/use-add-to-cart'
 import { FavoriteButton } from '@/features/favorites/components/favorite-button'
 import type { Product } from '../schemas'
 import { DiscountBadge, StockBadge } from './product-badges'
 import { ProductImage } from './product-image'
 import { ProductPrice } from './product-price'
 
+function AddToCartIcon({ product }: { product: Product }) {
+  const { t } = useTranslation()
+  const { add, pending, atMax } = useAddButton(product)
+  return (
+    <PendingButton
+      size="icon-sm"
+      variant="outline"
+      pending={pending}
+      disabled={product.stock <= 0 || atMax}
+      aria-label={t(atMax ? 'cart.maxInCart' : 'products.addToCartNamed', { title: product.title })}
+      onClick={() => void add()}
+    >
+      {pending ? null : <ShoppingCart className="size-4" />}
+    </PendingButton>
+  )
+}
+
 export function ProductTable({ products }: { products: Product[] }) {
   const { t } = useTranslation()
-  const addToCart = useAddToCart()
   return (
     <div className="overflow-x-auto rounded-lg border">
       <Table>
@@ -71,15 +87,7 @@ export function ProductTable({ products }: { products: Product[] }) {
               </TableCell>
               <TableCell className="flex items-center gap-1">
                 <FavoriteButton productId={product.id} title={product.title} />
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  disabled={product.stock <= 0}
-                  aria-label={t('products.addToCartNamed', { title: product.title })}
-                  onClick={() => addToCart(product)}
-                >
-                  <ShoppingCart className="size-4" />
-                </Button>
+                <AddToCartIcon product={product} />
               </TableCell>
             </TableRow>
           ))}

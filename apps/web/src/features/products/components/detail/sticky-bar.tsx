@@ -10,11 +10,11 @@ import { CompactBuy } from './compact-buy'
 export function StickyBar({
   product,
   visible,
-  onAdd,
+  quantity,
 }: {
   product: Product
   visible: boolean
-  onAdd: () => void
+  quantity: number
 }) {
   const { t } = useTranslation()
   if (!visible) return null
@@ -24,7 +24,7 @@ export function StickyBar({
       aria-label={t('products.sticky')}
       className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 shadow-lg backdrop-blur md:hidden"
     >
-      <CompactBuy product={product} onAdd={onAdd} className="mx-auto max-w-7xl px-4 py-2" />
+      <CompactBuy product={product} quantity={quantity} className="mx-auto max-w-7xl px-4 py-2" />
     </div>
   )
 }

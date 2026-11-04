@@ -1,11 +1,12 @@
 import { useForm } from '@tanstack/react-form'
 import { Link, useRouter } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { PendingButton } from '@/components/pending-button'
+import { runExclusive } from '@/lib/in-flight'
 import { ErrorState, PageSkeleton } from '@/components/feedback/feedback'
 import { Money } from '@/components/money'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,18 +36,19 @@ export function CheckoutPage() {
   const form = useForm({
     defaultValues: emptyShipping,
     validators: { onSubmit: shippingSchema },
-    onSubmit: async ({ value }) => {
-      try {
-        const order = await placeOrder.mutateAsync(value)
-        void router.navigate({
-          to: '/orders/$orderId',
-          params: { orderId: order.id },
-          search: { placed: 1 },
-        })
-      } catch {
-        return // the reason is shown above the button
-      }
-    },
+    onSubmit: ({ value }) =>
+      runExclusive('form:checkout', async () => {
+        try {
+          const order = await placeOrder.mutateAsync(value)
+          void router.navigate({
+            to: '/orders/$orderId',
+            params: { orderId: order.id },
+            search: { placed: 1 },
+          })
+        } catch {
+          return // the reason is shown above the button
+        }
+      }),
   })
 
   if (cart.isError) return <ErrorState onRetry={() => void cart.refetch()} />
@@ -135,16 +137,16 @@ export function CheckoutPage() {
                   {errorDetail ? <span className="block text-xs">{errorDetail}</span> : null}
                 </p>
               ) : null}
-              <Button
+              <PendingButton
                 type="submit"
                 form="checkout-form"
                 size="lg"
                 className="w-full"
+                pending={placeOrder.isPending}
                 disabled={!canPlace}
               >
-                {placeOrder.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                 {t('checkout.place')}
-              </Button>
+              </PendingButton>
               <Link
                 to="/cart"
                 className={buttonVariants({ variant: 'ghost', className: 'w-full' })}

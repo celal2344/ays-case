@@ -145,6 +145,7 @@ describe('cart page', () => {
     expect(screen.getByTestId('cart-total')).toHaveTextContent('$216.00') // 4 × $54
     await userEvent.click(screen.getByRole('button', { name: 'Decrease quantity' }))
     expect(screen.getByTestId('cart-total')).toHaveTextContent('$162.00')
+    await waitFor(() => expect(cartOf('user-16')[0]?.quantity).toBe(3)) // sent once the clicking stops
   })
 
   it('shows subtotal, discount and total', async () => {

@@ -54,6 +54,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  server.events.removeAllListeners()
   server.resetHandlers()
   localStorage.clear()
   sessionStorage.clear()

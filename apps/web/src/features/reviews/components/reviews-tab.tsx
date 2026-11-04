@@ -2,6 +2,7 @@ import { Link, useLocation } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { runExclusive } from '@/lib/in-flight'
 import { EmptyState } from '@/components/feedback/feedback'
 import {
   Select,
@@ -102,7 +103,11 @@ export function ReviewsTab({
                   canEdit={isOwn}
                   canDelete={isOwn || isAdmin}
                   onEdit={() => setEditing(true)}
-                  onDelete={() => remove.mutate(review.id)}
+                  onDelete={() =>
+                    void runExclusive(`delete:review:${review.id}`, () =>
+                      remove.mutateAsync(review.id).catch(() => undefined),
+                    )
+                  }
                 />
               )
             })}

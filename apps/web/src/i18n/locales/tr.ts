@@ -245,6 +245,7 @@ export const tr = {
     outOfStock: '{{title}} tükendi.',
     added: '{{title}} sepetine eklendi.',
     maxReached: '{{title}} için yalnızca {{max}} adet var, sepetinde o kadar var.',
+    maxInCart: 'Sepette en fazla',
     removedMissing: 'Bazı ürünler artık mevcut değil ve sepetinden çıkarıldı.',
     unavailable: 'Bu ürün tükendi. Devam etmek için kaldır.',
     remove: '{{title}} ürününü kaldır',

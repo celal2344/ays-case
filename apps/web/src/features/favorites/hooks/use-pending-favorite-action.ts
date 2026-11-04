@@ -25,7 +25,7 @@ export function usePendingFavoriteAction() {
     addFavorite(action.productId).then(
       () => {
         void queryClient.invalidateQueries({ queryKey: favoriteKeys.all })
-        toast.success(t('favorites.added'))
+        toast.success(t('favorites.added'), { id: `favorite:${action.productId}` })
       },
       (error: unknown) => toast.error(t(errorMessageKey(toAppError(error)))),
     )

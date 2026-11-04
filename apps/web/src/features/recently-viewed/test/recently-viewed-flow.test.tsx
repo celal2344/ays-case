@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { signInAs } from '@/test/auth'
 import { shopping } from '@/test/msw/handlers'
 import { renderApp } from '@/test/render'
+import { only, recordRequests } from '@/test/requests'
 
 import { useGuestViewedStore } from '../guest-store'
 
@@ -14,6 +15,15 @@ describe('recently viewed strip', () => {
     await renderApp('/products/2')
     await screen.findByRole('heading', { name: 'groceries item 02' })
     await waitFor(() => expect(shopping.viewedOf('user-16')).toEqual([2]))
+  })
+
+  it('one visit sends one PUT /recently-viewed', async () => {
+    signInAs('averyp')
+    const requests = recordRequests()
+    await renderApp('/products/2')
+    await screen.findByRole('heading', { name: 'groceries item 02' })
+    await waitFor(() => expect(shopping.viewedOf('user-16')).toEqual([2]))
+    expect(only(requests, 'PUT /api/recently-viewed')).toEqual(['PUT /api/recently-viewed/2'])
   })
 
   it('the product page shows the others newest first, without the current one; Clear empties it', async () => {

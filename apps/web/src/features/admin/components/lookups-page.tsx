@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { runExclusive } from '@/lib/in-flight'
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/feedback/feedback'
 import {
   AlertDialog,
@@ -161,13 +162,15 @@ function LookupsTable({ kind }: { kind: LookupKind }) {
   const confirmDelete = () => {
     const row = toDelete
     if (!row) return
-    remove.mutate(row.id, {
-      onSuccess: () => {
-        setToDelete(null)
-        toast.success(t('admin.lookups.deleted'))
-      },
-      onError: (error) => setDeleteError(error),
-    })
+    void runExclusive(`delete:lookup:${kind}:${row.id}`, () =>
+      remove.mutateAsync(row.id).then(
+        () => {
+          setToDelete(null)
+          toast.success(t('admin.lookups.deleted'), { id: `delete:lookup:${kind}:${row.id}` })
+        },
+        (error: Parameters<typeof setDeleteError>[0]) => setDeleteError(error),
+      ),
+    )
   }
 
   return (

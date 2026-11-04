@@ -1,10 +1,12 @@
 import { useForm, useStore } from '@tanstack/react-form'
 import { Link, useRouter } from '@tanstack/react-router'
-import { ArrowDown, ArrowUp, Loader2, Plus, Star, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Plus, Star, Trash2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { PendingButton } from '@/components/pending-button'
+import { runExclusive } from '@/lib/in-flight'
 import { UnsavedChangesDialog } from '@/components/unsaved-changes'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -149,18 +151,19 @@ export function ProductForm({ product }: { product?: ProductDetail }) {
   const form = useForm({
     defaultValues: product ? toFormValues(product, tagIdBySlug) : emptyProductForm,
     validators: { onSubmit: productFormSchema },
-    onSubmit: async ({ value }) => {
-      try {
-        const body = toProductBody(value)
-        if (product) await update.mutateAsync({ id: product.id, patch: body })
-        else await create.mutateAsync(body)
-      } catch {
-        return // the error is shown below the form
-      }
-      markSaved()
-      toast.success(t(product ? 'admin.form.updated' : 'admin.form.created'))
-      void router.navigate({ to: '/admin/products' })
-    },
+    onSubmit: ({ value }) =>
+      runExclusive(`form:product:${product?.id ?? 'new'}`, async () => {
+        try {
+          const body = toProductBody(value)
+          if (product) await update.mutateAsync({ id: product.id, patch: body })
+          else await create.mutateAsync(body)
+        } catch {
+          return // the error is shown below the form
+        }
+        markSaved()
+        toast.success(t(product ? 'admin.form.updated' : 'admin.form.created'))
+        void router.navigate({ to: '/admin/products' })
+      }),
   })
 
   const dirty = useStore(form.store, (s) => s.isDirty)
@@ -535,10 +538,9 @@ export function ProductForm({ product }: { product?: ProductDetail }) {
         ) : null}
 
         <div className="flex gap-2">
-          <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+          <PendingButton type="submit" pending={mutation.isPending}>
             {t(product ? 'admin.form.save' : 'admin.form.create')}
-          </Button>
+          </PendingButton>
           <Link to="/admin/products" className={buttonVariants({ variant: 'outline' })}>
             {t('admin.form.cancel')}
           </Link>
