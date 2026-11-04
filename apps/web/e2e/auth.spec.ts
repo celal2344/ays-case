@@ -16,7 +16,7 @@ test('invalid credentials show the server message', async ({ page }) => {
   await page.getByLabel('Username').fill('emilys')
   await page.getByLabel('Password').fill('nope')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByRole('alert')).toContainText('Invalid credentials')
+  await expect(page.getByRole('alert')).toContainText('Invalid username or password')
 })
 
 test('the session survives a reload and a user cannot open the admin area', async ({ page }) => {
