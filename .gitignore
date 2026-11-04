@@ -7,10 +7,11 @@ dist
 dist-ssr
 *.tsbuildinfo
 
-# Environment (only .env.example is committed)
+# Environment (only the *.example files are committed)
 .env
 .env.*
 !.env.example
+!.env.*.example
 *.local
 
 # Test output

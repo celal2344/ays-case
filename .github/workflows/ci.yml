@@ -20,6 +20,8 @@ jobs:
       - run: pnpm check:translations
       - run: pnpm typecheck
       - run: pnpm test
+        env:
+          DATABASE_URL_SESSION: ${{ secrets.DATABASE_URL_SESSION }}
       - run: pnpm build
 
   e2e:
