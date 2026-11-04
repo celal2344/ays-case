@@ -9,4 +9,6 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
+  // The API is served under /api on the same origin in production; dev proxies to the local API.
+  server: { proxy: { '/api': 'http://localhost:3000' } },
 })
