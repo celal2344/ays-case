@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 /** The admin-managed lookup tables: their route id and the fields their form has. */
 export const LOOKUP_KINDS = [
   { id: 'categories', fields: ['name', 'slug', 'sortOrder'] },
@@ -16,3 +18,9 @@ export const isLookupKind = (value: string): value is LookupKind =>
 
 export const fieldsOf = (kind: LookupKind): readonly LookupField[] =>
   LOOKUP_KINDS.find((k) => k.id === kind)!.fields
+
+/** The open dialog is in the URL: `new=1` to create, `edit=<id>` to edit a row. */
+export const lookupSearchSchema = z.object({
+  new: z.literal(1).optional().catch(undefined),
+  edit: z.coerce.number().int().positive().optional().catch(undefined),
+})

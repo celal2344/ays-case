@@ -7,6 +7,8 @@ export interface LookupRow {
   slug?: string
   sortOrder?: number
   label?: string
+  /** Tags only: how many products use the tag. */
+  productCount?: number
 }
 
 export interface LookupInput {

@@ -35,8 +35,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { UnsavedChangesDialog } from '@/components/unsaved-changes'
 import { errorCodeKey } from '@/lib/error-message'
 import type { AppError } from '@/lib/http-error'
+import { useUnsavedChangesGuard } from '@/lib/use-unsaved-changes-guard'
 
 import { useLookupMutations, useLookups } from '../hooks/use-lookups'
 import type { LookupInput, LookupRow } from '../lookups-api'
@@ -64,14 +66,20 @@ function LookupDialog({
   const { t } = useTranslation()
   const fields = fieldsOf(kind)
   const { create, update } = useLookupMutations(kind)
-  const [values, setValues] = useState<Record<LookupField, string>>({
+  const [initial] = useState<Record<LookupField, string>>(() => ({
     name: row?.name ?? '',
     slug: row?.slug ?? '',
     sortOrder: row?.sortOrder === undefined ? '' : String(row.sortOrder),
     label: row?.label ?? '',
-  })
+  }))
+  const [values, setValues] = useState(initial)
   const mutation = row ? update : create
   const error: AppError | null = mutation.error
+  const dirty = fields.some((field) => values[field] !== initial[field])
+  const { blocker, markSaved } = useUnsavedChangesGuard(
+    dirty,
+    (next) => next.search.new !== undefined || next.search.edit !== undefined,
+  )
 
   const toInput = (): LookupInput => ({
     ...(fields.includes('name') ? { name: values.name.trim() } : {}),
@@ -85,6 +93,7 @@ function LookupDialog({
   const submit = () => {
     const done = {
       onSuccess: () => {
+        markSaved()
         toast.success(t(row ? 'admin.lookups.updated' : 'admin.lookups.created'))
         onClose()
       },
@@ -137,6 +146,7 @@ function LookupDialog({
             {t(row ? 'admin.form.save' : 'admin.form.create')}
           </Button>
         </DialogFooter>
+        <UnsavedChangesDialog blocker={blocker} />
       </DialogContent>
     </Dialog>
   )
@@ -152,7 +162,11 @@ function LookupsTable({ kind }: { kind: LookupKind }) {
   const fields = fieldsOf(kind)
   const { rows, isPending, isError, refetch } = useLookups(kind)
   const { remove } = useLookupMutations(kind)
-  const [editing, setEditing] = useState<LookupRow | 'new' | null>(null)
+  const search = route.useSearch()
+  const navigate = route.useNavigate()
+  const open = (change: { new?: 1; edit?: number }) => void navigate({ search: change })
+  const editing: LookupRow | 'new' | null =
+    search.new === 1 ? 'new' : (rows?.find((row) => row.id === search.edit) ?? null)
   const [toDelete, setToDelete] = useState<LookupRow | null>(null)
   const [deleteError, setDeleteError] = useState<AppError | null>(null)
 
@@ -188,7 +202,7 @@ function LookupsTable({ kind }: { kind: LookupKind }) {
               {t(`admin.lookups.kinds.${k.id}`)}
             </Link>
           ))}
-          <Button onClick={() => setEditing('new')}>
+          <Button onClick={() => open({ new: 1 })}>
             <Plus className="size-4" />
             {t('admin.lookups.new')}
           </Button>
@@ -218,7 +232,7 @@ function LookupsTable({ kind }: { kind: LookupKind }) {
                         variant="ghost"
                         size="icon-sm"
                         aria-label={t('admin.lookups.edit', { name: row.name ?? row.label })}
-                        onClick={() => setEditing(row)}
+                        onClick={() => open({ edit: row.id })}
                       >
                         <Pencil className="size-4" />
                       </Button>
@@ -250,7 +264,7 @@ function LookupsTable({ kind }: { kind: LookupKind }) {
           kind={kind}
           row={editing === 'new' ? null : editing}
           open
-          onClose={() => setEditing(null)}
+          onClose={() => open({})}
         />
       ) : null}
 

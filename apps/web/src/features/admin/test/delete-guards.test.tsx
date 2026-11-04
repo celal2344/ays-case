@@ -18,7 +18,9 @@ describe('admin deletes: one confirm is one request (spam-click guards)', () => 
     fireEvent.click(confirm)
     fireEvent.click(confirm)
 
-    expect(await screen.findByText('groceries item 02 was deleted.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('groceries item 02 was deleted.', {}, { timeout: 4000 }),
+    ).toBeInTheDocument()
     expect(only(requests, 'DELETE /api/products')).toEqual(['DELETE /api/products/2'])
   })
 

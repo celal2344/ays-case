@@ -1,12 +1,11 @@
 import { useForm, useStore } from '@tanstack/react-form'
-import { Link, useRouter } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { PendingButton } from '@/components/pending-button'
 import { runExclusive } from '@/lib/in-flight'
 import { UnsavedChangesDialog } from '@/components/unsaved-changes'
-import { buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -37,9 +36,8 @@ import {
 } from '../schemas'
 
 /** One form for both creating and editing a user (`user` present = edit). */
-export function UserForm({ user }: { user?: User }) {
+export function UserForm({ user, onClose }: { user?: User; onClose: () => void }) {
   const { t } = useTranslation()
-  const router = useRouter()
   const { users } = useUsers()
   const currentUserId = useAuthStore((s) => s.user?.id)
   const refreshSession = useAuthStore((s) => s.refresh)
@@ -65,12 +63,15 @@ export function UserForm({ user }: { user?: User }) {
         }
         markSaved()
         toast.success(t(user ? 'admin.users.form.updated' : 'admin.users.form.created'))
-        void router.navigate({ to: '/admin/users' })
+        onClose()
       }),
   })
 
   const dirty = useStore(form.store, (s) => s.isDirty)
-  const { blocker, markSaved } = useUnsavedChangesGuard(dirty)
+  const { blocker, markSaved } = useUnsavedChangesGuard(
+    dirty,
+    (next) => next.search.new !== undefined || next.search.edit !== undefined,
+  )
 
   const roleItems = roleSchema.options.map((value) => ({
     value,
@@ -80,7 +81,7 @@ export function UserForm({ user }: { user?: User }) {
   return (
     <>
       <form
-        className="max-w-xl space-y-5"
+        className="space-y-5"
         noValidate
         onSubmit={(event) => {
           event.preventDefault()
@@ -224,9 +225,9 @@ export function UserForm({ user }: { user?: User }) {
           <PendingButton type="submit" pending={mutation.isPending}>
             {t(user ? 'admin.users.form.save' : 'admin.users.form.create')}
           </PendingButton>
-          <Link to="/admin/users" className={buttonVariants({ variant: 'outline' })}>
+          <Button type="button" variant="outline" onClick={onClose}>
             {t('admin.form.cancel')}
-          </Link>
+          </Button>
         </div>
       </form>
 

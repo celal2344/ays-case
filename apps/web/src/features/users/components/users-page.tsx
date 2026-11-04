@@ -49,6 +49,7 @@ import { selectLanguage, usePreferencesStore } from '@/preferences/store'
 import { filterUsers } from '../catalog'
 import { userErrorText } from '../error-text'
 import { useDeleteUser } from '../hooks/use-user-mutations'
+import { UserDialog } from './user-dialog'
 import { useUsers } from '../hooks/use-users'
 import { roleSchema, USER_PAGE_SIZE, type User, type UserSearch } from '../schemas'
 
@@ -99,8 +100,8 @@ function ActionsCell({ user }: { user: User }) {
   return (
     <div className="flex justify-end gap-1">
       <Link
-        to="/admin/users/$userId/edit"
-        params={{ userId: user.id }}
+        to="/admin/users"
+        search={(prev) => ({ ...prev, edit: user.id })}
         aria-label={t('admin.users.edit', { name })}
         className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
       >
@@ -232,7 +233,11 @@ export function UsersPage() {
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold">{t('admin.users.title')}</h1>
-          <Link to="/admin/users/new" className={buttonVariants()}>
+          <Link
+            to="/admin/users"
+            search={{ ...search, new: 1 as const }}
+            className={buttonVariants()}
+          >
             <Plus className="size-4" />
             {t('admin.users.new')}
           </Link>
@@ -332,6 +337,12 @@ export function UsersPage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      <UserDialog
+        target={search.new === 1 ? 'new' : search.edit !== undefined ? { id: search.edit } : null}
+        onClose={() =>
+          void navigate({ search: (prev) => ({ ...prev, new: undefined, edit: undefined }) })
+        }
+      />
     </Actions.Provider>
   )
 }

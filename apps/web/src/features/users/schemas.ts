@@ -88,5 +88,8 @@ export const userSearchSchema = z.object({
   q: z.string().optional().catch(undefined),
   role: roleSchema.optional().catch(undefined),
   page: z.coerce.number().int().min(2).optional().catch(undefined),
+  /** The user form is open: `new=1` to create, `edit=<id>` to edit. */
+  new: z.literal(1).optional().catch(undefined),
+  edit: z.string().optional().catch(undefined),
 })
 export type UserSearch = z.infer<typeof userSearchSchema>

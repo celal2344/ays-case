@@ -13,13 +13,13 @@
 | `/orders`                         | auth                                         | Order history                           |                                        |
 | `/orders/$orderId`                | auth, own order                              | Order detail / success                  | `placed?: 1`                           |
 | `/admin`                          | admin                                        | Dashboard (live counts, list links)     |                                        |
-| `/admin/products`                 | admin                                        | Product table                           | `q, category, sort, order, page, deleted` |
-| `/admin/products/new`             | admin                                        | Create form                             |                                        |
-| `/admin/products/$productId/edit` | admin                                        | Edit form                               |                                        |
-| `/admin/lookups/$kind`            | admin                                        | Categories, brands, tags and policies (list, create, edit, delete in a dialog) |                  |
-| `/admin/users`                    | admin                                        | User table                              | `q, role, page`                        |
-| `/admin/users/new`                | admin                                        | Create user form (with initial password)                        |                                        |
-| `/admin/users/$userId/edit`       | admin                                        | Edit user form                          |                                        |
+| `/admin/products`                 | admin                                        | Product table; the product form is a large modal on it | `q, category, sort, order, page, deleted, new, edit, section` |
+| `/admin/products/new`             | admin                                        | Redirects to `/admin/products?new=1`    |                                        |
+| `/admin/products/$productId/edit` | admin                                        | Redirects to `/admin/products?edit=<id>` |                                        |
+| `/admin/lookups/$kind`            | admin                                        | Categories, brands, tags and policies; create and edit in a dialog | `new, edit`          |
+| `/admin/users`                    | admin                                        | User table; create and edit in a dialog | `q, role, page, new, edit`             |
+| `/admin/users/new`                | admin                                        | Redirects to `/admin/users?new=1`       |                                        |
+| `/admin/users/$userId/edit`       | admin                                        | Redirects to `/admin/users?edit=<id>`   |                                        |
 | `/forbidden`                      | public                                       | 403 ("Admins only" + back link)         |                                        |
 | `*`                               | —                                            | 404 (global `defaultNotFoundComponent`) |                                        |
 
@@ -128,3 +128,14 @@ TanStack Form + Zod:
 ## UI states checklist (every data page)
 
 loading skeleton · error + retry · empty · success toast on writes · disabled buttons while pending · keyboard focus visible · `aria-live` on cart count.
+
+## Admin layout and forms
+
+Every `/admin/*` route renders inside the admin layout (`routes/_auth/_admin/admin.tsx`): a sidebar that stays mounted between admin pages (sticky under the header, collapsible to icons, a drawer below `md`) and the page. Groups: General (Dashboard), Catalog (Products, Categories, Brands, Tags), Policies (Warranty, Shipping, Returns), Users. Products shows a badge with the low-stock count. The dashboard stat cards link to their pages.
+
+Forms open as overlays and the open form is in the URL, so refresh, the back button and shared links work:
+
+- **Lookups and users:** a dialog, `?new=1` or `?edit=<id>`.
+- **Product:** a large modal (full screen on small screens), `?new=1` or `?edit=<id>`, plus `&section=general|pricing|size|tags|images` while editing. Creating walks the sections as steps (each is validated before Next; the last step is a review). Editing moves freely between sections and saves from any of them; after a failed save the sections with a problem get a red dot and the first one opens.
+- Closing a form with changes (Esc, backdrop, Cancel, the back button) asks to discard them. Switching section is not a way out.
+- Tags are picked with a searchable multi-select (chips, filter as you type, arrows/Enter/Backspace, the most used tags one click away while the search is empty). Brand and category are searchable selects. `GET /api/admin/tags` returns `productCount` for each tag.
