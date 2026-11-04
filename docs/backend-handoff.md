@@ -86,8 +86,8 @@ From `AGENTS.md` and `docs/conventions.md`:
 2. **Then add what DummyJSON could not do**, one feature per PR: persisted product CRUD, persisted user CRUD with roles, orders (atomic checkout), reviews. For each, delete the matching overlay store and its merge function, and update the tests that rely on it.
 3. **Keep serving the catalog as one list** at first (`limit=0`). ADR-0004 chose client-side search over a full catalog; moving to server-side pagination and search is a larger change (the URL-driven search params, filters, suggestions and best-deals all assume the full list) and should be its own decision.
 4. **Seed from DummyJSON** (products, categories, users with their roles) so the demo data and the two demo accounts keep working.
-5. **CORS**: allow the Vercel origin and localhost dev. No cookies are used.
-6. The app is a static SPA on Vercel with a catch-all rewrite (`apps/web/vercel.json`); the backend is a separate deployment.
+5. **Same origin, no CORS**: web and API deploy as one Vercel project using Services (root `vercel.json`), the API under `/api`. The api-client base URL is `/api`; in dev Vite proxies `/api` to the local API.
+6. The SPA fallback rewrite lives in the `web` service of the root `vercel.json`.
 
 ## 7. Open questions for the owner
 

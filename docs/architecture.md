@@ -89,7 +89,7 @@ ays-case/
     ├── scripts/check-translation-parity.mjs
     ├── components.json  eslint.config.js  prettier.config.mjs
     ├── tsconfig.json  vite.config.ts  vitest.config.ts  playwright.config.ts
-    └── vercel.json                   # SPA rewrite
+    (apps/web has no vercel.json: the SPA rewrite lives in the web service of the root vercel.json)
 ```
 
 Feature rule: a feature may import from `lib/`, `components/`, and another feature's **public** hooks/types only (e.g. `cart` imports `products` types). No deep imports into another feature's internals.

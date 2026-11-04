@@ -14,12 +14,18 @@ A Trendyol-style online shop built on [DummyJSON](https://dummyjson.com): login 
 
 ```bash
 pnpm install
-pnpm dev          # http://localhost:5173
+pnpm dev          # web on http://localhost:5173, API on http://localhost:3000 (proxied at /api)
 pnpm test         # unit + integration
 pnpm e2e          # Playwright
 ```
 
 Node 24+ and pnpm 11+. The repo is a pnpm + Turborepo workspace; the web app lives in `apps/web` and all commands above run from the root.
+
+## Deployment
+
+One Vercel project using [Services](https://vercel.com/docs/services) (Beta), configured in the root `vercel.json`: the web app (`apps/web`) is served at `/` and the API (`apps/api`, Hono) at `/api`, on the same domain. That means first-party cookies, no CORS, and every preview deployment of the web app talks to the matching preview API. In dev, Vite proxies `/api` to the local API, so relative paths are identical to production.
+
+API environment variables (names only, values live in the Vercel dashboard): `DATABASE_URL`, `DATABASE_URL_SESSION`, `LOG_LEVEL`. Locally they go in `apps/api/.env.development`.
 
 ## Demo accounts
 

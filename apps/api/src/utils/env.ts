@@ -7,7 +7,6 @@ export const env = createEnv({
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
-    WEB_ORIGIN: z.url().default('http://localhost:5173'),
     DATABASE_URL: z.string().min(1).optional(),
     DATABASE_URL_SESSION: z.string().min(1).optional(),
   },

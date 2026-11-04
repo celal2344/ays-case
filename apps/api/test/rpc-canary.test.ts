@@ -1,8 +1,8 @@
 /**
  * RPC canary: `hc<AppType>` must infer the request input from `validator()` and one typed
  * response per status from `c.json(body, status)`, with hono-openapi in the chain. The type
- * assertions are enforced by `tsc --noEmit` (the `typecheck` task); the runtime part checks
- * that the same route also validates and documents itself.
+ * assertions are enforced by `tsc --noEmit` (the `typecheck` task); the runtime part drives
+ * the same client with base URL `/api` through the mounted app.
  */
 import { errorSchema } from '@ays/validators'
 import { Hono } from 'hono'
@@ -41,9 +41,15 @@ export const sample = new Hono().post(
 
 type SampleApp = typeof sample
 
+// Same shape as production: the prefix-free app is mounted under /api and the client uses base URL /api.
+const outer = new Hono().route('/api', sample)
+const client = hc<SampleApp>('/api', {
+  fetch: (input: string | URL | Request, init?: RequestInit) =>
+    outer.request(input instanceof Request ? input : String(input), init),
+})
+
 describe('hc<AppType> inference', () => {
-  type Client = ReturnType<typeof hc<SampleApp>>
-  type Post = Client['items'][':id']['$post']
+  type Post = (typeof client.items)[':id']['$post']
 
   it('infers the request input from validator()', () => {
     expectTypeOf<Parameters<Post>[0]>().toEqualTypeOf<
@@ -60,9 +66,27 @@ describe('hc<AppType> inference', () => {
   })
 })
 
-describe('sample route at runtime', () => {
+describe('client with base URL /api at runtime', () => {
+  it('returns the typed success body', async () => {
+    const res = await client.items[':id'].$post({
+      param: { id: '7' },
+      json: { name: 'ab', qty: 1 },
+    })
+    expect(res.status).toBe(201)
+    if (res.status === 201) expect(await res.json()).toEqual({ data: { id: 7 } })
+  })
+
+  it('returns the typed error body', async () => {
+    const res = await client.items[':id'].$post({
+      param: { id: '0' },
+      json: { name: 'ab', qty: 1 },
+    })
+    expect(res.status).toBe(404)
+    if (res.status === 404) expect((await res.json()).code).toBe('not_found')
+  })
+
   it('validates input and answers a list of field errors', async () => {
-    const res = await sample.request('/items/1', {
+    const res = await outer.request('/api/items/1', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name: 'a', qty: 1.5 }),

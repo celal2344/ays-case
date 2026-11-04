@@ -13,4 +13,5 @@ export const openApiDocumentation = {
     version: '0.0.0',
     description: 'REST API for the ays-case shop. Successful bodies are wrapped in `{ data }`.',
   },
+  servers: [{ url: '/api' }],
 }
