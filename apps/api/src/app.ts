@@ -1,5 +1,6 @@
 import { Scalar } from '@scalar/hono-api-reference'
 import { Hono } from 'hono'
+import { requestId } from 'hono/request-id'
 import { secureHeaders } from 'hono/secure-headers'
 import { openAPIRouteHandler } from 'hono-openapi'
 
@@ -27,6 +28,8 @@ import { openApiDocumentation } from './utils/openapi'
 
 // Chained so `AppType` carries every route for the RPC client.
 const app = new Hono()
+  // Honors an incoming x-request-id only when it is short and safe; echoes it on every response.
+  .use(requestId({ limitLength: 64 }))
   .use(requestLogger)
   .use(secureHeaders())
   // Better Auth serves /api/auth/* itself (sign-in, session, sign-out, admin plugin).

@@ -7,7 +7,7 @@ import { Hono } from 'hono'
 import { describeRoute, resolver, validator } from 'hono-openapi'
 import { z } from 'zod'
 
-import { errorResponse } from '../../utils/openapi'
+import { errorResponse, errorResponses } from '../../utils/openapi'
 import { validationHook } from '../../utils/validation'
 import { getProduct, listCategories, listProducts } from './service'
 
@@ -24,7 +24,10 @@ export const productRoutes = new Hono()
     describeRoute({
       tags: ['catalog'],
       summary: 'The whole catalog in one list',
-      responses: { 200: json('Products, without soft-deleted ones', productListResponseSchema) },
+      responses: {
+        200: json('Products, without soft-deleted ones', productListResponseSchema),
+        ...errorResponses(),
+      },
     }),
     async (c) => c.json({ data: await listProducts() }, 200),
   )
@@ -35,15 +38,13 @@ export const productRoutes = new Hono()
       summary: 'Product detail with images, policies, rating histogram and reviews',
       responses: {
         200: json('The product', productDetailResponseSchema),
+        ...errorResponses(404, 422),
         404: errorResponse('No such product'),
-        422: errorResponse('Invalid id'),
       },
     }),
     validator('param', productParams, validationHook),
     async (c) => {
-      const product = await getProduct(c.req.valid('param').id)
-      if (!product) return c.json({ code: 'not_found', message: 'Product not found' }, 404)
-      return c.json({ data: product }, 200)
+      return c.json({ data: await getProduct(c.req.valid('param').id) }, 200)
     },
   )
 
@@ -52,7 +53,7 @@ export const categoryRoutes = new Hono().get(
   describeRoute({
     tags: ['catalog'],
     summary: 'Categories in display order',
-    responses: { 200: json('Categories', categoryListResponseSchema) },
+    responses: { 200: json('Categories', categoryListResponseSchema), ...errorResponses() },
   }),
   async (c) => c.json({ data: await listCategories() }, 200),
 )

@@ -465,8 +465,10 @@ describe('users', () => {
     await getDb().update(user).set({ role: 'user' }).where(eq(user.role, 'admin'))
     await getDb().update(user).set({ role: 'admin' }).where(eq(user.id, 'user-2'))
     // the API can only reach this with an actor who is not that admin, so the service is called directly
-    const result = await deleteUser('user-2', 'user-1')
-    expect(result).toMatchObject({ ok: false, code: 'last_admin' })
+    await expect(deleteUser('user-2', 'user-1')).rejects.toMatchObject({
+      status: 409,
+      code: 'last_admin',
+    })
     await getDb().update(user).set({ role: 'admin' }).where(eq(user.id, 'user-1'))
     await getDb().update(user).set({ role: 'user' }).where(eq(user.id, 'user-2'))
     const demote = await call(admin, 'PATCH', '/api/users/user-2', { role: 'user' })

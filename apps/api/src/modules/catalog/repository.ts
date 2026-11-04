@@ -15,7 +15,10 @@ import {
   user,
   warrantyPolicies,
 } from '../../db/schema'
+import { errorsFor } from '../../utils/error-helpers'
 import { reviewColumns } from '../reviews/repository'
+
+const fail = errorsFor('catalog', 'repository')
 
 // Ratings, the histogram, availability and numeric casts are all computed here, in SQL.
 const baseColumns = {
@@ -48,6 +51,10 @@ const baseColumns = {
 const notDeleted = isNull(products.deletedAt)
 
 export function findProducts(db: Database, includeDeleted = false) {
+  return fail.guard('findProducts', () => productsQuery(db, includeDeleted), { includeDeleted })
+}
+
+function productsQuery(db: Database, includeDeleted: boolean) {
   return db
     .select(baseColumns)
     .from(products)
@@ -63,7 +70,17 @@ export function findProducts(db: Database, includeDeleted = false) {
 }
 
 export async function findProductDetail(db: Database, id: number, includeDeleted = false) {
-  const [row] = await db
+  const [row] = await fail.guard(
+    'findProductDetail',
+    () => productDetailQuery(db, id, includeDeleted),
+    { id },
+  )
+  if (!row) throw fail.notFound('findProductDetail', 'Product not found', { id })
+  return row
+}
+
+function productDetailQuery(db: Database, id: number, includeDeleted: boolean) {
+  return db
     .select({
       ...baseColumns,
       sku: products.sku,
@@ -96,10 +113,13 @@ export async function findProductDetail(db: Database, id: number, includeDeleted
       and(eq(productImages.productId, products.id), eq(productImages.isPrimary, true)),
     )
     .where(and(includeDeleted ? undefined : notDeleted, eq(products.id, id)))
-  return row
 }
 
 export function findTags(db: Database, productIds?: number[]) {
+  return fail.guard('findTags', () => tagsQuery(db, productIds), { productIds })
+}
+
+function tagsQuery(db: Database, productIds?: number[]) {
   const query = db
     .select({ productId: productTags.productId, slug: tags.slug, name: tags.name })
     .from(productTags)
@@ -110,6 +130,10 @@ export function findTags(db: Database, productIds?: number[]) {
 }
 
 export function findImages(db: Database, productId: number) {
+  return fail.guard('findImages', () => imagesQuery(db, productId), { productId })
+}
+
+function imagesQuery(db: Database, productId: number) {
   return db
     .select({
       url: productImages.url,
@@ -122,6 +146,10 @@ export function findImages(db: Database, productId: number) {
 }
 
 export function findReviews(db: Database, productId: number) {
+  return fail.guard('findReviews', () => reviewsQuery(db, productId), { productId })
+}
+
+function reviewsQuery(db: Database, productId: number) {
   return db
     .select(reviewColumns)
     .from(reviews)
@@ -131,6 +159,10 @@ export function findReviews(db: Database, productId: number) {
 }
 
 export function findCategories(db: Database) {
+  return fail.guard('findCategories', () => categoriesQuery(db))
+}
+
+function categoriesQuery(db: Database) {
   return db
     .select({ id: categories.id, slug: categories.slug, name: categories.name })
     .from(categories)

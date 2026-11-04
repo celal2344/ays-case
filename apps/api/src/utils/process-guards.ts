@@ -3,14 +3,18 @@ import { logger } from './logger'
 let installed = false
 
 /**
- * A database error that is not awaited by anyone (for example the second of two queries when the
- * first already failed, or a pooled connection dropping) must not take the whole process down:
- * the request that caused it has already been answered with a 500. Log it and keep serving.
+ * Local dev only (`dev.ts`, never the Vercel entry, which has its own runtime). A database error
+ * that nobody awaits (for example a pooled connection dropping) or a throw outside a request must
+ * not take the dev server down: the request that caused it has already been answered. Log it at
+ * fatal through the same logger and keep serving.
  */
 export function installProcessGuards() {
   if (installed) return
   installed = true
   process.on('unhandledRejection', (reason) => {
-    logger.error({ err: reason }, 'unhandled rejection')
+    logger.fatal({ err: reason }, 'unhandled rejection')
+  })
+  process.on('uncaughtException', (error) => {
+    logger.fatal({ err: error }, 'uncaught exception')
   })
 }

@@ -13,9 +13,9 @@ import { z } from 'zod'
 import { getDb } from '../../../db/client'
 import { user } from '../../../db/schema'
 import { requireRole, type AuthEnv } from '../../../middlewares/auth'
-import { errorResponse } from '../../../utils/openapi'
+import { errorResponse, errorResponses } from '../../../utils/openapi'
 import { validationHook } from '../../../utils/validation'
-import { createUser, deleteUser, updateUser, type UserFailure } from './service'
+import { createUser, deleteUser, updateUser } from './service'
 
 const json = (description: string, schema: Parameters<typeof resolver>[0]) => ({
   description,
@@ -34,8 +34,6 @@ const errors = {
   422: errorResponse('Invalid body'),
 }
 
-const body = (result: UserFailure) => ({ code: result.code, message: result.message })
-
 export const userRoutes = new Hono<AuthEnv>()
   .get(
     '/',
@@ -44,6 +42,7 @@ export const userRoutes = new Hono<AuthEnv>()
       summary: 'All users (admin only)',
       responses: {
         200: json('Users, without any secrets', userListResponseSchema),
+        ...errorResponses(),
         401: errors[401],
         403: errors[403],
       },
@@ -75,6 +74,7 @@ export const userRoutes = new Hono<AuthEnv>()
       summary: 'Create a user with an initial password (hashed by Better Auth)',
       responses: {
         201: json('The new user', userResponseSchema),
+        ...errorResponses(),
         401: errors[401],
         403: errors[403],
         409: errors[409],
@@ -84,9 +84,7 @@ export const userRoutes = new Hono<AuthEnv>()
     requireRole('admin'),
     validator('json', userCreateBodySchema, validationHook),
     async (c) => {
-      const result = await createUser(c.req.valid('json'), c.req.raw.headers)
-      if (result.ok) return c.json({ data: result.user }, 201)
-      return c.json(body(result), 409)
+      return c.json({ data: await createUser(c.req.valid('json'), c.req.raw.headers) }, 201)
     },
   )
   .patch(
@@ -96,6 +94,7 @@ export const userRoutes = new Hono<AuthEnv>()
       summary: 'Change a user; demoting also ends their sessions',
       responses: {
         200: json('The updated user', userResponseSchema),
+        ...errorResponses(),
         401: errors[401],
         403: errors[403],
         404: errors[404],
@@ -107,9 +106,8 @@ export const userRoutes = new Hono<AuthEnv>()
     validator('param', idParam, validationHook),
     validator('json', userPatchBodySchema, validationHook),
     async (c) => {
-      const result = await updateUser(c.req.valid('param').id, c.req.valid('json'), c.var.user.id)
-      if (result.ok) return c.json({ data: result.user }, 200)
-      return result.status === 404 ? c.json(body(result), 404) : c.json(body(result), 409)
+      const { id } = c.req.valid('param')
+      return c.json({ data: await updateUser(id, c.req.valid('json'), c.var.user.id) }, 200)
     },
   )
   .delete(
@@ -119,6 +117,7 @@ export const userRoutes = new Hono<AuthEnv>()
       summary: 'Delete a user (their sessions, cart, orders and reviews go with them)',
       responses: {
         204: { description: 'Deleted' },
+        ...errorResponses(),
         401: errors[401],
         403: errors[403],
         404: errors[404],
@@ -129,8 +128,7 @@ export const userRoutes = new Hono<AuthEnv>()
     requireRole('admin'),
     validator('param', idParam, validationHook),
     async (c) => {
-      const result = await deleteUser(c.req.valid('param').id, c.var.user.id)
-      if (result.ok) return c.body(null, 204)
-      return result.status === 404 ? c.json(body(result), 404) : c.json(body(result), 409)
+      await deleteUser(c.req.valid('param').id, c.var.user.id)
+      return c.body(null, 204)
     },
   )
