@@ -7,7 +7,8 @@ import { fixtureProducts } from '@/test/fixtures/products'
 import { renderApp } from '@/test/render'
 
 import { brandsOf, filterByBrand, filterByMinRating, filterByPrice } from '../catalog'
-import { qualifiesForFreeShipping, salePriceCents } from '../pricing'
+import { salePriceCents } from '@ays/validators'
+import { qualifiesForFreeShipping } from '../pricing'
 import { productSearchSchema } from '../schemas'
 import { activeFilters, normalizeSearch, withoutFilter } from '../search-state'
 

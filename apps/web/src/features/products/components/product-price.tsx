@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils'
 import { formatPrice } from '@/lib/format'
 import { selectLanguage, usePreferencesStore } from '@/preferences/store'
 
-import { hasDiscount, salePriceCents, toCents } from '../pricing'
+import { salePriceCents, toCents } from '@ays/validators'
+import { hasDiscount } from '../pricing'
 import type { Product } from '../schemas'
 
 /** The sale price in the brand colour (bold), the list price struck through when discounted. */

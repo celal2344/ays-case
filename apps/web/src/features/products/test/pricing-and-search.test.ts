@@ -1,18 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { hasDiscount, salePriceCents, stockLevel, toCents } from '../pricing'
+import { hasDiscount, stockLevel } from '../pricing'
 import { productSearchSchema } from '../schemas'
 import { fromSortOption, normalizeSearch, toSortOption, updateSearch } from '../search-state'
 
-describe('pricing (integer cents)', () => {
-  it('avoids float drift', () => {
-    expect(toCents(0.1 + 0.2)).toBe(30)
-    expect(toCents(19.99)).toBe(1999)
-  })
-
-  it('applies the discount percentage to the price', () => {
-    expect(salePriceCents({ price: 100, discountPercentage: 10 })).toBe(9000)
-    expect(salePriceCents({ price: 9.99, discountPercentage: 10.48 })).toBe(894)
+describe('product pricing helpers', () => {
+  it('flags real discounts only', () => {
     expect(hasDiscount({ discountPercentage: 0.4 })).toBe(false)
     expect(hasDiscount({ discountPercentage: 10 })).toBe(true)
   })
