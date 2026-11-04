@@ -57,7 +57,7 @@ React 19 · Vite · TypeScript · Tailwind 4 · shadcn/ui · TanStack Router, Qu
 4. **Review:** CI (lint, format, typecheck, unit tests, build, e2e) ran on every PR; I reviewed and tested, then merged. The agent never merged on its own.
 5. **Project manager pass:** a separate agent reviewed the finished repo and filed new issues (deep links on Vercel, design, pagination, mega-menu, favorites), which went through the same issue → PR → review loop.
 
-Result: 20 merged PRs, 300 unit tests, 7 e2e specs.
+Result: 37 merged PRs, each with its unit tests, plus 7 e2e specs.
 
 ## Known limitations
 
