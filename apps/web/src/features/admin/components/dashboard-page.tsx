@@ -28,7 +28,6 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCatalog } from '@/features/products/hooks/use-catalog'
-import { LOW_STOCK_THRESHOLD } from '@/features/products/pricing'
 import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { useOrdersStore } from '@/features/orders/store'
 import { useUserOverlayStore } from '@/features/users/overlay-store'
@@ -78,8 +77,8 @@ export function DashboardPage() {
     )
   if (isPending || !products) return <PageSkeleton />
 
-  const lowStock = products.filter((p) => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD).length
-  const outOfStock = products.filter((p) => p.stock <= 0).length
+  const lowStock = products.filter((p) => p.availability === 'low').length
+  const outOfStock = products.filter((p) => p.availability === 'out').length
   const localChanges =
     Object.keys(created).length + Object.keys(patched).length + deleted.length + userChanges
 
@@ -121,7 +120,7 @@ export function DashboardPage() {
         />
         <Stat
           icon={<TriangleAlert className="size-4" />}
-          label={t('admin.dashboard.low', { max: LOW_STOCK_THRESHOLD })}
+          label={t('admin.dashboard.low')}
           value={lowStock}
         />
         <Stat

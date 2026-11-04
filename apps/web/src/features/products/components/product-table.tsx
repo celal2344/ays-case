@@ -65,9 +65,9 @@ export function ProductTable({ products }: { products: Product[] }) {
                   <DiscountBadge product={product} />
                 </div>
               </TableCell>
-              <TableCell>{product.rating.toFixed(1)}</TableCell>
+              <TableCell>{product.rating === null ? '–' : product.rating.toFixed(1)}</TableCell>
               <TableCell>
-                {product.stock > 5 ? product.stock : <StockBadge stock={product.stock} />}
+                {product.availability === 'in' ? product.stock : <StockBadge product={product} />}
               </TableCell>
               <TableCell className="flex items-center gap-1">
                 <FavoriteButton productId={product.id} title={product.title} />

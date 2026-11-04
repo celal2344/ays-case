@@ -5,7 +5,7 @@ import { useReviewsStore } from '../store'
 const state = () => useReviewsStore.getState()
 const input = {
   productId: 1,
-  userId: 7,
+  userId: 'user-7',
   authorName: 'Ada Lovelace',
   rating: 4,
   comment: 'Solid product.',
@@ -26,7 +26,7 @@ describe('reviews store', () => {
     expect(state().add(input)).not.toBeNull()
     expect(state().add({ ...input, rating: 1 })).toBeNull()
     expect(state().add({ ...input, productId: 2 })).not.toBeNull()
-    expect(state().add({ ...input, userId: 8 })).not.toBeNull()
+    expect(state().add({ ...input, userId: 'user-8' })).not.toBeNull()
   })
 
   it('updates only rating and comment', () => {
@@ -35,7 +35,7 @@ describe('reviews store', () => {
     expect(state().byProduct[1]?.[0]).toMatchObject({
       rating: 2,
       comment: 'Changed my mind.',
-      userId: 7,
+      userId: 'user-7',
     })
   })
 
@@ -58,6 +58,6 @@ describe('reviews store', () => {
     state().add(input)
     const saved = JSON.parse(localStorage.getItem('ays-case:v1:reviews') ?? '{}')
     expect(saved.state.byProduct['1']).toHaveLength(1)
-    expect(saved.version).toBe(1)
+    expect(saved.version).toBe(2)
   })
 })

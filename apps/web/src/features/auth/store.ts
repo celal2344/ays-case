@@ -1,97 +1,106 @@
+import { toast } from 'sonner'
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
 
+import i18next from 'i18next'
 import { resolveSessionUser } from '@/features/users/session'
-import { AppError } from '@/lib/http-error'
+import { authClient } from '@/lib/auth-client'
+import { AppError, toAppError } from '@/lib/http-error'
 import { queryClient } from '@/lib/query-client'
-import { storageKey } from '@/lib/storage'
 
-import { getMe, loginRequest } from './api'
-import type { Tokens, User } from './schemas'
+import { sessionUserSchema, type User } from './schemas'
 
 export type AuthStatus = 'idle' | 'restoring' | 'authenticated' | 'anonymous'
 
 interface AuthState {
-  accessToken: string | null
-  refreshToken: string | null
   user: User | null
   status: AuthStatus
   bootstrap: () => Promise<void>
   login: (username: string, password: string) => Promise<User>
   logout: () => void
-  setTokens: (tokens: Tokens) => void
+  /** The server rejected the session (expired or revoked) while the user was signed in. */
+  expire: () => void
 }
 
 let restoring: Promise<void> | null = null
+let onExpired: (() => void) | null = null
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      accessToken: null,
-      refreshToken: null,
-      user: null,
-      status: 'idle',
+/** The app shell registers where to send the user once their session is gone. */
+export function setSessionExpiredHandler(handler: (() => void) | null) {
+  onExpired = handler
+}
 
-      // Idempotent: every caller (guards, tests) shares one restore promise.
-      bootstrap: () => {
-        if (restoring) return restoring
-        if (get().status !== 'idle') return Promise.resolve()
-        const { accessToken, refreshToken } = get()
-        if (!accessToken || !refreshToken) {
-          set({ status: 'anonymous' })
-          return Promise.resolve()
-        }
-        set({ status: 'restoring' })
-        const attempt = getMe()
-          .then(
-            (fetched) => {
-              // the admin overlay can change or remove this account (see users/session.ts)
-              const user = resolveSessionUser(fetched)
-              if (user) set({ user, status: 'authenticated' })
-              else get().logout()
-            },
-            () => {
-              get().logout()
-            },
-          )
-          .finally(() => {
-            restoring = null
-          })
-        restoring = attempt
-        return attempt
-      },
+/** The role comes from the session user itself; the admin overlay can still adjust or remove it. */
+async function readSession(): Promise<User | null> {
+  const { data } = await authClient.getSession()
+  if (!data) return null
+  const parsed = sessionUserSchema.safeParse(data.user)
+  return parsed.success ? resolveSessionUser(parsed.data) : null
+}
 
-      login: async (username, password) => {
-        const { accessToken, refreshToken } = await loginRequest(username, password)
-        set({ accessToken, refreshToken })
-        try {
-          const user = resolveSessionUser(await getMe())
-          if (!user) {
-            throw new AppError('unauthorized', 'This account was removed by an administrator.')
-          }
-          set({ user, status: 'authenticated' })
-          return user
-        } catch (error) {
-          set({ accessToken: null, refreshToken: null, user: null, status: 'anonymous' })
-          throw error
-        }
-      },
+export const useAuthStore = create<AuthState>()((set, get) => ({
+  user: null,
+  status: 'idle',
 
-      logout: () => {
-        set({ accessToken: null, refreshToken: null, user: null, status: 'anonymous' })
-        queryClient.clear()
-      },
+  // Idempotent: every caller (guards, tests) shares one restore promise.
+  bootstrap: () => {
+    if (restoring) return restoring
+    if (get().status !== 'idle') return Promise.resolve()
+    set({ status: 'restoring' })
+    const attempt = readSession()
+      .then(
+        (user) => {
+          if (user) set({ user, status: 'authenticated' })
+          else set({ user: null, status: 'anonymous' })
+        },
+        () => {
+          set({ user: null, status: 'anonymous' })
+        },
+      )
+      .finally(() => {
+        restoring = null
+      })
+    restoring = attempt
+    return attempt
+  },
 
-      setTokens: ({ accessToken, refreshToken }) => set({ accessToken, refreshToken }),
-    }),
-    {
-      name: storageKey('auth'),
-      version: 1,
-      storage: createJSONStorage(() => localStorage),
-      partialize: ({ accessToken, refreshToken, user }) => ({ accessToken, refreshToken, user }),
-    },
-  ),
-)
+  login: async (username, password) => {
+    let result
+    try {
+      result = await authClient.signIn.username({ username, password })
+    } catch (error) {
+      throw toAppError(error)
+    }
+    if (result.error) {
+      const status = result.error.status
+      throw new AppError(
+        status === 401 || status === 400 ? 'validation' : 'server',
+        result.error.message ?? 'Sign-in failed',
+        status,
+      )
+    }
+    const user = await readSession().catch(() => null)
+    if (!user) {
+      await authClient.signOut().catch(() => undefined)
+      throw new AppError('unauthorized', 'This account was removed by an administrator.')
+    }
+    set({ user, status: 'authenticated' })
+    return user
+  },
+
+  logout: () => {
+    set({ user: null, status: 'anonymous' })
+    queryClient.clear()
+    void authClient.signOut().catch(() => undefined)
+  },
+
+  expire: () => {
+    if (get().status !== 'authenticated') return
+    set({ user: null, status: 'anonymous' })
+    queryClient.clear()
+    toast.error(i18next.t('errors.unauthorized'))
+    onExpired?.()
+  },
+}))
 
 export const selectUser = (s: AuthState) => s.user
 export const selectIsAuthenticated = (s: AuthState) => s.status === 'authenticated'

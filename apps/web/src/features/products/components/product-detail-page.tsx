@@ -5,12 +5,11 @@ import { useTranslation } from 'react-i18next'
 
 import { ErrorState, NotFound, PageSkeleton } from '@/components/feedback/feedback'
 import { Button } from '@/components/ui/button'
-import { useProductReviews } from '@/features/reviews/hooks/use-product-reviews'
 import { RatingStars } from '@/features/reviews/components/rating-stars'
 import { ReviewsTab } from '@/features/reviews/components/reviews-tab'
 import { useMediaQuery } from '@/lib/use-media-query'
 
-import type { Review } from '../schemas'
+import type { ReviewSummary } from '@/features/reviews/schemas'
 import { useAddToCart, useBuyNow } from '@/features/cart/hooks/use-add-to-cart'
 import { FavoriteButton } from '@/features/favorites/components/favorite-button'
 import { useCatalog } from '../hooks/use-catalog'
@@ -31,7 +30,7 @@ import { StickyBar } from './detail/sticky-bar'
 import { DiscountBadge, StockBadge } from './product-badges'
 import { ProductPrice } from './product-price'
 
-const NO_REVIEWS: Review[] = []
+const NO_HISTOGRAM = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } as const
 
 const route = getRouteApi('/products/$productId')
 
@@ -52,7 +51,6 @@ export function ProductDetailPage() {
   const hash = useLocation({ select: (location) => location.hash })
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const { products: catalog } = useCatalog()
-  const { summary } = useProductReviews(id, product?.reviews ?? NO_REVIEWS, 'newest')
 
   const hasSimilar =
     product !== undefined &&
@@ -88,6 +86,12 @@ export function ProductDetailPage() {
     })
     document.getElementById(`${section}-heading`)?.focus({ preventScroll: true })
   }
+  // rating, count and histogram are computed by the API (SQL); nothing is derived here
+  const summary: ReviewSummary = {
+    average: product.rating,
+    count: product.reviewCount,
+    histogram: product.ratingHistogram ?? NO_HISTOGRAM,
+  }
   const sections = [
     { id: 'details', label: t('products.tabs.info') },
     { id: 'description', label: t('products.tabs.description') },
@@ -118,20 +122,24 @@ export function ProductDetailPage() {
             onClick={() => goToSection('reviews')}
             className="flex items-center gap-2 text-sm hover:underline"
           >
-            <RatingStars rating={summary.count > 0 ? summary.average : product.rating} />
-            <span className="font-medium">
-              {(summary.count > 0 ? summary.average : product.rating).toFixed(1)}
-            </span>
-            <span className="text-muted-foreground">
-              {t('reviews.count', { count: summary.count })}
-            </span>
+            <RatingStars rating={summary.average ?? 0} />
+            {summary.average === null ? (
+              <span className="text-muted-foreground">{t('reviews.none')}</span>
+            ) : (
+              <>
+                <span className="font-medium">{summary.average.toFixed(1)}</span>
+                <span className="text-muted-foreground">
+                  {t('reviews.count', { count: summary.count })}
+                </span>
+              </>
+            )}
           </button>
 
           <div className="space-y-3 rounded-lg border bg-card p-4">
             <div className="flex flex-wrap items-center gap-2">
               <ProductPrice product={product} large />
               <DiscountBadge product={product} />
-              <StockBadge stock={product.stock} />
+              <StockBadge product={product} />
             </div>
             <div className="flex flex-wrap items-center gap-3" ref={actionsRef}>
               <QuantityStepper
@@ -175,7 +183,7 @@ export function ProductDetailPage() {
           <p className="max-w-3xl text-muted-foreground">{product.description}</p>
         </DetailSection>
         <DetailSection id="reviews" title={t('products.tabs.reviews', { n: summary.count })}>
-          <ReviewsTab productId={id} seeded={product.reviews} />
+          <ReviewsTab productId={id} seeded={product.reviews} summary={summary} />
         </DetailSection>
         <div id="similar" className={SECTION_SCROLL_MARGIN}>
           <SimilarProducts productId={id} category={product.category} />

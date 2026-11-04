@@ -2,19 +2,16 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
+import { serverSession } from '@/test/msw/handlers'
 import { renderApp } from '@/test/render'
 
-import { useAuthStore } from '../store'
+import { setSessionExpiredHandler, useAuthStore } from '../store'
 
 const pathname = (router: { state: { location: { pathname: string } } }) =>
   router.state.location.pathname
 
 function signInAs(role: 'admin' | 'user') {
-  useAuthStore.setState(
-    role === 'admin'
-      ? { accessToken: 'access-1', refreshToken: 'refresh-1' }
-      : { accessToken: 'access-16', refreshToken: 'refresh-16' },
-  )
+  serverSession.userId = role === 'admin' ? 'user-1' : 'user-16'
 }
 
 describe('auth flow (AUTH-1..7)', () => {
@@ -38,12 +35,12 @@ describe('auth flow (AUTH-1..7)', () => {
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
   })
 
-  it('AUTH-1: shows the DummyJSON error for invalid credentials', async () => {
+  it('AUTH-1: shows the server error for invalid credentials', async () => {
     await renderApp('/login')
     await userEvent.type(screen.getByLabelText('Username'), 'emilys')
     await userEvent.type(screen.getByLabelText('Password'), 'wrong')
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid credentials')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid username or password')
   })
 
   it('AUTH-1: validates required fields before calling the API', async () => {
@@ -52,18 +49,23 @@ describe('auth flow (AUTH-1..7)', () => {
     expect(await screen.findAllByText('This field is required')).toHaveLength(2)
   })
 
-  it('AUTH-6: a persisted session survives a reload, and /login sends the user away', async () => {
+  it('AUTH-6: a session cookie survives a reload, and /login sends the user away', async () => {
     signInAs('user')
     const { router } = await renderApp('/login')
     expect(pathname(router)).toBe('/products')
     expect(useAuthStore.getState().user?.username).toBe('averyp')
   })
 
-  it('AUTH-6: an expired access token is refreshed during bootstrap', async () => {
-    useAuthStore.setState({ accessToken: 'access-16-expired', refreshToken: 'refresh-16' })
+  it('AUTH-6: a session the server rejects mid-visit sends the user back to /login', async () => {
+    signInAs('admin')
     const { router } = await renderApp('/orders')
     expect(pathname(router)).toBe('/orders')
-    expect(useAuthStore.getState().accessToken).toBe('access-16')
+    setSessionExpiredHandler(() => void router.navigate({ to: '/login' }))
+    serverSession.userId = null // the cookie expired
+    await router.navigate({ to: '/admin/users' })
+    await waitFor(() => expect(pathname(router)).toBe('/login'))
+    expect(useAuthStore.getState().status).toBe('anonymous')
+    setSessionExpiredHandler(null)
   })
 
   it('AUTH-7: a normal user on /admin is sent to /forbidden', async () => {
@@ -87,6 +89,6 @@ describe('auth flow (AUTH-1..7)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Emily Johnson' }))
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Log out' }))
     await waitFor(() => expect(pathname(router)).toBe('/login'))
-    expect(useAuthStore.getState()).toMatchObject({ accessToken: null, user: null })
+    expect(useAuthStore.getState()).toMatchObject({ user: null, status: 'anonymous' })
   })
 })

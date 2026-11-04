@@ -12,7 +12,7 @@ export function applyUserOverlay(remote: User[], overlay: UserOverlaySnapshot): 
   const local = Object.values(overlay.created)
     .filter((u) => !hidden.has(u.id))
     .map(patch)
-    .sort((a, b) => b.id - a.id) // newest local user first
+    .sort((a, b) => b.id.localeCompare(a.id, 'en', { numeric: true })) // newest local user first
   const merged = remote.filter((u) => !hidden.has(u.id)).map(patch)
   return [...local, ...merged]
 }
@@ -32,14 +32,14 @@ export function filterUsers(
   return users.filter((u) => {
     if (role && u.role !== role) return false
     if (!needle) return true
-    return [`${u.firstName} ${u.lastName}`, u.username, u.email].some((field) =>
+    return [`${u.firstName} ${u.lastName}`, u.username ?? '', u.email].some((field) =>
       normalize(field, language).includes(needle),
     )
   })
 }
 
 /** Usernames are unique case-insensitively across the merged list (`exceptId` = the user being edited). */
-export function isUsernameTaken(users: User[], username: string, exceptId?: number) {
+export function isUsernameTaken(users: User[], username: string, exceptId?: string) {
   const wanted = username.trim().toLowerCase()
-  return users.some((u) => u.id !== exceptId && u.username.toLowerCase() === wanted)
+  return users.some((u) => u.id !== exceptId && u.username?.toLowerCase() === wanted)
 }

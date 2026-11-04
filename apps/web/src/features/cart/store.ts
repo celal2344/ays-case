@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-import { storageKey } from '@/lib/storage'
+import { migrateUserKeys, storageKey } from '@/lib/storage'
 
 export interface CartLine {
   productId: number
@@ -11,13 +11,13 @@ export interface CartLine {
 
 interface CartState {
   /** One cart per user id; lines hold only ids and quantities, prices come from the catalog at render time. */
-  byUser: Record<number, CartLine[]>
+  byUser: Record<string, CartLine[]>
   /** Adds `quantity` (default 1) and caps the line at `stock`; returns the resulting line quantity. */
-  add: (userId: number, productId: number, quantity: number, stock: number) => number
+  add: (userId: string, productId: number, quantity: number, stock: number) => number
   /** Sets the quantity, clamped to 1…stock; returns the resulting quantity. */
-  setQuantity: (userId: number, productId: number, quantity: number, stock: number) => number
-  remove: (userId: number, productId: number) => void
-  clear: (userId: number) => void
+  setQuantity: (userId: string, productId: number, quantity: number, stock: number) => number
+  remove: (userId: string, productId: number) => void
+  clear: (userId: string) => void
   removeProductEverywhere: (productId: number) => void
   /** Every user's cart (Reset demo data). */
   reset: () => void
@@ -80,7 +80,12 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: storageKey('cart'),
-      version: 1,
+      version: 2,
+      // v1 keyed lists by DummyJSON's numeric user ids; the API's ids are strings
+      migrate: (persisted, version) => {
+        const state = persisted as { byUser?: Record<string, never[]> }
+        return version < 2 ? { byUser: migrateUserKeys(state.byUser) } : state
+      },
       storage: createJSONStorage(() => localStorage),
       partialize: ({ byUser }) => ({ byUser }),
     },

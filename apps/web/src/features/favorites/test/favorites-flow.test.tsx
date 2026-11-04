@@ -7,7 +7,7 @@ import { renderApp } from '@/test/render'
 
 import { useFavoritesStore } from '../store'
 
-const mine = () => useFavoritesStore.getState().byUser[16] ?? []
+const mine = () => useFavoritesStore.getState().byUser['user-16'] ?? []
 const card = async (title: string) => (await screen.findByText(title)).closest('li')!
 
 describe('favorites (heart and page)', () => {
@@ -31,8 +31,8 @@ describe('favorites (heart and page)', () => {
 
   it('/favorites lists them newest first; un-favoriting removes the card', async () => {
     signInAs('averyp')
-    useFavoritesStore.getState().toggle(16, 1)
-    useFavoritesStore.getState().toggle(16, 2)
+    useFavoritesStore.getState().toggle('user-16', 1)
+    useFavoritesStore.getState().toggle('user-16', 2)
     await renderApp('/favorites')
     const titles = (await screen.findAllByRole('link', { name: /item 0[12]$/ })).map(
       (a) => a.textContent,
@@ -47,7 +47,7 @@ describe('favorites (heart and page)', () => {
 
   it('shows an empty state, and drops favorites whose product no longer exists', async () => {
     signInAs('averyp')
-    useFavoritesStore.getState().toggle(16, 99999)
+    useFavoritesStore.getState().toggle('user-16', 99999)
     await renderApp('/favorites')
     expect(await screen.findByText('You have no favorites yet')).toBeInTheDocument()
   })

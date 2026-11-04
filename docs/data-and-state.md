@@ -1,6 +1,6 @@
 # Data and state
 
-DummyJSON accepts add/update/delete but **persists nothing** (see [api.md](api.md)). So the app has two sources: the remote catalog (read-only truth) and a local **overlay** of the admin's changes. This doc defines who owns what. Decision record: [ADR-0003](decisions/0003-query-plus-zustand-overlay.md).
+Our API serves the catalog and users read-only; it has no product or user writes yet (see [api.md](api.md)). So the app has two sources: the remote catalog (read-only truth) and a local **overlay** of the admin's changes. This doc defines who owns what. Decision record: [ADR-0003](decisions/0003-query-plus-zustand-overlay.md).
 
 ## Ownership table
 | Data | Owner | Persisted | Key |
@@ -12,7 +12,7 @@ DummyJSON accepts add/update/delete but **persists nothing** (see [api.md](api.m
 | Admin user changes (created / patched / deleted) | `useUserOverlayStore` (Zustand) | yes | `ays-case:v1:user-overlay` |
 | Reviews written in the app | `useReviewsStore` (Zustand) | yes | `ays-case:v1:reviews` |
 | Remote users (admin list) | TanStack Query `userKeys.list()` | no | — |
-| Tokens + current user | `useAuthStore` | tokens + user yes, status no | `ays-case:v1:auth` |
+| Current user (the session cookie is owned by the server) | `useAuthStore` | no, restored by `bootstrap()` | — |
 | Cart | `useCartStore` | yes, per user | `ays-case:v1:cart` |
 | Orders | `useOrdersStore` | yes, per user | `ays-case:v1:orders` |
 | Theme, language, shop view (grid/table) | `usePreferencesStore` | yes | `ays-case:v1:prefs` |
@@ -21,7 +21,7 @@ DummyJSON accepts add/update/delete but **persists nothing** (see [api.md](api.m
 
 Rule of thumb: **if it came from the server, it's Query; if the user made it, it's Zustand; if it should be shareable/back-button-able, it's the URL.**
 
-All persisted stores use `persist` with `version` + `migrate`, and keys built by `lib/storage.ts` so a schema change bumps `v1 → v2` cleanly.
+All persisted stores use `persist` with `version` + `migrate`, and keys built by `lib/storage.ts` so a schema change bumps the version cleanly. User ids became strings with the API (`user-<n>`); the cart, favorites, recently viewed, orders, reviews and user overlay stores are at version 2 and migrate numeric ids with `migrateUserId` in `lib/storage.ts`.
 
 ## Product overlay
 ```ts
@@ -42,7 +42,7 @@ interface ProductOverlayState {
 ```
 
 ### Why local ids
-`POST /products/add` always returns `id = total + 1` (e.g. 195), so two adds collide. We keep DummyJSON's echoed fields but assign our own id from `nextLocalId` (≥ 100000, never clashes with remote 1–194). `isLocal(id) = id >= 100_000`.
+The API has no product writes, so created products get their own id from `nextLocalId` (≥ 100000, never clashes with real ids). `isLocal(id) = id >= 100_000`. Created users get `local-<n>` ids.
 
 ### Merge (single function, pure, unit-tested)
 ```ts
@@ -72,17 +72,17 @@ Detail page: `useProduct(id)` → local product if `isLocal(id)`; else `useQuery
 | Delete local | none | `remove(id)` (also drops from `created`) | — |
 | Delete (any) | — | `cartStore.removeProductEverywhere(id)` | — |
 
-Store writes happen in `onSuccess`. If DummyJSON fails, nothing is written and the form shows the error (keeps the "real API" behaviour honest).
+Admin mutations write the overlay only; no request is sent. When the API gains write endpoints, the mutation hooks call them first and write the overlay after they succeed.
 
 ## Catalog loading: why fetch everything once
-DummyJSON has ~194 products. We load `GET /products?limit=0&select=<list fields>` once and do search / filter / sort / paginate on the merged list in memory. Reason: with server-side pagination, local creates/deletes would break page counts and totals. ADR: [0004](decisions/0004-client-side-catalog.md).
+The catalog has ~194 products. We load `GET /api/products` once (through the typed client) and do search / filter / sort / paginate on the merged list in memory. Reason: with server-side pagination, local creates/deletes would break page counts and totals. ADR: [0004](decisions/0004-client-side-catalog.md).
 
-List fields: `id,title,description,category,price,discountPercentage,rating,stock,brand,thumbnail,availabilityStatus,minimumOrderQuantity,tags`.
+The list carries the fields the cards and filters need; the detail (`GET /api/products/:id`) adds images, sku, dimensions, policies, reviews and the rating histogram. `api.ts` maps the wire shape (integer cents, nested category and brand) to the shapes the UI uses. `rating`, `reviewCount`, `availability` and the histogram are computed by the API in SQL and never derived in the browser (a product without reviews has `rating: null`).
 
 Filtering pipeline (pure, unit-tested): `applyOverlay → filterByQuery(q) → filterByCategory → sortBy → paginate`. Search matches title, brand, category, tags (case-insensitive, Turkish-safe with `toLocaleLowerCase("tr")` only when lang = tr).
 
 ## User overlay
-Same pattern as products, for the admin Users panel (USER-1..5). DummyJSON's `POST/PUT/DELETE /users` are simulated and `role` is accepted but never persisted, so every admin change is also written locally.
+Same pattern as products, for the admin Users panel (USER-1..5). The user list comes from `GET /api/users` (admin only); there are no user writes yet, so every admin change is kept locally.
 ```ts
 // features/users/overlay-store.ts
 interface UserOverlayState {
@@ -105,28 +105,26 @@ export function applyUserOverlay(remote: User[], o: UserOverlaySnapshot): User[]
 - Usernames are unique case-insensitively across the merged list.
 
 ## Reviews
-- Seeded reviews come from `GET /products/{id}` (`reviews[]`: `rating, comment, date, reviewerName, reviewerEmail`). DummyJSON's `/comments` endpoints belong to posts and are not used.
+- Reviews come from `GET /api/products/:id` (`reviews[]`: `id, rating, comment, createdAt, author`). The headline rating, count and histogram also come from the API, so a review written only in this browser appears in the list but does not move them.
 - `useReviewsStore`: `byProduct: Record<number, LocalReview[]>` with `LocalReview { id, productId, userId, authorName, rating, comment, createdAt }`; actions `add`, `update`, `remove`, `removeProduct`, `reset`. One review per user per product.
-- `features/reviews/summary.ts` (pure): `mergeReviews(seeded, local)`, `summarize(reviews) → { average, count, histogram }`, `sortReviews`.
+- `features/reviews/merge.ts` (pure): `mergeReviews(seeded, local)` and `sortReviews`. Nothing averages ratings on the client.
 - Verified buyer: author has an order containing the product (selector over the orders store).
 - Deleting a product also calls `reviews.removeProduct(id)`. Reset demo data clears this store.
 
 ## Auth store
 ```ts
 interface AuthState {
-  accessToken: string | null;
-  refreshToken: string | null;
-  user: User | null;               // from /auth/me, includes role
+  user: User | null;               // from the Better Auth session, includes role
   status: "idle" | "restoring" | "authenticated" | "anonymous";
   bootstrap(): Promise<void>;      // idempotent
   login(username: string, password: string): Promise<User>;
-  logout(): void;                  // also queryClient.clear()
-  setTokens(t: Tokens): void;
+  logout(): void;                  // also queryClient.clear() and ends the server session
+  expire(): void;                  // the API answered 401 while signed in: clear, toast, go to /login
 }
 // selectors
 export const selectIsAdmin = (s: AuthState) => s.user?.role === "admin";
 ```
-`status` is not persisted; it always starts `idle` and `bootstrap()` resolves it.
+Nothing is persisted: the session is an HttpOnly cookie, and `bootstrap()` asks the server who is signed in (`status` always starts `idle`). Login is by username through `authClient`.
 
 ## Cart store
 ```ts
@@ -149,19 +147,18 @@ interface CartState {
 ```ts
 interface Order {
   id: string;                // crypto.randomUUID()
-  userId: number;
+  userId: string;            // Better Auth user id, e.g. user-16
   createdAt: string;
   lines: { productId: number; title: string; thumbnail: string; unitPrice: number; quantity: number; discountPercentage: number }[];
   totals: { subtotal: number; discount: number; total: number };
   shipping: { fullName: string; address: string; city: string; phone: string };
-  remoteCartId?: number;     // id echoed by POST /carts/add
 }
 ```
 Lines are a **snapshot** (title/price at purchase time) — later admin edits must not change past orders.
 
 ## Checkout sequence
 1. Validate cart lines against merged stock (abort with a message if a line exceeds stock).
-2. `POST /carts/add { userId, products: [{ id, quantity }] }` for remote ids only (local ids don't exist on DummyJSON; verify its exact behaviour in G6). Totals shown to the user are always computed by us from merged prices (admin may have changed a price DummyJSON doesn't know); the DummyJSON response is only used for `remoteCartId`.
+2. No request is made: the API has no checkout yet. Totals are computed by us from merged prices.
 3. `ordersStore.add(order)` → `overlay.decrementStock(lines)` → `cart.clear(userId)`.
 4. Navigate to `/orders/$orderId?placed=1` (success banner).
 

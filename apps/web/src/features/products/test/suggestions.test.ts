@@ -14,9 +14,9 @@ const make = (id: number, over: Partial<Product>): Product => ({
   ...over,
 })
 const categories: Category[] = [
-  { slug: 'beauty', name: 'Beauty', url: '' },
-  { slug: 'beach-gear', name: 'Beach gear', url: '' },
-  { slug: 'empty', name: 'Empty shelf', url: '' },
+  { slug: 'beauty', name: 'Beauty' },
+  { slug: 'beach-gear', name: 'Beach gear' },
+  { slug: 'empty', name: 'Empty shelf' },
 ]
 
 describe('getSuggestions', () => {

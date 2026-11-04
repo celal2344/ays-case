@@ -4,7 +4,7 @@ import { HttpResponse, http } from 'msw'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
 
 import { signInAs } from '@/test/auth'
-import { fixtureDetail } from '@/test/fixtures/products'
+import { fixtureWireDetail } from '@/test/fixtures/products'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
@@ -37,10 +37,16 @@ describe('product page (PDP-1..6)', () => {
       window.matchMedia = originalMatchMedia
     })
     server.use(
-      http.get('https://dummyjson.com/products/2', () =>
+      http.get('http://localhost/api/products/2', () =>
         HttpResponse.json({
-          ...fixtureDetail(2),
-          images: ['https://img.test/a.webp', 'https://img.test/b.webp', 'https://img.test/c.webp'],
+          data: {
+            ...fixtureWireDetail(2),
+            images: ['a', 'b', 'c'].map((name, position) => ({
+              url: `https://img.test/${name}.webp`,
+              position,
+              isPrimary: position === 0,
+            })),
+          },
         }),
       ),
     )
@@ -144,11 +150,19 @@ describe('product page (PDP-1..6)', () => {
     vi.stubGlobal('IntersectionObserver', original)
   })
 
-  it('shows only the specs a product has (local products have none of the remote-only ones)', async () => {
+  it('shows the specs from the API, converting grams and millimetres for display', async () => {
     await renderApp('/products/2')
     await screen.findByRole('heading', { name: 'groceries item 02' })
     const specs = screen.getByRole('region', { name: 'Details' })
     expect(within(specs).getByText('Brand')).toBeInTheDocument()
-    expect(within(specs).queryByText('Warranty')).not.toBeInTheDocument()
+    expect(within(specs).getByText('1 week warranty')).toBeInTheDocument()
+    expect(within(specs).getByText('15 × 13 × 23 cm')).toBeInTheDocument()
+    expect(within(specs).getByText('4 kg')).toBeInTheDocument()
+  })
+
+  it('shows "no reviews yet" for a product nobody has reviewed, instead of a rating', async () => {
+    await renderApp('/products/7')
+    await screen.findByRole('heading', { name: 'beauty item 07' })
+    expect(screen.getAllByText('No reviews yet').length).toBeGreaterThan(0)
   })
 })

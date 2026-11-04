@@ -5,12 +5,11 @@ import type { Order, Shipping } from './schemas'
 
 interface BuildOrderInput {
   id: string
-  userId: number
+  userId: string
   createdAt: string
   items: CartItem[]
   totals: CartTotals
   shipping: Shipping
-  remoteCartId?: number
 }
 
 /** Freezes the cart into an order: titles and prices are copied, not referenced. */
@@ -36,5 +35,5 @@ export function buildOrder({ items, totals, shipping, ...rest }: BuildOrderInput
   }
 }
 
-export const hasBought = (orders: Order[], userId: number, productId: number) =>
+export const hasBought = (orders: Order[], userId: string, productId: number) =>
   orders.some((o) => o.userId === userId && o.lines.some((l) => l.productId === productId))

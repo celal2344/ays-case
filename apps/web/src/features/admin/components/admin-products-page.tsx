@@ -164,11 +164,16 @@ const columns = helper.columns([
   }),
   helper.accessor('stock', {
     header: ({ column }) => <SortHeader column={column} label="stock" />,
-    cell: ({ getValue }) => (getValue() > 5 ? getValue() : <StockBadge stock={getValue()} />),
+    cell: ({ row }) =>
+      row.original.availability === 'in' ? (
+        row.original.stock
+      ) : (
+        <StockBadge product={row.original} />
+      ),
   }),
   helper.accessor('rating', {
     header: ({ column }) => <SortHeader column={column} label="rating" />,
-    cell: ({ getValue }) => getValue().toFixed(1),
+    cell: ({ getValue }) => getValue()?.toFixed(1) ?? '–',
   }),
   helper.display({
     id: 'actions',

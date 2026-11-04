@@ -22,7 +22,7 @@ export function EditUserPage() {
   const { t } = useTranslation()
   const { userId } = editRoute.useParams()
   const { users } = useUsers()
-  const user = users?.find((u) => u.id === Number(userId))
+  const user = users?.find((u) => u.id === userId)
   if (!user) return <NotFound />
   return (
     <div className="space-y-4">

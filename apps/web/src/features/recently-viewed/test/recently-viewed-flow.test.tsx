@@ -12,13 +12,13 @@ describe('recently viewed strip', () => {
     signInAs('averyp')
     await renderApp('/products/2')
     await screen.findByRole('heading', { name: 'groceries item 02' })
-    expect(useRecentlyViewedStore.getState().byUser['16']).toEqual([2])
+    expect(useRecentlyViewedStore.getState().byUser['user-16']).toEqual([2])
   })
 
   it('the product page shows the others newest first, without the current one; Clear empties it', async () => {
     signInAs('averyp')
-    useRecentlyViewedStore.getState().record('16', 1)
-    useRecentlyViewedStore.getState().record('16', 4)
+    useRecentlyViewedStore.getState().record('user-16', 1)
+    useRecentlyViewedStore.getState().record('user-16', 4)
     await renderApp('/products/2')
     const strip = await screen.findByRole('region', { name: 'Recently viewed' })
     const titles = within(strip)
@@ -33,7 +33,7 @@ describe('recently viewed strip', () => {
 
   it('the shop list has no recently viewed section', async () => {
     signInAs('averyp')
-    useRecentlyViewedStore.getState().record('16', 1)
+    useRecentlyViewedStore.getState().record('user-16', 1)
     await renderApp('/products')
     await screen.findByRole('heading', { name: 'Products' })
     expect(screen.queryByRole('region', { name: 'Recently viewed' })).not.toBeInTheDocument()

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { hasDiscount, stockLevel } from '../pricing'
+import { hasDiscount } from '../pricing'
 import { productSearchSchema } from '../schemas'
 import { fromSortOption, normalizeSearch, toSortOption, updateSearch } from '../search-state'
 
@@ -8,10 +8,6 @@ describe('product pricing helpers', () => {
   it('flags real discounts only', () => {
     expect(hasDiscount({ discountPercentage: 0.4 })).toBe(false)
     expect(hasDiscount({ discountPercentage: 10 })).toBe(true)
-  })
-
-  it('classifies stock', () => {
-    expect([0, 1, 5, 6].map(stockLevel)).toEqual(['out', 'low', 'low', 'in'])
   })
 })
 

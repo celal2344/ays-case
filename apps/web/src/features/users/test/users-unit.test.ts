@@ -15,13 +15,13 @@ import {
 import { resolveSessionUser } from '../session'
 
 const none = { created: {}, patched: {}, deleted: [] }
-const ids = (users: { id: number }[]) => users.map((u) => u.id)
+const ids = (users: { id: string }[]) => users.map((u) => u.id)
 const input = {
   username: 'newbie',
   firstName: 'New',
   lastName: 'Bie',
   email: 'n@x.com',
-  image: '',
+  image: null,
   role: 'user' as const,
 }
 
@@ -33,25 +33,25 @@ describe('applyUserOverlay', () => {
   it('hides deleted users, applies patches and puts local users first, newest first', () => {
     const merged = applyUserOverlay(fixtureUserList, {
       created: {
-        100_000: { ...input, id: 100_000 },
-        100_001: { ...input, id: 100_001, username: 'newer' },
+        'local-1': { ...input, id: 'local-1' },
+        'local-2': { ...input, id: 'local-2', username: 'newer' },
       },
-      patched: { 3: { role: 'moderator' }, 100_001: { firstName: 'Renamed' } },
-      deleted: [4],
+      patched: { 'user-3': { role: 'moderator' }, 'local-2': { firstName: 'Renamed' } },
+      deleted: ['user-4'],
     })
-    expect(ids(merged).slice(0, 2)).toEqual([100_001, 100_000])
+    expect(ids(merged).slice(0, 2)).toEqual(['local-2', 'local-1'])
     expect(merged[0]?.firstName).toBe('Renamed')
-    expect(merged.find((u) => u.id === 3)?.role).toBe('moderator')
-    expect(ids(merged)).not.toContain(4)
+    expect(merged.find((u) => u.id === 'user-3')?.role).toBe('moderator')
+    expect(ids(merged)).not.toContain('user-4')
   })
 })
 
 describe('filterUsers', () => {
   it('matches name, username and email case-insensitively', () => {
-    expect(ids(filterUsers(fixtureUserList, 'EMILY', undefined, 'en'))).toEqual([1])
-    expect(ids(filterUsers(fixtureUserList, 'michaelw', undefined, 'en'))).toEqual([2])
-    expect(ids(filterUsers(fixtureUserList, 'perez', undefined, 'en'))).toEqual([16])
-    expect(filterUsers(fixtureUserList, 'x.dummyjson.com', undefined, 'en')).toHaveLength(25)
+    expect(ids(filterUsers(fixtureUserList, 'EMILY', undefined, 'en'))).toEqual(['user-1'])
+    expect(ids(filterUsers(fixtureUserList, 'michaelw', undefined, 'en'))).toEqual(['user-2'])
+    expect(ids(filterUsers(fixtureUserList, 'perez', undefined, 'en'))).toEqual(['user-16'])
+    expect(filterUsers(fixtureUserList, 'example.com', undefined, 'en')).toHaveLength(25)
   })
 
   it('filters by role and combines with the query', () => {
@@ -65,55 +65,59 @@ describe('isUsernameTaken', () => {
   it('compares case-insensitively and can ignore the user being edited', () => {
     expect(isUsernameTaken(fixtureUserList, 'EmilyS')).toBe(true)
     expect(isUsernameTaken(fixtureUserList, '  emilys  ')).toBe(true)
-    expect(isUsernameTaken(fixtureUserList, 'emilys', 1)).toBe(false)
+    expect(isUsernameTaken(fixtureUserList, 'emilys', 'user-1')).toBe(false)
     expect(isUsernameTaken(fixtureUserList, 'nobody')).toBe(false)
   })
 })
 
 describe('guardrails (USER-5)', () => {
   it('refuses to delete yourself or the last admin', () => {
-    expect(deleteGuard(fixtureUserList, 1, 1)).toBe('self')
-    expect(deleteGuard(fixtureUserList, 2, 1)).toBeNull() // another admin: fine while two exist
-    const oneAdmin = fixtureUserList.map((u) => (u.id === 1 ? { ...u, role: 'user' as const } : u))
-    expect(deleteGuard(oneAdmin, 2, 1)).toBe('last-admin')
-    expect(deleteGuard(fixtureUserList, 5, 1)).toBeNull()
+    expect(deleteGuard(fixtureUserList, 'user-1', 'user-1')).toBe('self')
+    expect(deleteGuard(fixtureUserList, 'user-2', 'user-1')).toBeNull() // another admin: fine while two exist
+    const oneAdmin = fixtureUserList.map((u) =>
+      u.id === 'user-1' ? { ...u, role: 'user' as const } : u,
+    )
+    expect(deleteGuard(oneAdmin, 'user-2', 'user-1')).toBe('last-admin')
+    expect(deleteGuard(fixtureUserList, 'user-5', 'user-1')).toBeNull()
   })
 
   it('refuses to demote yourself or the last admin, but allows promoting and keeping admin', () => {
-    expect(demoteGuard(fixtureUserList, 1, 'user', 1)).toBe('self')
-    expect(demoteGuard(fixtureUserList, 2, 'moderator', 1)).toBeNull()
-    const oneAdmin = fixtureUserList.map((u) => (u.id === 1 ? { ...u, role: 'user' as const } : u))
-    expect(demoteGuard(oneAdmin, 2, 'user', 1)).toBe('last-admin')
-    expect(demoteGuard(fixtureUserList, 1, 'admin', 1)).toBeNull()
-    expect(demoteGuard(fixtureUserList, 5, 'admin', 1)).toBeNull() // promoting a user
-    expect(demoteGuard(fixtureUserList, 5, 'user', 1)).toBeNull() // not an admin: nothing to lose
+    expect(demoteGuard(fixtureUserList, 'user-1', 'user', 'user-1')).toBe('self')
+    expect(demoteGuard(fixtureUserList, 'user-2', 'moderator', 'user-1')).toBeNull()
+    const oneAdmin = fixtureUserList.map((u) =>
+      u.id === 'user-1' ? { ...u, role: 'user' as const } : u,
+    )
+    expect(demoteGuard(oneAdmin, 'user-2', 'user', 'user-1')).toBe('last-admin')
+    expect(demoteGuard(fixtureUserList, 'user-1', 'admin', 'user-1')).toBeNull()
+    expect(demoteGuard(fixtureUserList, 'user-5', 'admin', 'user-1')).toBeNull() // promoting a user
+    expect(demoteGuard(fixtureUserList, 'user-5', 'user', 'user-1')).toBeNull() // not an admin: nothing to lose
   })
 })
 
 describe('user overlay store', () => {
   beforeEach(() => useUserOverlayStore.getState().reset())
 
-  it('creates local users with sequential ids from 100000', () => {
+  it('creates local users with sequential local- ids', () => {
     const a = useUserOverlayStore.getState().create(input)
     const b = useUserOverlayStore.getState().create(input)
-    expect([a.id, b.id]).toEqual([FIRST_LOCAL_USER_ID, FIRST_LOCAL_USER_ID + 1])
+    expect([a.id, b.id]).toEqual(['local-1', 'local-2'])
     expect(isLocalUser(a.id)).toBe(true)
-    expect(isLocalUser(208)).toBe(false)
+    expect(isLocalUser('user-208')).toBe(false)
   })
 
   it('updates local users in place and remote ones through patches', () => {
     const local = useUserOverlayStore.getState().create(input)
     useUserOverlayStore.getState().update(local.id, { role: 'admin' })
-    useUserOverlayStore.getState().update(7, { firstName: 'Seven' })
+    useUserOverlayStore.getState().update('user-7', { firstName: 'Seven' })
     expect(useUserOverlayStore.getState().created[local.id]?.role).toBe('admin')
-    expect(useUserOverlayStore.getState().patched[7]).toEqual({ firstName: 'Seven' })
+    expect(useUserOverlayStore.getState().patched['user-7']).toEqual({ firstName: 'Seven' })
   })
 
   it('removing hides a remote user and deletes a local one; reset restores everything', () => {
     const local = useUserOverlayStore.getState().create(input)
-    useUserOverlayStore.getState().remove(7)
+    useUserOverlayStore.getState().remove('user-7')
     useUserOverlayStore.getState().remove(local.id)
-    expect(useUserOverlayStore.getState().deleted).toEqual([7])
+    expect(useUserOverlayStore.getState().deleted).toEqual(['user-7'])
     expect(useUserOverlayStore.getState().created).toEqual({})
     useUserOverlayStore.getState().reset()
     expect(useUserOverlayStore.getState()).toMatchObject({
@@ -123,10 +127,10 @@ describe('user overlay store', () => {
   })
 
   it('persists under the versioned key', () => {
-    useUserOverlayStore.getState().update(7, { firstName: 'Seven' })
+    useUserOverlayStore.getState().update('user-7', { firstName: 'Seven' })
     const saved = JSON.parse(localStorage.getItem('ays-case:v1:user-overlay') ?? '{}')
-    expect(saved.state.patched['7']).toEqual({ firstName: 'Seven' })
-    expect(saved.version).toBe(1)
+    expect(saved.state.patched['user-7']).toEqual({ firstName: 'Seven' })
+    expect(saved.version).toBe(2)
   })
 })
 
@@ -139,7 +143,7 @@ describe('resolveSessionUser', () => {
   })
 
   it('applies the overlay patch on top (USER-5)', () => {
-    useUserOverlayStore.getState().update(1, { firstName: 'Em', role: 'moderator' })
+    useUserOverlayStore.getState().update('user-1', { firstName: 'Em', role: 'moderator' })
     expect(resolveSessionUser(emily)).toMatchObject({
       firstName: 'Em',
       role: 'moderator',
@@ -148,8 +152,30 @@ describe('resolveSessionUser', () => {
   })
 
   it('returns null for a user an admin deleted', () => {
-    useUserOverlayStore.getState().remove(1)
+    useUserOverlayStore.getState().remove('user-1')
     expect(resolveSessionUser(emily)).toBeNull()
+  })
+})
+
+describe('persisted state migration (v1 → v2)', () => {
+  it('maps numeric DummyJSON ids to the API ids and drops users created in the old overlay', () => {
+    localStorage.setItem(
+      'ays-case:v1:user-overlay',
+      JSON.stringify({
+        state: {
+          created: { '100000': { id: 100000, username: 'old' } },
+          patched: { '16': { firstName: 'Av' } },
+          deleted: [5],
+          nextLocalId: 100001,
+        },
+        version: 1,
+      }),
+    )
+    void useUserOverlayStore.persist.rehydrate()
+    const state = useUserOverlayStore.getState()
+    expect(state.created).toEqual({})
+    expect(state.patched).toEqual({ 'user-16': { firstName: 'Av' } })
+    expect(state.deleted).toEqual(['user-5'])
   })
 })
 
@@ -183,7 +209,7 @@ describe('user form schema', () => {
     expect(toUserInput({ ...valid, username: '  newbie ' })).toEqual({
       ...valid,
       username: 'newbie',
-      image: '',
+      image: null,
     })
     expect(toUserPatch(valid)).toEqual(valid)
   })

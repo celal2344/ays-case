@@ -17,7 +17,7 @@ const make = (id: number, over: Partial<Product>): Product => ({
 })
 
 describe('getSuggestedTags', () => {
-  const categories: Category[] = [{ slug: 'beauty', name: 'Beauty', url: '' }]
+  const categories: Category[] = [{ slug: 'beauty', name: 'Beauty' }]
 
   it('orders by frequency then alphabet, skips category tags and caps the list', () => {
     const products = [

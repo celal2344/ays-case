@@ -24,15 +24,15 @@ async function writeReview(stars: number, text = comment) {
 }
 
 describe('reviews (REV-1..5)', () => {
-  it('REV-1/2: lists the DummyJSON review with the summary and histogram', async () => {
+  it('REV-1/2: lists the API review with the summary and histogram from the API', async () => {
     await openReviews()
     expect(await screen.findByText('Great!')).toBeInTheDocument()
     expect(screen.getByText('Eleanor Collins')).toBeInTheDocument()
-    expect(screen.getByTestId('review-average')).toHaveTextContent('5.0')
+    expect(screen.getByTestId('review-average')).toHaveTextContent('3.0')
     const histogram = screen.getByRole('list', { name: 'Rating distribution' })
     expect(within(histogram).getAllByRole('listitem')).toHaveLength(5)
-    expect(within(histogram).getAllByRole('listitem')[0]).toHaveTextContent('5 ★')
-    expect(within(histogram).getAllByRole('listitem')[0]).toHaveTextContent('1')
+    expect(within(histogram).getAllByRole('listitem')[2]).toHaveTextContent('3 ★')
+    expect(within(histogram).getAllByRole('listitem')[2]).toHaveTextContent('1')
   })
 
   it('REV-3: a logged-out visitor gets a sign-in prompt instead of the form', async () => {
@@ -45,13 +45,13 @@ describe('reviews (REV-1..5)', () => {
     expect(screen.queryByRole('button', { name: 'Submit review' })).not.toBeInTheDocument()
   })
 
-  it('REV-3: a signed-in user adds a review that shows up, updates the summary and survives reload', async () => {
+  it('REV-3: a signed-in user adds a review that shows up (the API figures stay) and survives reload', async () => {
     signInAs('averyp')
     await openReviews()
     await writeReview(3)
     expect(await screen.findByText(comment)).toBeInTheDocument()
     expect(screen.getByText('Avery Perez')).toBeInTheDocument()
-    expect(screen.getByTestId('review-average')).toHaveTextContent('4.0') // (5 + 3) / 2
+    expect(screen.getByTestId('review-average')).toHaveTextContent('3.0') // computed by the API; a browser-only review does not change it
     // one review per user: the form is replaced by the user's own review
     expect(screen.queryByRole('button', { name: 'Submit review' })).not.toBeInTheDocument()
     expect(
@@ -90,7 +90,7 @@ describe('reviews (REV-1..5)', () => {
   it("REV-4: other users cannot edit or delete someone else's review, an admin can delete any", async () => {
     useReviewsStore.getState().add({
       productId: 2,
-      userId: 16,
+      userId: 'user-16',
       authorName: 'Avery Perez',
       rating: 2,
       comment: 'Not for me, sadly.',
@@ -122,7 +122,7 @@ describe('reviews (REV-1..5)', () => {
   it('REV-1: sorts by rating', async () => {
     useReviewsStore.getState().add({
       productId: 2,
-      userId: 16,
+      userId: 'user-16',
       authorName: 'Low Rater',
       rating: 1,
       comment: 'Not good at all.',
@@ -140,16 +140,16 @@ describe('reviews (REV-1..5)', () => {
     expect(order()[0]).toContain('Great!')
   })
 
-  it('the header rating reflects seeded + local reviews and opens the reviews tab', async () => {
+  it('the header rating comes from the API and opens the reviews tab', async () => {
     useReviewsStore.getState().add({
       productId: 2,
-      userId: 16,
+      userId: 'user-16',
       authorName: 'Avery Perez',
       rating: 3,
       comment: 'It is okay overall.',
     })
     await renderApp('/products/2')
-    const link = await screen.findByRole('button', { name: /4\.0.*2 reviews/ })
+    const link = await screen.findByRole('button', { name: /3\.0.*1 review/ })
     await userEvent.click(link)
     expect(await screen.findByTestId('review-average')).toBeInTheDocument()
   })

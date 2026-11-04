@@ -78,7 +78,8 @@ export function toFormValues(product: Product): ProductFormValues {
   }
 }
 
-const availability = (stock: number) => (stock > 0 ? 'In Stock' : 'Out of Stock')
+/** Same default as the database column; the API derives `availability` from it. */
+const DEFAULT_LOW_STOCK_THRESHOLD = 5
 
 /** Everything a new product needs; fields the form does not edit get neutral defaults. */
 export function toNewProduct(values: ProductFormValues): Omit<Product, 'id'> {
@@ -90,10 +91,12 @@ export function toNewProduct(values: ProductFormValues): Omit<Product, 'id'> {
     ...(values.brand.trim() ? { brand: values.brand.trim() } : {}),
     price: Number(values.price),
     discountPercentage: Number(values.discountPercentage),
-    rating: 0,
+    rating: null,
+    reviewCount: 0,
     stock,
     thumbnail: values.thumbnail.trim(),
-    availabilityStatus: availability(stock),
+    lowStockThreshold: DEFAULT_LOW_STOCK_THRESHOLD,
+    availability: stock <= 0 ? 'out' : stock <= DEFAULT_LOW_STOCK_THRESHOLD ? 'low' : 'in',
     minimumOrderQuantity: 1,
     tags: [values.category],
   }
@@ -111,7 +114,6 @@ export function toProductPatch(values: ProductFormValues) {
     discountPercentage: Number(values.discountPercentage),
     stock,
     thumbnail: values.thumbnail.trim(),
-    availabilityStatus: availability(stock),
   }
 }
 

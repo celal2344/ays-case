@@ -7,7 +7,7 @@ export const REVIEW_MAX_LENGTH = 500
 export const localReviewSchema = z.object({
   id: z.string(),
   productId: z.number().int(),
-  userId: z.number().int(),
+  userId: z.string(),
   authorName: z.string(),
   rating: z.number().int().min(1).max(5),
   comment: z.string(),
@@ -29,14 +29,16 @@ export interface ReviewItem {
   date: string
   authorName: string
   /** Present only for reviews written in this app. */
-  local?: { id: string; userId: number }
+  local?: { id: string; userId: string }
 }
 
 export type ReviewSort = 'newest' | 'highest' | 'lowest'
 
+/** Rating figures as the API computed them (SQL view); the client never derives them. */
 export interface ReviewSummary {
-  average: number
+  /** Null while a product has no reviews. */
+  average: number | null
   count: number
-  /** Number of reviews per star, 5 → 1. */
+  /** Number of reviews per star. */
   histogram: Record<1 | 2 | 3 | 4 | 5, number>
 }

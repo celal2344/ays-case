@@ -1,54 +1,63 @@
+import type { Availability } from '@ays/validators'
 import { z } from 'zod'
 
 import { GROUP_IDS } from './category-groups'
 
-// Derived by hand from dummyjson.json (Product, ProductList, Category). The spec has no `required`
-// lists, so the fields the app depends on are required here; `brand` really is missing on some items.
+/** What the shop needs of a product, built from the API's catalog shape in api.ts. */
+export interface Product {
+  id: number
+  title: string
+  description: string
+  /** Category slug. */
+  category: string
+  /** Dollars. The API sends integer cents; api.ts converts once at the boundary. */
+  price: number
+  discountPercentage: number
+  /** Average of the reviews, computed by the API; null while a product has none. */
+  rating: number | null
+  reviewCount: number
+  stock: number
+  /** Brand name; some products have none. */
+  brand?: string
+  thumbnail: string
+  /** Derived by the API from stock and the product's low-stock threshold. */
+  availability: Availability
+  minimumOrderQuantity: number
+  lowStockThreshold: number
+  /** Tag slugs. */
+  tags: string[]
+}
 
-/** The fields loaded for every product in the catalog (`select=` in `api.ts`). */
-export const productSchema = z.object({
-  id: z.number().int(),
-  title: z.string(),
-  description: z.string(),
-  category: z.string(),
-  price: z.number(),
-  discountPercentage: z.number(),
-  rating: z.number(),
-  stock: z.number().int(),
-  brand: z.string().optional(),
-  thumbnail: z.string(),
-  availabilityStatus: z.string().optional(),
-  minimumOrderQuantity: z.number().int().optional(),
-  tags: z.array(z.string()).default([]),
-})
-export type Product = z.infer<typeof productSchema>
+export interface Review {
+  id: number
+  rating: number
+  comment: string
+  date: string
+  reviewerName: string
+}
 
-export const reviewSchema = z.object({
-  rating: z.number(),
-  comment: z.string(),
-  date: z.string(),
-  reviewerName: z.string(),
-  reviewerEmail: z.string(),
-})
-export type Review = z.infer<typeof reviewSchema>
+/** Review counts per star, computed by the API. */
+export type RatingHistogram = Record<1 | 2 | 3 | 4 | 5, number>
 
-/** `GET /products/{id}`: the catalog fields plus gallery, specs, policies and reviews. */
-export const productDetailSchema = productSchema.extend({
-  images: z.array(z.string()).default([]),
-  sku: z.string().optional(),
-  weight: z.number().optional(),
-  dimensions: z.object({ width: z.number(), height: z.number(), depth: z.number() }).optional(),
-  warrantyInformation: z.string().optional(),
-  shippingInformation: z.string().optional(),
-  returnPolicy: z.string().optional(),
-  reviews: z.array(reviewSchema).default([]),
-})
-export type ProductDetail = z.infer<typeof productDetailSchema>
+/** GET /products/{id}: the catalog fields plus gallery, specs, policies and reviews. */
+export interface ProductDetail extends Product {
+  images: string[]
+  sku?: string
+  /** Kilograms, converted from the API's grams for display. */
+  weight?: number
+  /** Centimetres, converted from the API's millimetres for display. */
+  dimensions?: { width: number; height: number; depth: number }
+  warrantyInformation?: string
+  shippingInformation?: string
+  returnPolicy?: string
+  reviews: Review[]
+  ratingHistogram?: RatingHistogram
+}
 
-export const productListResponseSchema = z.object({ products: z.array(productSchema) })
-
-export const categorySchema = z.object({ slug: z.string(), name: z.string(), url: z.string() })
-export type Category = z.infer<typeof categorySchema>
+export interface Category {
+  slug: string
+  name: string
+}
 
 export const productSortSchema = z.enum(['price', 'rating', 'title'])
 export type ProductSort = z.infer<typeof productSortSchema>

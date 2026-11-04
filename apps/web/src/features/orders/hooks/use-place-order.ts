@@ -4,11 +4,10 @@ import { selectUser, useAuthStore } from '@/features/auth/store'
 import { buildCartItems, cartTotals } from '@/features/cart/selectors'
 import { useCartStore } from '@/features/cart/store'
 import { applyOverlay } from '@/features/products/catalog'
-import { isLocal, useProductOverlayStore } from '@/features/products/overlay-store'
+import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { catalogQueryOptions } from '@/features/products/queries'
-import { AppError, toAppError } from '@/lib/http-error'
+import { AppError } from '@/lib/http-error'
 
-import { createRemoteCart } from '../api'
 import { buildOrder } from '../build-order'
 import type { Order, Shipping } from '../schemas'
 import { useOrdersStore } from '../store'
@@ -28,7 +27,7 @@ export class CheckoutError extends AppError {
 
 /**
  * The purchase (docs/data-and-state.md, "Checkout sequence"). Everything is read fresh from the stores,
- * and nothing is written until DummyJSON has answered, so a failure leaves cart and stock untouched.
+ * and orders live in the browser until the API has a checkout, so nothing leaves the client.
  */
 export function usePlaceOrder() {
   const queryClient = useQueryClient()
@@ -54,18 +53,6 @@ export function usePlaceOrder() {
         throw new CheckoutError('stock', title)
       }
 
-      let remoteCartId: number | undefined
-      const remoteLines = items
-        .filter((i) => !isLocal(i.product.id))
-        .map((i) => ({ id: i.product.id, quantity: i.quantity }))
-      if (remoteLines.length > 0) {
-        try {
-          remoteCartId = await createRemoteCart(user.id, remoteLines)
-        } catch (error) {
-          throw toAppError(error)
-        }
-      }
-
       const order = buildOrder({
         id: crypto.randomUUID(),
         userId: user.id,
@@ -73,7 +60,6 @@ export function usePlaceOrder() {
         items,
         totals: cartTotals(items),
         shipping,
-        remoteCartId,
       })
       useOrdersStore.getState().add(order)
       useProductOverlayStore

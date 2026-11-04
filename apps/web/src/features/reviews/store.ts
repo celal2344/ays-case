@@ -1,13 +1,13 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-import { storageKey } from '@/lib/storage'
+import { migrateUserId, storageKey } from '@/lib/storage'
 
 import type { LocalReview } from './schemas'
 
 export interface NewReview {
   productId: number
-  userId: number
+  userId: string
   authorName: string
   rating: number
   comment: string
@@ -85,7 +85,24 @@ export const useReviewsStore = create<ReviewsState>()(
     }),
     {
       name: storageKey('reviews'),
-      version: 1,
+      version: 2,
+      // v1 reviews carried DummyJSON's numeric user id, and hid API reviews by date + email
+      migrate: (persisted, version) => {
+        if (version >= 2) return persisted as { byProduct: object; hidden: object }
+        const state = persisted as {
+          byProduct?: Record<string, { userId: string | number }[]>
+        }
+        const byProduct = Object.fromEntries(
+          Object.entries(state.byProduct ?? {}).map(([productId, reviews]) => [
+            productId,
+            reviews.flatMap((review) => {
+              const userId = migrateUserId(review.userId)
+              return userId === null ? [] : [{ ...review, userId }]
+            }),
+          ]),
+        )
+        return { byProduct, hidden: {} }
+      },
       storage: createJSONStorage(() => localStorage),
       partialize: ({ byProduct, hidden }) => ({ byProduct, hidden }),
     },

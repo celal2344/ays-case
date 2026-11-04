@@ -1,72 +1,42 @@
-# DummyJSON API
+# API
 
-Base URL: `https://dummyjson.com` (env `VITE_API_BASE_URL`, so MSW / a mock can replace it). Docs: https://dummyjson.com/docs
+The web app talks to our own API, served on the same origin under `/api` (Vite proxies `/api` to `localhost:3000` in development; one Vercel project serves both in production). Interactive docs: `/api/docs` (Scalar), spec: `/api/openapi.json`.
 
-## Endpoints used
-| Area | Method + path | Used for | Notes |
-|---|---|---|---|
-| Auth | `POST /auth/login` `{ username, password, expiresInMins? }` | Login | Returns `accessToken`, `refreshToken`, `id`, `username`, `email`, `firstName`, `lastName`, `gender`, `image`. **No `role`** here → call `/auth/me` |
-| Auth | `GET /auth/me` (Bearer) | Bootstrap + get `role` | Full user object |
-| Auth | `POST /auth/refresh` `{ refreshToken, expiresInMins? }` | 401 recovery | Returns new token pair |
-| Users | `GET /users/filter?key=role&value=user&select=username,password,role` | Find demo user account (G2, one-time, dev only) | Hardcode the result in `features/auth/demo-accounts.ts` |
-| Products | `GET /products?limit=0&select=…` | Full catalog | ~194 items |
-| Products | `GET /products/{id}` | Detail page (images, reviews, dimensions, policies) | |
-| Products | `GET /products/categories` | Category filter + admin select | `{ slug, name, url }[]` |
-| Products | `POST /products/add` | Admin create | **Simulated**, returns id = total+1 |
-| Products | `PUT /products/{id}` | Admin update | **Simulated**, returns merged object |
-| Products | `DELETE /products/{id}` | Admin delete | **Simulated**, returns object with `isDeleted`, `deletedOn` |
-| Users | `GET /users?limit=0` | Admin users list | ~208 users, filtered/sorted client-side |
-| Users | `POST /users/add`, `PUT /users/{id}`, `DELETE /users/{id}` | Admin user CRUD | **Simulated**, nothing persists; `role` is accepted in `UserInput` but not persisted (see `dummyjson.json` OpenAPI). Skipped for local ids |
-| Carts | `POST /carts/add` `{ userId, products: [{ id, quantity }] }` | Checkout | **Simulated**, returns computed totals + id |
+## Two clients
 
-Reviews are not a separate endpoint: they are the `reviews[]` array inside `GET /products/{id}`. `/comments` is for posts and is not used.
+| Use                               | Client                                                   | Where                                         |
+| --------------------------------- | -------------------------------------------------------- | --------------------------------------------- |
+| Resources (catalog, users)        | Hono RPC `hc<AppType>('/api')` through `@ays/api-client` | `lib/api.ts`, used by `features/*/api.ts`     |
+| Auth (sign in, session, sign out) | Better Auth `authClient`                                 | `lib/auth-client.ts`, used by `features/auth/store.ts` |
 
-Not used (on purpose): `GET /products/search` and `/products/category/{slug}` — search/filter run client-side over the merged catalog ([ADR-0004](decisions/0004-client-side-catalog.md)).
+Response and request types come from the API's routes (`AppType`) and the shared validators in `@ays/validators`, so there is no hand-written response type and no re-parsing in the browser.
 
-## Quirks to code around
-1. **Nothing persists.** Every write must also go to the overlay store ([data-and-state.md](data-and-state.md)).
-2. **Add returns a colliding id.** Assign local ids ≥ 100000.
-3. **Update/delete on a local id** would hit a product that doesn't exist on the server → skip the network call for `isLocal(id)`.
-4. **Login has no role.** (`moderator` exists as a role value but has no special behaviour in the app.) Always follow with `/auth/me`.
-5. **Cookies.** Login/refresh also set cookies; we use Bearer headers only and do **not** set `withCredentials` (avoid CORS/cookie confusion).
-6. **Tokens default to 60 min.** Send `expiresInMins: 60`; the refresh interceptor handles expiry. Test it by logging in with `expiresInMins: 1` in a dev flag.
-7. **Images** are on `cdn.dummyjson.com`; admin-created products use a user-entered URL with a placeholder fallback (`onError`).
+## Endpoints in use
 
-## Axios setup (`lib/http.ts`)
-```ts
-export const http = axios.create({ baseURL: env.VITE_API_BASE_URL, timeout: 15_000 });
+| Endpoint                          | Auth   | Notes                                                                                                                                                                       |
+| --------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/products`               | public | whole catalog in one list (ADR-0004); money in integer cents, `rating` null when unreviewed, `availability` derived by the API                                              |
+| `GET /api/products/:id`           | public | adds images, sku, weight (g), dimensions (mm), warranty/shipping/return policy, reviews and the 1 to 5 `ratingHistogram`; 404 `{ code, message }`                           |
+| `GET /api/categories`             | public |                                                                                                                                                                             |
+| `GET /api/users`                  | admin  | 401 without a session, 403 for other roles                                                                                                                                  |
+| `POST /api/auth/sign-in/username` | public | `{ username, password }`, sets the session cookie                                                                                                                           |
+| `GET /api/auth/get-session`       | cookie | the session user, including `role`                                                                                                                                          |
+| `POST /api/auth/sign-out`         | cookie |                                                                                                                                                                             |
 
-http.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+Demo accounts: `emilys` / `emilyspass` (admin), `averyp` / `averyppass` (user). Self sign-up is disabled.
 
-let refreshing: Promise<string | null> | null = null; // single-flight, like StokMate client.ts
-http.interceptors.response.use(undefined, async (error) => {
-  const original = error.config;
-  if (error.response?.status !== 401 || original._retried || /\/auth\/(login|refresh)/.test(original.url ?? "")) {
-    throw toAppError(error);
-  }
-  original._retried = true;
-  refreshing ??= refreshTokens().finally(() => (refreshing = null));
-  const token = await refreshing;
-  if (!token) { useAuthStore.getState().logout(); throw toAppError(error); }
-  original.headers.Authorization = `Bearer ${token}`;
-  return http(original);
-});
-```
+## Rules
 
-## Response validation
-Each `api.ts` function parses responses with Zod (`productSchema.parse`) at the boundary, so a DummyJSON shape change fails loudly in one place instead of as `undefined` in the UI. Types are `z.infer` of those schemas — one source of truth (same idea as StokMate's generated `*.zod.ts`, written by hand here from [`dummyjson.json`](../dummyjson.json): the spec has no `required` lists or enums, so generated schemas would be all-optional; each schema cites its spec schema in a comment).
+1. **Cookie session, same origin.** No tokens in JS, no CORS, no `localStorage` for auth.
+2. **`call()`** wraps every RPC request: transport failures become `AppError('network')`, non-2xx answers become an `AppError` of the right `kind` from the `{ code, message }` body, and a 401 while signed in ends the session (toast, redirect to `/login`).
+3. **Derived figures stay on the server.** Rating, review count, histogram and availability are computed in SQL; the browser only formats them.
+4. **Units at the boundary.** `features/products/api.ts` converts cents to dollars, grams to kilograms and millimetres to centimetres for display, and nothing else.
+5. **No writes yet.** Admin product and user changes live in the local overlay ([data-and-state.md](data-and-state.md)) until the API grows write endpoints.
 
-## Errors (`lib/http-error.ts`)
-```ts
-class AppError extends Error {
-  constructor(public kind: "network" | "unauthorized" | "forbidden" | "not_found" | "validation" | "server", message: string, public status?: number) { super(message); }
-}
-```
-UI maps `kind` → i18n message. DummyJSON error bodies are `{ message }`; we show it for 400 (e.g. "Invalid credentials") and a generic message otherwise.
+## Errors
 
-## `POST /carts/add` (observed, G6)
-Simulated like every DummyJSON write. Answer: `{ id: 209, products: [...], total, discountedTotal, userId, totalProducts, totalQuantity }`; the id is always 209. Product ids it does not know (our local ids ≥ 100000) are **silently dropped** from `products` rather than rejected, and a body with only unknown ids still succeeds with an empty list. The app therefore sends remote ids only, skips the call when there are none, and keeps just the echoed `id` as `remoteCartId`; totals always come from our own merged prices.
+`AppError { kind, message, status }`, where `kind` is one of `network | unauthorized | forbidden | not_found | validation | server`. The UI maps `kind` to an i18n message (`lib/error-message.ts`); the server's message is shown for validation errors such as a failed sign-in.
+
+## Tests
+
+Vitest runs against MSW handlers at `http://localhost/api/...` that return the API's wire shapes from the shared fixtures (`src/test/fixtures`). The mocked server keeps the signed-in user in `serverSession` (Node's `fetch` has no cookie jar). Playwright specs use the same fixtures through `e2e/support/mock-api.ts`.

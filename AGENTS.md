@@ -11,7 +11,7 @@
 - No network call for local product ids (`isLocal(id)`).
 - Zustand: always select slices; persisted stores have `version` + `migrate`; keys from `lib/storage.ts`.
 - All user-facing text through i18n; add keys to **both** `en.ts` and `tr.ts`.
-- Zod-parse every API response at the `api.ts` boundary.
+- API responses are typed by the shared client (`hc<AppType>` from `@ays/api-client`) and `@ays/validators`: call it only inside `features/*/api.ts`, through `call()` from `lib/api.ts`. Do not hand-write response types or re-parse responses, and never compute ratings, availability or other API-owned figures in the browser.
 - Exact dependency versions; no new dependency without saying why in the handoff.
 - No `any`, no `console.log`, no commented-out code, no TODOs left in a finished gate.
 - Don't edit `docs/` unless the gate says so. If the docs are wrong or block you, stop and report.

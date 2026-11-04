@@ -171,6 +171,7 @@ export const en = {
     verified: 'Verified buyer',
     edit: 'Edit your review',
     empty: 'No reviews yet. Be the first to write one.',
+    none: 'No reviews yet',
     signIn: 'Sign in',
     signInSuffix: 'to write a review.',
     sort: {
@@ -347,7 +348,7 @@ export const en = {
       manageUsers: 'Manage users',
       users: 'Users',
       total: 'Products',
-      low: 'Low stock (≤ {{max}})',
+      low: 'Low stock',
       out: 'Out of stock',
       changes: 'Local changes',
       demoData: 'Demo data',

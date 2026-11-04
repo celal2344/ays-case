@@ -7,9 +7,8 @@ export const userKeys = {
   list: () => [...userKeys.all, 'list'] as const,
 }
 
-// Remote users never change during a session (DummyJSON persists nothing): cache them forever.
 export const usersQueryOptions = queryOptions({
   queryKey: userKeys.list(),
   queryFn: getUsers,
-  staleTime: 'static',
+  staleTime: 60_000,
 })

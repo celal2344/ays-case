@@ -2,17 +2,8 @@ import { salePriceCents } from '@ays/validators'
 
 import type { Product } from './schemas'
 
-export const LOW_STOCK_THRESHOLD = 5
-
 export function hasDiscount(product: Pick<Product, 'discountPercentage'>) {
   return product.discountPercentage >= 1
-}
-
-export type StockLevel = 'out' | 'low' | 'in'
-
-export function stockLevel(stock: number): StockLevel {
-  if (stock <= 0) return 'out'
-  return stock <= LOW_STOCK_THRESHOLD ? 'low' : 'in'
 }
 
 /** Orders of a single item at or above this sale price show a "Free shipping" tag (display only). */

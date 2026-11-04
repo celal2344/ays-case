@@ -1,5 +1,3 @@
-import { isAxiosError } from 'axios'
-
 export type AppErrorKind =
   'network' | 'unauthorized' | 'forbidden' | 'not_found' | 'validation' | 'server'
 
@@ -15,7 +13,7 @@ export class AppError extends Error {
   }
 }
 
-function kindFromStatus(status: number): AppErrorKind {
+export function kindFromStatus(status: number): AppErrorKind {
   if (status === 401) return 'unauthorized'
   if (status === 403) return 'forbidden'
   if (status === 404) return 'not_found'
@@ -23,20 +21,23 @@ function kindFromStatus(status: number): AppErrorKind {
   return 'server'
 }
 
-/** DummyJSON error bodies look like `{ message: string }`. */
+/** API error bodies look like `{ code: string, message: string }`. */
 export function toAppError(error: unknown): AppError {
   if (error instanceof AppError) return error
-  if (isAxiosError(error)) {
-    if (!error.response) return new AppError('network', error.message)
-    const { status, data } = error.response
-    const message =
-      typeof data === 'object' &&
-      data !== null &&
-      'message' in data &&
-      typeof data.message === 'string'
-        ? data.message
-        : error.message
-    return new AppError(kindFromStatus(status), message, status)
-  }
+  // `fetch` rejects with a TypeError when the network is unreachable
+  if (error instanceof TypeError) return new AppError('network', error.message)
   return new AppError('server', error instanceof Error ? error.message : 'Unknown error')
+}
+
+/** Builds the error for a non-2xx API response. */
+export async function errorFromResponse(res: Response): Promise<AppError> {
+  const body: unknown = await res.json().catch(() => null)
+  const message =
+    typeof body === 'object' &&
+    body !== null &&
+    'message' in body &&
+    typeof body.message === 'string'
+      ? body.message
+      : res.statusText
+  return new AppError(kindFromStatus(res.status), message, res.status)
 }

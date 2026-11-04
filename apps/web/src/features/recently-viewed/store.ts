@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-import { storageKey } from '@/lib/storage'
+import { migrateUserKeys, storageKey } from '@/lib/storage'
 
 export const MAX_RECENTLY_VIEWED = 12
 
@@ -48,7 +48,12 @@ export const useRecentlyViewedStore = create<RecentlyViewedState>()(
     }),
     {
       name: storageKey('recently-viewed'),
-      version: 1,
+      version: 2,
+      // v1 keyed lists by DummyJSON's numeric user ids; the API's ids are strings
+      migrate: (persisted, version) => {
+        const state = persisted as { byUser?: Record<string, never[]> }
+        return version < 2 ? { byUser: migrateUserKeys(state.byUser) } : state
+      },
       storage: createJSONStorage(() => localStorage),
       partialize: ({ byUser }) => ({ byUser }),
     },

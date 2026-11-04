@@ -20,9 +20,6 @@ export type Shipping = z.infer<typeof shippingSchema>
 
 export const emptyShipping: Shipping = { fullName: '', address: '', city: '', phone: '' }
 
-// What `POST /carts/add` answers (hand-written from dummyjson.json: Cart); only the id is used.
-export const remoteCartSchema = z.object({ id: z.number() }).passthrough()
-
 /** A purchased line, frozen at purchase time so later admin edits cannot rewrite history. */
 export interface OrderLine {
   productId: number
@@ -38,11 +35,10 @@ export interface OrderLine {
 
 export interface Order {
   id: string
-  userId: number
+  userId: string
   createdAt: string
   lines: OrderLine[]
   totals: { subtotalCents: number; discountCents: number; totalCents: number }
   shipping: Shipping
   /** Id echoed by `POST /carts/add`; absent when the order held only local products. */
-  remoteCartId?: number
 }

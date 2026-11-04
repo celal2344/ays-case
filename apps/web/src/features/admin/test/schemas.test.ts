@@ -81,16 +81,17 @@ describe('form ↔ product mapping', () => {
       price: 24.99,
       discountPercentage: 10,
       stock: 7,
-      rating: 0,
-      availabilityStatus: 'In Stock',
+      rating: null,
+      reviewCount: 0,
+      availability: 'in',
       tags: ['furniture'],
     })
   })
 
-  it('toNewProduct omits an empty brand and marks zero stock as out of stock', () => {
+  it('toNewProduct omits an empty brand and derives out-of-stock availability for zero stock', () => {
     const product = toNewProduct({ ...valid, brand: '  ', stock: '0' })
     expect('brand' in product).toBe(false)
-    expect(product.availabilityStatus).toBe('Out of Stock')
+    expect(product.availability).toBe('out')
   })
 
   it('toProductPatch keeps an emptied brand as "" so the patch survives JSON', () => {

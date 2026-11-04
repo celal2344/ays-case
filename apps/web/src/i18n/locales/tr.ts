@@ -173,6 +173,7 @@ export const tr = {
     verified: 'Doğrulanmış alıcı',
     edit: 'Yorumunu düzenle',
     empty: 'Henüz yorum yok. İlk yorumu sen yaz.',
+    none: 'Henüz yorum yok',
     signIn: 'Giriş yap',
     signInSuffix: 've yorum yaz.',
     sort: {
@@ -349,7 +350,7 @@ export const tr = {
       manageUsers: 'Kullanıcıları yönet',
       users: 'Kullanıcılar',
       total: 'Ürünler',
-      low: 'Az stok (≤ {{max}})',
+      low: 'Az stok',
       out: 'Tükenen',
       changes: 'Yerel değişiklikler',
       demoData: 'Demo verisi',

@@ -2,17 +2,16 @@ import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 
-import { hasDiscount, stockLevel } from '../pricing'
+import { hasDiscount } from '../pricing'
 import type { Product } from '../schemas'
 
-export function StockBadge({ stock }: { stock: number }) {
+export function StockBadge({ product }: { product: Pick<Product, 'availability' | 'stock'> }) {
   const { t } = useTranslation()
-  const level = stockLevel(stock)
-  if (level === 'in') return null
-  return level === 'out' ? (
+  if (product.availability === 'in') return null
+  return product.availability === 'out' ? (
     <Badge variant="destructive">{t('products.stock.out')}</Badge>
   ) : (
-    <Badge variant="secondary">{t('products.stock.low', { left: stock })}</Badge>
+    <Badge variant="secondary">{t('products.stock.low', { left: product.stock })}</Badge>
   )
 }
 
