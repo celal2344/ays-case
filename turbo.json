@@ -1,10 +1,11 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": ["DATABASE_URL", "DATABASE_URL_SESSION", "LOG_LEVEL"],
   "tasks": {
-    "build": { "dependsOn": ["^build"], "outputs": ["dist/**"] },
+    "build": { "dependsOn": ["^build"], "env": ["VITE_API_BASE_URL"], "outputs": ["dist/**"] },
     "lint": { "dependsOn": ["^build"] },
     "typecheck": { "dependsOn": ["^build"] },
-    "test": { "dependsOn": ["^build"] },
+    "test": { "dependsOn": ["^build"], "env": ["DATABASE_URL_SESSION"] },
     "format:check": {},
     "check:translations": {},
     "e2e": { "dependsOn": ["build"], "cache": false },
