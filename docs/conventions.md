@@ -58,6 +58,16 @@ Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: Reac
 - No `useEffect` for data fetching or derived state.
 - Money: store as numbers from API, compute totals in cents, format with `Intl.NumberFormat(lang, { style: "currency", currency: "USD" })`.
 
+## Mutating actions (spam-click guards)
+
+Every mutating action is guarded, so one user intent sends one request and shows one message. Pick the pattern by the kind of action:
+
+- **A. One-shot** (login, form submits, place order, delete confirms, clear cart, sign out, buy now): run it through `runExclusive(key, action)` from `lib/in-flight.ts`, which ignores a second call while the first runs (a `disabled` button only applies after the next render), and show `<PendingButton pending={...}>` (disabled, spinner, `aria-busy`).
+- **B. Optimistic toggles and steppers** (favorite heart, quantity, remove line): the screen updates at once and the requests are coalesced. The heart keeps at most one request in flight per product and follows up with the latest wanted state; the quantity is sent 300 ms after the last change.
+- **C. Add to cart:** `useAddButton(product)` gives `pending` (per product id) and `atMax` (the cart already holds all the stock: show "Max in cart" instead of letting the click fail with a 409).
+
+Toasts for these actions have stable ids (`cart:<productId>`, `favorite:<productId>`, `delete:<kind>:<id>`), so a repeat replaces the message instead of stacking. A new mutating action picks A, B or C; it does not copy a guard into the component. A product visit is recorded once (`useRecordView`).
+
 ## Styling
 
 - Tailwind utilities + shadcn tokens (`bg-background`, `text-muted-foreground`). No raw hex in components.

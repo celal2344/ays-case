@@ -1,6 +1,6 @@
 import { MAX_RECENTLY_VIEWED } from '@ays/validators'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
 import { selectUser, useAuthStore } from '@/features/auth/store'
 import { useCatalog } from '@/features/products/hooks/use-catalog'
@@ -52,12 +52,23 @@ export function useRecentlyViewed(excludeId?: number) {
   return { items, clear }
 }
 
-/** Records a visit once the product is known to exist (not for not-found or deleted products). */
+/**
+ * Records a visit once the product is known to exist (not for not-found or deleted products), and once
+ * the session is known: recording while it is still being restored would log the visit for a guest and
+ * again for the user. A ref remembers what was recorded, so the double effect of StrictMode and
+ * re-renders do not send it twice.
+ */
 export function useRecordView(productId: number, exists: boolean) {
   const { userId, record } = useViewedIds()
+  const settled = useAuthStore((s) => s.status !== 'restoring')
+  const recorded = useRef<string | null>(null)
   useEffect(() => {
-    if (exists) record(productId)
+    if (!exists || !settled) return
+    const visit = `${userId ?? 'guest'}:${productId}`
+    if (recorded.current === visit) return
+    recorded.current = visit
+    record(productId)
     // `record` is rebuilt every render; a visit is recorded when the product or the visitor changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exists, productId, userId])
+  }, [exists, settled, productId, userId])
 }
