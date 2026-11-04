@@ -11,6 +11,7 @@
     },
     "api": {
       "root": "apps/api",
+      "entrypoint": "src/index.ts",
       "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
       "buildCommand": "cd ../.. && pnpm turbo run build --filter=@ays/api^...",
       "functions": { "src/index.ts": { "regions": ["sin1"] } }
