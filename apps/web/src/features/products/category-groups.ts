@@ -12,7 +12,7 @@ export const GROUP_IDS = [
 ] as const
 export type GroupId = (typeof GROUP_IDS)[number]
 
-// DummyJSON categories are a flat list; this is the navigation's own grouping of them.
+// The API returns categories as a flat list; this is the navigation's own grouping of them.
 const GROUP_OF: Record<string, Exclude<GroupId, 'other'>> = {
   laptops: 'electronics',
   smartphones: 'electronics',
@@ -64,7 +64,9 @@ export function groupCategories(
   products: Pick<Product, 'category'>[],
 ): CategoryGroup[] {
   const counts = new Map<string, number>()
-  for (const { category } of products) counts.set(category, (counts.get(category) ?? 0) + 1)
+  for (const { category } of products) {
+    counts.set(category.slug, (counts.get(category.slug) ?? 0) + 1)
+  }
 
   const groups = new Map<GroupId, GroupedCategory[]>()
   for (const { slug, name } of categories) {

@@ -130,7 +130,7 @@ describe('user overlay store', () => {
     useUserOverlayStore.getState().update('user-7', { firstName: 'Seven' })
     const saved = JSON.parse(localStorage.getItem('ays-case:v1:user-overlay') ?? '{}')
     expect(saved.state.patched['user-7']).toEqual({ firstName: 'Seven' })
-    expect(saved.version).toBe(2)
+    expect(saved.version).toBe(1)
   })
 })
 
@@ -142,11 +142,12 @@ describe('resolveSessionUser', () => {
     expect(resolveSessionUser(emily)).toBe(emily)
   })
 
-  it('applies the overlay patch on top (USER-5)', () => {
+  it('applies the overlay patch on top, but the session keeps its role and id (USER-5)', () => {
     useUserOverlayStore.getState().update('user-1', { firstName: 'Em', role: 'moderator' })
     expect(resolveSessionUser(emily)).toMatchObject({
+      id: 'user-1',
       firstName: 'Em',
-      role: 'moderator',
+      role: 'admin',
       username: 'emilys',
     })
   })
@@ -154,28 +155,6 @@ describe('resolveSessionUser', () => {
   it('returns null for a user an admin deleted', () => {
     useUserOverlayStore.getState().remove('user-1')
     expect(resolveSessionUser(emily)).toBeNull()
-  })
-})
-
-describe('persisted state migration (v1 → v2)', () => {
-  it('maps numeric DummyJSON ids to the API ids and drops users created in the old overlay', () => {
-    localStorage.setItem(
-      'ays-case:v1:user-overlay',
-      JSON.stringify({
-        state: {
-          created: { '100000': { id: 100000, username: 'old' } },
-          patched: { '16': { firstName: 'Av' } },
-          deleted: [5],
-          nextLocalId: 100001,
-        },
-        version: 1,
-      }),
-    )
-    void useUserOverlayStore.persist.rehydrate()
-    const state = useUserOverlayStore.getState()
-    expect(state.created).toEqual({})
-    expect(state.patched).toEqual({ 'user-16': { firstName: 'Av' } })
-    expect(state.deleted).toEqual(['user-5'])
   })
 })
 

@@ -1,11 +1,6 @@
 import type { Page, Route } from '@playwright/test'
 
-import {
-  fixtureProducts,
-  fixtureWireCategories,
-  fixtureWireDetail,
-  toWireProduct,
-} from '../../src/test/fixtures/products'
+import { fixtureCategories, fixtureDetail, fixtureProducts } from '../../src/test/fixtures/products'
 import { fixtureUserList } from '../../src/test/fixtures/users'
 
 const accounts = {
@@ -62,13 +57,13 @@ export async function mockApi(page: Page) {
       return json(route, { success: true })
     }
 
-    if (pathname === '/api/categories') return json(route, { data: fixtureWireCategories })
+    if (pathname === '/api/categories') return json(route, { data: fixtureCategories })
     if (pathname === '/api/products') {
-      return json(route, { data: fixtureProducts.map(toWireProduct) })
+      return json(route, { data: fixtureProducts })
     }
     const productId = /^\/api\/products\/(\d+)$/.exec(pathname)?.[1]
     if (productId) {
-      const detail = fixtureWireDetail(Number(productId))
+      const detail = fixtureDetail(Number(productId))
       return detail
         ? json(route, { data: detail })
         : json(route, { code: 'not_found', message: 'Product not found' }, 404)

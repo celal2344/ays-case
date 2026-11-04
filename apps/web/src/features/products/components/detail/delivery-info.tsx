@@ -7,9 +7,9 @@ import type { ProductDetail } from '../../schemas'
 export function DeliveryInfo({ product }: { product: ProductDetail }) {
   const { t } = useTranslation()
   const rows = [
-    { icon: Truck, label: t('products.specs.shipping'), value: product.shippingInformation },
-    { icon: RotateCcw, label: t('products.specs.returns'), value: product.returnPolicy },
-    { icon: ShieldCheck, label: t('products.specs.warranty'), value: product.warrantyInformation },
+    { icon: Truck, label: t('products.specs.shipping'), value: product.shipping?.label },
+    { icon: RotateCcw, label: t('products.specs.returns'), value: product.returnPolicy?.label },
+    { icon: ShieldCheck, label: t('products.specs.warranty'), value: product.warranty?.label },
   ].filter((row) => row.value)
   if (rows.length === 0) return null
 

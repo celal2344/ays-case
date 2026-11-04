@@ -4,7 +4,7 @@ import { HttpResponse, http } from 'msw'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
 
 import { signInAs } from '@/test/auth'
-import { fixtureWireDetail } from '@/test/fixtures/products'
+import { fixtureDetail } from '@/test/fixtures/products'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
@@ -40,7 +40,7 @@ describe('product page (PDP-1..6)', () => {
       http.get('http://localhost/api/products/2', () =>
         HttpResponse.json({
           data: {
-            ...fixtureWireDetail(2),
+            ...fixtureDetail(2),
             images: ['a', 'b', 'c'].map((name, position) => ({
               url: `https://img.test/${name}.webp`,
               position,

@@ -1,11 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatDate, formatPrice } from '../format'
+import { formatDate, formatDimensions, formatMoney, formatPrice, formatWeight } from '../format'
 
 describe('format', () => {
   it('formats prices per language', () => {
     expect(formatPrice(1234.5, 'en')).toBe('$1,234.50')
     expect(formatPrice(1234.5, 'tr')).toContain('1.234,50')
+  })
+
+  it('formats integer cents, grams and millimetres for display', () => {
+    expect(formatMoney(123450, 'en')).toBe('$1,234.50')
+    expect(formatWeight(4000, 'en')).toBe('4 kg')
+    expect(formatWeight(1250, 'tr')).toBe('1,25 kg')
+    expect(formatDimensions({ widthMm: 150, heightMm: 130, depthMm: 235 }, 'en')).toBe(
+      '15 × 13 × 23.5 cm',
+    )
   })
 
   it('formats dates per language', () => {

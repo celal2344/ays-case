@@ -1,4 +1,4 @@
-import { salePriceCents, toCents } from '@ays/validators'
+import { salePriceCents } from '@ays/validators'
 import type { Product } from '@/features/products/schemas'
 
 import type { CartLine } from './store'
@@ -53,7 +53,7 @@ export function cartTotals(items: CartItem[]): CartTotals {
   let totalCents = 0
   for (const item of items) {
     if (!item.available) continue
-    subtotalCents += toCents(item.product.price) * item.quantity
+    subtotalCents += item.product.priceCents * item.quantity
     totalCents += item.lineCents
   }
   return { subtotalCents, totalCents, discountCents: subtotalCents - totalCents }

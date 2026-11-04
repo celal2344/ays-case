@@ -3,12 +3,7 @@ import { http, HttpResponse } from 'msw'
 import type { User } from '@/features/auth/schemas'
 
 import { fixtureUserList } from '../fixtures/users'
-import {
-  fixtureProducts,
-  fixtureWireCategories,
-  fixtureWireDetail,
-  toWireProduct,
-} from '../fixtures/products'
+import { fixtureCategories, fixtureDetail, fixtureProducts } from '../fixtures/products'
 
 const BASE = 'http://localhost/api'
 
@@ -60,16 +55,14 @@ export const authHandlers = [
 ]
 
 export const productHandlers = [
-  http.get(`${BASE}/categories`, () => HttpResponse.json({ data: fixtureWireCategories })),
+  http.get(`${BASE}/categories`, () => HttpResponse.json({ data: fixtureCategories })),
   http.get(`${BASE}/products/:id`, ({ params }) => {
-    const detail = fixtureWireDetail(Number(params.id))
+    const detail = fixtureDetail(Number(params.id))
     return detail
       ? HttpResponse.json({ data: detail })
       : HttpResponse.json({ code: 'not_found', message: 'Product not found' }, { status: 404 })
   }),
-  http.get(`${BASE}/products`, () =>
-    HttpResponse.json({ data: fixtureProducts.map(toWireProduct) }),
-  ),
+  http.get(`${BASE}/products`, () => HttpResponse.json({ data: fixtureProducts })),
 ]
 
 export const userHandlers = [

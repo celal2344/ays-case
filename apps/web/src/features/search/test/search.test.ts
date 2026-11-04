@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { Category, Product } from '@/features/products/schemas'
-import { fixtureProducts } from '@/test/fixtures/products'
+import { cat, fixtureProducts, tags } from '@/test/fixtures/products'
 
 import { getBestDeals, getSuggestedTags } from '../panel-data'
 import { MAX_RECENT_SEARCHES, useSearchStore } from '../store'
@@ -17,14 +17,14 @@ const make = (id: number, over: Partial<Product>): Product => ({
 })
 
 describe('getSuggestedTags', () => {
-  const categories: Category[] = [{ slug: 'beauty', name: 'Beauty' }]
+  const categories: Category[] = [cat('beauty', 'Beauty')]
 
   it('orders by frequency then alphabet, skips category tags and caps the list', () => {
     const products = [
-      make(1, { tags: ['mascara', 'beauty', 'Eyes'] }),
-      make(2, { tags: ['mascara', 'lipstick'] }),
-      make(3, { tags: ['lipstick', 'mascara', 'mascara'] }),
-      make(4, { tags: ['eyes'] }),
+      make(1, { tags: tags('mascara', 'beauty', 'Eyes') }),
+      make(2, { tags: tags('mascara', 'lipstick') }),
+      make(3, { tags: tags('lipstick', 'mascara', 'mascara') }),
+      make(4, { tags: tags('eyes') }),
     ]
     expect(getSuggestedTags(products, categories, 10)).toEqual(['mascara', 'eyes', 'lipstick'])
     expect(getSuggestedTags(products, categories, 2)).toEqual(['mascara', 'eyes'])

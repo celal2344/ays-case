@@ -49,14 +49,18 @@ export function filterByQuery(products: Product[], query: string | undefined, la
   const needle = normalize((query ?? '').trim(), language)
   if (!needle) return products
   return products.filter((p) =>
-    [p.title, p.brand ?? '', p.category, ...p.tags].some((field) =>
-      normalize(field, language).includes(needle),
-    ),
+    [
+      p.title,
+      p.brand?.name ?? '',
+      p.category.name,
+      p.category.slug,
+      ...p.tags.map((t) => t.slug),
+    ].some((field) => normalize(field, language).includes(needle)),
   )
 }
 
 export function filterByCategory(products: Product[], category: string | undefined) {
-  return category ? products.filter((p) => p.category === category) : products
+  return category ? products.filter((p) => p.category.slug === category) : products
 }
 
 export function sortProducts(
@@ -76,7 +80,8 @@ export function sortProducts(
       }
       return (a.rating - b.rating) * direction
     }
-    const result = sort === 'title' ? a.title.localeCompare(b.title, locale) : a.price - b.price
+    const result =
+      sort === 'title' ? a.title.localeCompare(b.title, locale) : a.priceCents - b.priceCents
     return result * direction
   })
 }
@@ -121,7 +126,7 @@ export function filterByPrice(
 }
 
 export function filterByBrand(products: Product[], brand: string | undefined) {
-  return brand ? products.filter((p) => p.brand === brand) : products
+  return brand ? products.filter((p) => p.brand?.name === brand) : products
 }
 
 export function filterByMinRating(products: Product[], rating: number | undefined) {
@@ -130,12 +135,12 @@ export function filterByMinRating(products: Product[], rating: number | undefine
 
 /** Distinct brands, alphabetical, for the filter panel. */
 export function brandsOf(products: Product[]): string[] {
-  return [...new Set(products.flatMap((p) => (p.brand ? [p.brand] : [])))].sort((a, b) =>
+  return [...new Set(products.flatMap((p) => (p.brand ? [p.brand.name] : [])))].sort((a, b) =>
     a.localeCompare(b),
   )
 }
 
 /** Products whose category belongs to a navigation group. */
 export function filterByGroup(products: Product[], group: GroupId | undefined) {
-  return group ? products.filter((p) => groupOf(p.category) === group) : products
+  return group ? products.filter((p) => groupOf(p.category.slug) === group) : products
 }

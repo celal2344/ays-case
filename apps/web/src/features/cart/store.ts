@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-import { migrateUserKeys, storageKey } from '@/lib/storage'
+import { storageKey } from '@/lib/storage'
 
 export interface CartLine {
   productId: number
@@ -80,12 +80,7 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: storageKey('cart'),
-      version: 2,
-      // v1 keyed lists by DummyJSON's numeric user ids; the API's ids are strings
-      migrate: (persisted, version) => {
-        const state = persisted as { byUser?: Record<string, never[]> }
-        return version < 2 ? { byUser: migrateUserKeys(state.byUser) } : state
-      },
+      version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: ({ byUser }) => ({ byUser }),
     },

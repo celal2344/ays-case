@@ -8,7 +8,7 @@ import { useReviewsStore } from '@/features/reviews/store'
 import { useUserOverlayStore } from '@/features/users/overlay-store'
 
 /**
- * "Reset demo data": back to the untouched DummyJSON catalog and users. Every store that holds data a
+ * "Reset demo data": back to the untouched catalog and users from the API. Every store that holds data a
  * demo user created is cleared here;
  */
 export function resetDemoData() {

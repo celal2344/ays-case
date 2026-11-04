@@ -1,63 +1,9 @@
-import type { Availability } from '@ays/validators'
 import { z } from 'zod'
 
 import { GROUP_IDS } from './category-groups'
 
-/** What the shop needs of a product, built from the API's catalog shape in api.ts. */
-export interface Product {
-  id: number
-  title: string
-  description: string
-  /** Category slug. */
-  category: string
-  /** Dollars. The API sends integer cents; api.ts converts once at the boundary. */
-  price: number
-  discountPercentage: number
-  /** Average of the reviews, computed by the API; null while a product has none. */
-  rating: number | null
-  reviewCount: number
-  stock: number
-  /** Brand name; some products have none. */
-  brand?: string
-  thumbnail: string
-  /** Derived by the API from stock and the product's low-stock threshold. */
-  availability: Availability
-  minimumOrderQuantity: number
-  lowStockThreshold: number
-  /** Tag slugs. */
-  tags: string[]
-}
-
-export interface Review {
-  id: number
-  rating: number
-  comment: string
-  date: string
-  reviewerName: string
-}
-
-/** Review counts per star, computed by the API. */
-export type RatingHistogram = Record<1 | 2 | 3 | 4 | 5, number>
-
-/** GET /products/{id}: the catalog fields plus gallery, specs, policies and reviews. */
-export interface ProductDetail extends Product {
-  images: string[]
-  sku?: string
-  /** Kilograms, converted from the API's grams for display. */
-  weight?: number
-  /** Centimetres, converted from the API's millimetres for display. */
-  dimensions?: { width: number; height: number; depth: number }
-  warrantyInformation?: string
-  shippingInformation?: string
-  returnPolicy?: string
-  reviews: Review[]
-  ratingHistogram?: RatingHistogram
-}
-
-export interface Category {
-  slug: string
-  name: string
-}
+// The API's own types (shared validators) are the only product types: no second interface, no mapper.
+export type { Category, Product, ProductDetail, Review } from '@ays/validators'
 
 export const productSortSchema = z.enum(['price', 'rating', 'title'])
 export type ProductSort = z.infer<typeof productSortSchema>

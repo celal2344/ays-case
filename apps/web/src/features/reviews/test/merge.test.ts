@@ -9,8 +9,9 @@ const seeded = (rating: number, date: string, id = rating): Review => ({
   id,
   rating,
   comment: `comment ${rating}`,
-  date,
-  reviewerName: 'Seed Person',
+  createdAt: date,
+  updatedAt: date,
+  author: { id: 'user-5', name: 'Seed Person' },
 })
 
 const local = (id: string, rating: number, createdAt: string): LocalReview => ({

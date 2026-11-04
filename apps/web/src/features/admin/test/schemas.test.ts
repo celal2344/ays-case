@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { fixtureProducts } from '@/test/fixtures/products'
+import { cat, fixtureCategories, fixtureProducts } from '@/test/fixtures/products'
 
 import {
   adminProductSearchSchema,
@@ -12,6 +12,7 @@ import {
   type ProductFormValues,
 } from '../schemas'
 
+const categories = [...fixtureCategories, cat('furniture', 'Furniture')]
 const valid: ProductFormValues = {
   title: 'Desk lamp',
   description: 'A warm desk lamp for late nights.',
@@ -75,38 +76,39 @@ describe('productFormSchema', () => {
 
 describe('form ↔ product mapping', () => {
   it('toNewProduct turns strings into numbers and fills neutral defaults', () => {
-    expect(toNewProduct(valid)).toMatchObject({
+    expect(toNewProduct(valid, categories)).toMatchObject({
       title: 'Desk lamp',
-      brand: 'Lumen',
-      price: 24.99,
+      brand: { name: 'Lumen', slug: 'lumen' },
+      category: { slug: 'furniture', name: 'Furniture' },
+      priceCents: 2499,
       discountPercentage: 10,
       stock: 7,
       rating: null,
       reviewCount: 0,
       availability: 'in',
-      tags: ['furniture'],
+      tags: [{ slug: 'furniture', name: 'Furniture' }],
     })
   })
 
-  it('toNewProduct omits an empty brand and derives out-of-stock availability for zero stock', () => {
-    const product = toNewProduct({ ...valid, brand: '  ', stock: '0' })
-    expect('brand' in product).toBe(false)
+  it('toNewProduct has no brand when it is empty and derives out-of-stock availability for zero stock', () => {
+    const product = toNewProduct({ ...valid, brand: '  ', stock: '0' }, categories)
+    expect(product.brand).toBeNull()
     expect(product.availability).toBe('out')
   })
 
-  it('toProductPatch keeps an emptied brand as "" so the patch survives JSON', () => {
-    const patch = toProductPatch({ ...valid, brand: '' })
-    expect(patch.brand).toBe('')
-    expect(JSON.parse(JSON.stringify(patch))).toHaveProperty('brand', '')
+  it('toProductPatch stores an emptied brand as null, which survives JSON', () => {
+    const patch = toProductPatch({ ...valid, brand: '' }, categories)
+    expect(patch.brand).toBeNull()
+    expect(JSON.parse(JSON.stringify(patch))).toHaveProperty('brand', null)
   })
 
   it('toFormValues round-trips a product', () => {
     const product = fixtureProducts[1]!
     const values = toFormValues(product)
     expect(productFormSchema.safeParse(values).success).toBe(true)
-    expect(toProductPatch(values)).toMatchObject({
+    expect(toProductPatch(values, categories)).toMatchObject({
       title: product.title,
-      price: product.price,
+      priceCents: product.priceCents,
       stock: product.stock,
     })
   })

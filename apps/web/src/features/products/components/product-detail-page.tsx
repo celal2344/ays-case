@@ -54,7 +54,7 @@ export function ProductDetailPage() {
 
   const hasSimilar =
     product !== undefined &&
-    (catalog ?? []).some((p) => p.category === product.category && p.id !== id)
+    (catalog ?? []).some((p) => p.category.slug === product.category.slug && p.id !== id)
   const sectionIds = product
     ? ['details', 'description', 'reviews', ...(hasSimilar ? ['similar'] : [])]
     : []
@@ -75,7 +75,8 @@ export function ProductDetailPage() {
   if (!product) return <ErrorState onRetry={() => void query.refetch()} />
 
   const outOfStock = product.stock <= 0
-  const images = product.images.length > 0 ? product.images : [product.thumbnail]
+  const gallery = product.images.toSorted((a, b) => a.position - b.position).map((i) => i.url)
+  const images = gallery.length > 0 ? gallery : product.thumbnail ? [product.thumbnail] : []
   const goToSection = (section: string) => {
     setActiveSection(section)
     void navigate({
@@ -109,7 +110,7 @@ export function ProductDetailPage() {
         <div className="space-y-4">
           <div>
             {product.brand ? (
-              <p className="text-sm text-muted-foreground">{product.brand}</p>
+              <p className="text-sm text-muted-foreground">{product.brand.name}</p>
             ) : null}
             <div className="flex items-start justify-between gap-2">
               <h1 className="text-2xl font-semibold">{product.title}</h1>
@@ -186,7 +187,7 @@ export function ProductDetailPage() {
           <ReviewsTab productId={id} seeded={product.reviews} summary={summary} />
         </DetailSection>
         <div id="similar" className={SECTION_SCROLL_MARGIN}>
-          <SimilarProducts productId={id} category={product.category} />
+          <SimilarProducts productId={id} category={product.category.slug} />
         </div>
       </div>
       <RecentlyViewedStrip excludeId={id} />

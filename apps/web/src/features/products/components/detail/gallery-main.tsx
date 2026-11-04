@@ -15,7 +15,7 @@ export function GalleryMain({
   title,
   onOpen,
 }: {
-  src: string
+  src: string | null
   title: string
   onOpen: () => void
 }) {

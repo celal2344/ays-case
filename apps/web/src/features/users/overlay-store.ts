@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-import { migrateUserId, migrateUserKeys, storageKey } from '@/lib/storage'
+import { storageKey } from '@/lib/storage'
 
 import type { User } from './schemas'
 
@@ -68,24 +68,7 @@ export const useUserOverlayStore = create<UserOverlayState>()(
     }),
     {
       name: storageKey('user-overlay'),
-      version: 2,
-      // v1 keyed edits by DummyJSON's numeric ids; users created there are gone with the old backend
-      migrate: (persisted, version) => {
-        if (version >= 2) return persisted as UserOverlaySnapshot & { nextLocalId: number }
-        const state = persisted as {
-          patched?: Record<string, UserPatch>
-          deleted?: (string | number)[]
-        }
-        return {
-          created: {},
-          patched: migrateUserKeys(state.patched),
-          deleted: (state.deleted ?? []).flatMap((id) => {
-            const next = migrateUserId(id)
-            return next === null ? [] : [next]
-          }),
-          nextLocalId: FIRST_LOCAL_USER_ID,
-        }
-      },
+      version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: ({ created, patched, deleted, nextLocalId }) => ({
         created,

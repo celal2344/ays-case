@@ -40,7 +40,7 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
       <CardContent className="flex flex-1 flex-col gap-1 p-3">
         {product.brand ? (
-          <p className="truncate text-xs text-muted-foreground">{product.brand}</p>
+          <p className="truncate text-xs text-muted-foreground">{product.brand.name}</p>
         ) : null}
         <Link
           to="/products/$productId"

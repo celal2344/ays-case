@@ -31,7 +31,7 @@ export const en = {
   },
   login: {
     title: 'Sign in',
-    demoNote: 'Demo app: accounts come from DummyJSON.',
+    demoNote: 'Demo app: use one of the demo accounts below.',
     username: 'Username',
     password: 'Password',
     submit: 'Sign in',
@@ -353,7 +353,7 @@ export const en = {
       changes: 'Local changes',
       demoData: 'Demo data',
       resetBody:
-        'Product and user changes, reviews and carts live in this browser only. Reset restores the original DummyJSON data and clears them.',
+        'Product and user changes, reviews and carts live in this browser only. Reset restores the data from the server and clears them.',
       reset: 'Reset demo data',
       resetDone: 'Demo data was reset.',
       confirm: {

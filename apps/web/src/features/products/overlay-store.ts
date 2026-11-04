@@ -21,7 +21,7 @@ export interface StockLine {
 
 interface ProductOverlayState extends OverlaySnapshot {
   nextLocalId: number
-  /** Stores a new product under a fresh local id; DummyJSON's own id is ignored (it always collides). */
+  /** Stores a new product under a fresh local id; the id comes from the counter, never from the server. */
   create: (input: ProductInput) => Product
   update: (id: number, patch: ProductPatch) => void
   remove: (id: number) => void

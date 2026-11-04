@@ -33,7 +33,7 @@ export const tr = {
   },
   login: {
     title: 'Giriş yap',
-    demoNote: 'Demo uygulama: hesaplar DummyJSON üzerinden gelir.',
+    demoNote: 'Demo uygulama: aşağıdaki demo hesaplardan birini kullan.',
     username: 'Kullanıcı adı',
     password: 'Şifre',
     submit: 'Giriş yap',
@@ -355,7 +355,7 @@ export const tr = {
       changes: 'Yerel değişiklikler',
       demoData: 'Demo verisi',
       resetBody:
-        'Ürün ve kullanıcı değişiklikleri, yorumlar ve sepetler yalnızca bu tarayıcıda durur. Sıfırlama, özgün DummyJSON verisini geri getirir ve bunları temizler.',
+        'Ürün ve kullanıcı değişiklikleri, yorumlar ve sepetler yalnızca bu tarayıcıda durur. Sıfırlama, sunucudaki veriyi geri getirir ve bunları temizler.',
       reset: 'Demo verisini sıfırla',
       resetDone: 'Demo verisi sıfırlandı.',
       confirm: {

@@ -2,10 +2,10 @@ import { Link } from '@tanstack/react-router'
 
 import { FavoriteButton } from '@/features/favorites/components/favorite-button'
 import { ProductImage } from '@/features/products/components/product-image'
-import { salePriceCents, toCents } from '@ays/validators'
+import { salePriceCents } from '@ays/validators'
 import { hasDiscount } from '@/features/products/pricing'
 import type { Product } from '@/features/products/schemas'
-import { formatPrice } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { selectLanguage, usePreferencesStore } from '@/preferences/store'
 
 /**
@@ -26,11 +26,11 @@ export function RecentlyViewedCard({ product }: { product: Product }) {
         <p className="mt-2 line-clamp-2 min-h-10 text-sm leading-5">{product.title}</p>
         <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
           <span className="text-sm font-bold text-brand-text">
-            {formatPrice(salePriceCents(product) / 100, language)}
+            {formatMoney(salePriceCents(product), language)}
           </span>
           {discounted ? (
             <span className="text-xs text-muted-foreground line-through">
-              {formatPrice(toCents(product.price) / 100, language)}
+              {formatMoney(product.priceCents, language)}
             </span>
           ) : null}
         </p>

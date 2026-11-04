@@ -24,7 +24,11 @@ function rank(product: Product, needle: string, language: Language) {
   const title = normalize(product.title, language)
   if (title.startsWith(needle)) return 0
   if (title.includes(needle)) return 1
-  const others = [product.brand ?? '', product.category, ...product.tags]
+  const others = [
+    product.brand?.name ?? '',
+    product.category.name,
+    ...product.tags.map((t) => t.slug),
+  ]
   return others.some((field) => normalize(field, language).includes(needle)) ? 2 : -1
 }
 
@@ -51,7 +55,7 @@ export function getSuggestions(
 
   const counts = new Map<string, number>()
   for (const product of products)
-    counts.set(product.category, (counts.get(product.category) ?? 0) + 1)
+    counts.set(product.category.slug, (counts.get(product.category.slug) ?? 0) + 1)
 
   const matchedCategories = categories
     .filter(

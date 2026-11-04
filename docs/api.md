@@ -4,24 +4,24 @@ The web app talks to our own API, served on the same origin under `/api` (Vite p
 
 ## Two clients
 
-| Use                               | Client                                                   | Where                                         |
-| --------------------------------- | -------------------------------------------------------- | --------------------------------------------- |
-| Resources (catalog, users)        | Hono RPC `hc<AppType>('/api')` through `@ays/api-client` | `lib/api.ts`, used by `features/*/api.ts`     |
+| Use                               | Client                                                   | Where                                                  |
+| --------------------------------- | -------------------------------------------------------- | ------------------------------------------------------ |
+| Resources (catalog, users)        | Hono RPC `hc<AppType>('/api')` through `@ays/api-client` | `lib/api.ts`, used by `features/*/api.ts`              |
 | Auth (sign in, session, sign out) | Better Auth `authClient`                                 | `lib/auth-client.ts`, used by `features/auth/store.ts` |
 
 Response and request types come from the API's routes (`AppType`) and the shared validators in `@ays/validators`, so there is no hand-written response type and no re-parsing in the browser.
 
 ## Endpoints in use
 
-| Endpoint                          | Auth   | Notes                                                                                                                                                                       |
-| --------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/products`               | public | whole catalog in one list (ADR-0004); money in integer cents, `rating` null when unreviewed, `availability` derived by the API                                              |
-| `GET /api/products/:id`           | public | adds images, sku, weight (g), dimensions (mm), warranty/shipping/return policy, reviews and the 1 to 5 `ratingHistogram`; 404 `{ code, message }`                           |
-| `GET /api/categories`             | public |                                                                                                                                                                             |
-| `GET /api/users`                  | admin  | 401 without a session, 403 for other roles                                                                                                                                  |
-| `POST /api/auth/sign-in/username` | public | `{ username, password }`, sets the session cookie                                                                                                                           |
-| `GET /api/auth/get-session`       | cookie | the session user, including `role`                                                                                                                                          |
-| `POST /api/auth/sign-out`         | cookie |                                                                                                                                                                             |
+| Endpoint                          | Auth   | Notes                                                                                                                                             |
+| --------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/products`               | public | whole catalog in one list (ADR-0004); money in integer cents, `rating` null when unreviewed, `availability` derived by the API                    |
+| `GET /api/products/:id`           | public | adds images, sku, weight (g), dimensions (mm), warranty/shipping/return policy, reviews and the 1 to 5 `ratingHistogram`; 404 `{ code, message }` |
+| `GET /api/categories`             | public |                                                                                                                                                   |
+| `GET /api/users`                  | admin  | 401 without a session, 403 for other roles                                                                                                        |
+| `POST /api/auth/sign-in/username` | public | `{ username, password }`, sets the session cookie                                                                                                 |
+| `GET /api/auth/get-session`       | cookie | the session user, including `role`                                                                                                                |
+| `POST /api/auth/sign-out`         | cookie |                                                                                                                                                   |
 
 Demo accounts: `emilys` / `emilyspass` (admin), `averyp` / `averyppass` (user). Self sign-up is disabled.
 
@@ -30,7 +30,7 @@ Demo accounts: `emilys` / `emilyspass` (admin), `averyp` / `averyppass` (user). 
 1. **Cookie session, same origin.** No tokens in JS, no CORS, no `localStorage` for auth.
 2. **`call()`** wraps every RPC request: transport failures become `AppError('network')`, non-2xx answers become an `AppError` of the right `kind` from the `{ code, message }` body, and a 401 while signed in ends the session (toast, redirect to `/login`).
 3. **Derived figures stay on the server.** Rating, review count, histogram and availability are computed in SQL; the browser only formats them.
-4. **Units at the boundary.** `features/products/api.ts` converts cents to dollars, grams to kilograms and millimetres to centimetres for display, and nothing else.
+4. **One type, cents everywhere.** The UI, the overlay, the cart and the tests use the types from `@ays/validators` directly. Money stays in integer cents and is formatted at render time (`formatMoney`); grams and millimetres are formatted by `formatWeight` and `formatDimensions`. The admin form collects dollars and converts once with `toCents` on submit.
 5. **No writes yet.** Admin product and user changes live in the local overlay ([data-and-state.md](data-and-state.md)) until the API grows write endpoints.
 
 ## Errors

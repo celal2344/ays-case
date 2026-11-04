@@ -1,6 +1,7 @@
+import { toCents } from '@ays/validators'
 import { z } from 'zod'
 
-import type { Product } from '@/features/products/schemas'
+import type { Category, Product } from '@/features/products/schemas'
 
 // Form fields are strings (that is what inputs hold). Messages are i18n keys, translated where shown.
 export const FORM_ERRORS = {
@@ -69,51 +70,74 @@ export function toFormValues(product: Product): ProductFormValues {
   return {
     title: product.title,
     description: product.description,
-    category: product.category,
-    brand: product.brand ?? '',
-    price: String(product.price),
+    category: product.category.slug,
+    brand: product.brand?.name ?? '',
+    price: String(product.priceCents / 100),
     discountPercentage: String(product.discountPercentage),
     stock: String(product.stock),
-    thumbnail: product.thumbnail,
+    thumbnail: product.thumbnail ?? '',
   }
 }
 
 /** Same default as the database column; the API derives `availability` from it. */
 const DEFAULT_LOW_STOCK_THRESHOLD = 5
 
-/** Everything a new product needs; fields the form does not edit get neutral defaults. */
-export function toNewProduct(values: ProductFormValues): Omit<Product, 'id'> {
+const slugify = (value: string) => value.trim().toLowerCase().replaceAll(/s+/g, '-')
+
+/** The form holds a slug; the product carries the whole category, like the API's. */
+function categoryOf(slug: string, categories: readonly Category[]) {
+  return categories.find((c) => c.slug === slug) ?? { id: 0, slug, name: slug }
+}
+
+/** A typed brand name becomes a brand object (id 0: it only exists in this browser). */
+function brandOf(name: string) {
+  const trimmed = name.trim()
+  return trimmed ? { id: 0, slug: slugify(trimmed), name: trimmed } : null
+}
+
+/**
+ * Everything a new product needs; fields the form does not edit get neutral defaults. The form
+ * collects dollars; this is the one place they become cents.
+ */
+export function toNewProduct(
+  values: ProductFormValues,
+  categories: readonly Category[],
+): Omit<Product, 'id'> {
   const stock = Number(values.stock)
+  const category = categoryOf(values.category, categories)
+  const now = new Date().toISOString()
   return {
     title: values.title.trim(),
     description: values.description.trim(),
-    category: values.category,
-    ...(values.brand.trim() ? { brand: values.brand.trim() } : {}),
-    price: Number(values.price),
+    category,
+    brand: brandOf(values.brand),
+    priceCents: toCents(Number(values.price)),
     discountPercentage: Number(values.discountPercentage),
     rating: null,
     reviewCount: 0,
     stock,
-    thumbnail: values.thumbnail.trim(),
+    thumbnail: values.thumbnail.trim() || null,
     lowStockThreshold: DEFAULT_LOW_STOCK_THRESHOLD,
     availability: stock <= 0 ? 'out' : stock <= DEFAULT_LOW_STOCK_THRESHOLD ? 'low' : 'in',
     minimumOrderQuantity: 1,
-    tags: [values.category],
+    tags: [{ slug: category.slug, name: category.name }],
+    createdAt: now,
+    updatedAt: now,
   }
 }
 
-/** Only the fields the form edits. An emptied brand is stored as '' so the patch survives JSON. */
-export function toProductPatch(values: ProductFormValues) {
+/** Only the fields the form edits. An emptied brand is stored as null, which survives JSON. */
+export function toProductPatch(values: ProductFormValues, categories: readonly Category[]) {
   const stock = Number(values.stock)
   return {
     title: values.title.trim(),
     description: values.description.trim(),
-    category: values.category,
-    brand: values.brand.trim(),
-    price: Number(values.price),
+    category: categoryOf(values.category, categories),
+    brand: brandOf(values.brand),
+    priceCents: toCents(Number(values.price)),
     discountPercentage: Number(values.discountPercentage),
     stock,
-    thumbnail: values.thumbnail.trim(),
+    thumbnail: values.thumbnail.trim() || null,
   }
 }
 

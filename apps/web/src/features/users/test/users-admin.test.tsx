@@ -371,19 +371,19 @@ describe('guardrails (USER-5)', () => {
   })
 })
 
-describe('role edits take effect on sign-in (USER-5)', () => {
-  it('a role granted in the overlay is applied when that user signs in', async () => {
+describe('the session decides the role (USER-5)', () => {
+  it('a role granted in the overlay does not make a user an admin in the UI', async () => {
     overlay().update('user-16', { role: 'admin' })
     await useAuthStore.getState().login('averyp', 'averyppass')
-    expect(useAuthStore.getState().user?.role).toBe('admin')
+    expect(useAuthStore.getState().user?.role).toBe('user')
   })
 
-  it('a role removed in the overlay is applied when that user signs in', async () => {
+  it('a role removed in the overlay does not hide the admin pages from an admin', async () => {
     overlay().update('user-1', { role: 'user' })
     const user = await useAuthStore.getState().login('emilys', 'emilyspass')
-    expect(user.role).toBe('user')
+    expect(user.role).toBe('admin')
     const { router } = await renderApp('/admin')
-    expect(router.state.location.pathname).toBe('/forbidden')
+    expect(router.state.location.pathname).toBe('/admin')
   })
 
   it('a deleted user cannot sign in', async () => {

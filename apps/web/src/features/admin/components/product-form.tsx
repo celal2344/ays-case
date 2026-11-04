@@ -46,8 +46,12 @@ export function ProductForm({ product }: { product?: Product }) {
     validators: { onSubmit: productFormSchema },
     onSubmit: async ({ value }) => {
       try {
-        if (product) await update.mutateAsync({ id: product.id, patch: toProductPatch(value) })
-        else await create.mutateAsync(toNewProduct(value))
+        if (product)
+          await update.mutateAsync({
+            id: product.id,
+            patch: toProductPatch(value, categories ?? []),
+          })
+        else await create.mutateAsync(toNewProduct(value, categories ?? []))
       } catch {
         return // the error is shown below the form
       }

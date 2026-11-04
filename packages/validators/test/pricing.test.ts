@@ -9,7 +9,7 @@ describe('pricing (integer cents)', () => {
   })
 
   it('applies the discount percentage to the price', () => {
-    expect(salePriceCents({ price: 100, discountPercentage: 10 })).toBe(9000)
-    expect(salePriceCents({ price: 9.99, discountPercentage: 10.48 })).toBe(894)
+    expect(salePriceCents({ priceCents: 10000, discountPercentage: 10 })).toBe(9000)
+    expect(salePriceCents({ priceCents: 999, discountPercentage: 10.48 })).toBe(894)
   })
 })

@@ -9,7 +9,7 @@ import { useCategories } from '@/features/products/hooks/use-categories'
 import { ProductImage } from '@/features/products/components/product-image'
 import { salePriceCents } from '@ays/validators'
 import { useRecentlyViewed } from '@/features/recently-viewed/hooks/use-recently-viewed'
-import { formatPrice } from '@/lib/format'
+import { formatMoney } from '@/lib/format'
 import { selectLanguage, usePreferencesStore } from '@/preferences/store'
 
 import { getBestDeals, getSuggestedTags } from '../panel-data'
@@ -163,7 +163,7 @@ export function FocusPanel({
                     <span className="line-clamp-2 text-sm leading-5">{product.title}</span>
                     <span className="flex items-center gap-1.5">
                       <span className="text-sm font-bold text-brand-text">
-                        {formatPrice(salePriceCents(product) / 100, language)}
+                        {formatMoney(salePriceCents(product), language)}
                       </span>
                       <span className="rounded bg-brand-soft px-1 text-xs font-medium text-brand-text">
                         {t('products.discount', {

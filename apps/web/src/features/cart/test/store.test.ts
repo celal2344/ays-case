@@ -62,6 +62,6 @@ describe('cart store', () => {
     state().add('user-7', 10, 2, 5)
     const saved = JSON.parse(localStorage.getItem('ays-case:v1:cart') ?? '{}')
     expect(saved.state.byUser['user-7'][0]).toMatchObject({ productId: 10, quantity: 2 })
-    expect(saved.version).toBe(2)
+    expect(saved.version).toBe(1)
   })
 })

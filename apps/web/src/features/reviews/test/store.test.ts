@@ -58,6 +58,6 @@ describe('reviews store', () => {
     state().add(input)
     const saved = JSON.parse(localStorage.getItem('ays-case:v1:reviews') ?? '{}')
     expect(saved.state.byProduct['1']).toHaveLength(1)
-    expect(saved.version).toBe(2)
+    expect(saved.version).toBe(1)
   })
 })

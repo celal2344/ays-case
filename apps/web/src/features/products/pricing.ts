@@ -9,6 +9,8 @@ export function hasDiscount(product: Pick<Product, 'discountPercentage'>) {
 /** Orders of a single item at or above this sale price show a "Free shipping" tag (display only). */
 export const FREE_SHIPPING_THRESHOLD_CENTS = 5000
 
-export function qualifiesForFreeShipping(product: Pick<Product, 'price' | 'discountPercentage'>) {
+export function qualifiesForFreeShipping(
+  product: Pick<Product, 'priceCents' | 'discountPercentage'>,
+) {
   return salePriceCents(product) >= FREE_SHIPPING_THRESHOLD_CENTS
 }

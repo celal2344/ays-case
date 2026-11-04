@@ -176,7 +176,9 @@ describe('cart page', () => {
 
   it('reflects admin price and stock changes immediately', async () => {
     useCartStore.getState().add('user-16', 2, 5, 50)
-    useProductOverlayStore.getState().update(2, { price: 100, discountPercentage: 0, stock: 2 })
+    useProductOverlayStore
+      .getState()
+      .update(2, { priceCents: 10000, discountPercentage: 0, stock: 2 })
     signInAs('averyp')
     await renderApp('/cart')
     expect(await screen.findByRole('textbox', { name: 'Quantity' })).toHaveValue('2') // 5 → stock 2

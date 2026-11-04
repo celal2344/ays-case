@@ -55,10 +55,10 @@ export function ProductTable({ products }: { products: Product[] }) {
                   {product.title}
                 </Link>
                 {product.brand ? (
-                  <span className="text-xs text-muted-foreground">{product.brand}</span>
+                  <span className="text-xs text-muted-foreground">{product.brand.name}</span>
                 ) : null}
               </TableCell>
-              <TableCell className="capitalize">{product.category.replaceAll('-', ' ')}</TableCell>
+              <TableCell>{product.category.name}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <ProductPrice product={product} />

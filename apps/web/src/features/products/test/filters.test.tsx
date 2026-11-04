@@ -27,15 +27,17 @@ describe('filter helpers', () => {
   })
 
   it('filters by brand and by minimum rating, and lists distinct brands', () => {
-    expect(filterByBrand(fixtureProducts, 'Brand 1').every((p) => p.brand === 'Brand 1')).toBe(true)
+    expect(
+      filterByBrand(fixtureProducts, 'Brand 1').every((p) => p.brand?.name === 'Brand 1'),
+    ).toBe(true)
     expect(filterByBrand(fixtureProducts, undefined)).toBe(fixtureProducts)
     expect(filterByMinRating(fixtureProducts, 4).every((p) => (p.rating ?? 0) >= 4)).toBe(true)
     expect(brandsOf(fixtureProducts)).toEqual(['Brand 0', 'Brand 1', 'Brand 2'])
   })
 
   it('knows which products ship free (sale price from $50)', () => {
-    expect(qualifiesForFreeShipping({ price: 50, discountPercentage: 0 })).toBe(true)
-    expect(qualifiesForFreeShipping({ price: 50, discountPercentage: 10 })).toBe(false)
+    expect(qualifiesForFreeShipping({ priceCents: 5000, discountPercentage: 0 })).toBe(true)
+    expect(qualifiesForFreeShipping({ priceCents: 5000, discountPercentage: 10 })).toBe(false)
   })
 })
 
@@ -61,7 +63,7 @@ describe('filters on the shop list', () => {
   it('applies price, brand and rating from the URL together', async () => {
     await renderApp('/products?minPrice=100&brand=Brand%201&rating=3')
     const expected = fixtureProducts.filter(
-      (p) => sale(p) >= 100 && p.brand === 'Brand 1' && (p.rating ?? 0) >= 3,
+      (p) => sale(p) >= 100 && p.brand?.name === 'Brand 1' && (p.rating ?? 0) >= 3,
     )
     expect(expected.length).toBeGreaterThan(0)
     expect(

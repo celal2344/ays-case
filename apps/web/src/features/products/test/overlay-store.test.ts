@@ -21,15 +21,15 @@ describe('product overlay store', () => {
 
   it('updates created products in place and remote products through patches', () => {
     const local = state().create(input)
-    state().update(local.id, { price: 5 })
-    state().update(7, { price: 9 })
+    state().update(local.id, { priceCents: 500 })
+    state().update(7, { priceCents: 900 })
     state().update(7, { stock: 1 })
-    expect(state().created[local.id]?.price).toBe(5)
-    expect(state().patched[7]).toEqual({ price: 9, stock: 1 })
+    expect(state().created[local.id]?.priceCents).toBe(500)
+    expect(state().patched[7]).toEqual({ priceCents: 900, stock: 1 })
   })
 
   it('removing a remote product hides it and drops its patch; removing a local one deletes it', () => {
-    state().update(7, { price: 9 })
+    state().update(7, { priceCents: 900 })
     state().remove(7)
     expect(state().deleted).toEqual([7])
     expect(state().patched[7]).toBeUndefined()
@@ -63,9 +63,9 @@ describe('product overlay store', () => {
   })
 
   it('persists under the versioned key', () => {
-    state().update(7, { price: 9 })
+    state().update(7, { priceCents: 900 })
     const saved = JSON.parse(localStorage.getItem('ays-case:v1:product-overlay') ?? '{}')
-    expect(saved.state.patched).toEqual({ '7': { price: 9 } })
+    expect(saved.state.patched).toEqual({ '7': { priceCents: 900 } })
     expect(saved.version).toBe(1)
   })
 })

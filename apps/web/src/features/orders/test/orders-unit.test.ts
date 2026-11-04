@@ -52,8 +52,8 @@ describe('buildOrder (CART-5)', () => {
 
   it('does not change when the product is edited afterwards', () => {
     const order = makeOrder()
-    const edited = { ...fixtureProducts[1]!, title: 'Renamed', price: 999 }
-    expect(edited.price).not.toBe(order.lines[0]?.listCents)
+    const edited = { ...fixtureProducts[1]!, title: 'Renamed', priceCents: 99900 }
+    expect(edited.priceCents).not.toBe(order.lines[0]?.listCents)
     expect(order.lines[0]?.title).toBe('groceries item 02')
     expect(order.lines[0]?.listCents).toBe(2000)
   })
@@ -109,7 +109,7 @@ describe('orders store', () => {
       'order-user-16-2',
     ])
     const saved = JSON.parse(localStorage.getItem('ays-case:v1:orders') ?? '{}')
-    expect(saved.version).toBe(2)
+    expect(saved.version).toBe(1)
     expect(saved.state.orders).toHaveLength(2)
     useOrdersStore.getState().reset()
     expect(useOrdersStore.getState().orders).toEqual([])

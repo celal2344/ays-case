@@ -17,8 +17,8 @@ export function mergeReviews(
       key: seededKey(r),
       rating: r.rating,
       comment: r.comment,
-      date: r.date,
-      authorName: r.reviewerName,
+      date: r.createdAt,
+      authorName: r.author.name,
     }))
   const fromLocal: ReviewItem[] = local.map((r) => ({
     key: r.id,

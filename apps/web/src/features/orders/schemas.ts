@@ -24,7 +24,7 @@ export const emptyShipping: Shipping = { fullName: '', address: '', city: '', ph
 export interface OrderLine {
   productId: number
   title: string
-  thumbnail: string
+  thumbnail: string | null
   /** List price per unit, in cents. */
   listCents: number
   /** Price per unit actually paid (after discount), in cents. */

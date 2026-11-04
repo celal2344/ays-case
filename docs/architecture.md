@@ -3,6 +3,7 @@
 A pnpm + Turborepo workspace. Today only `apps/web` (the Vite SPA) exists; `apps/api` and shared `packages/*` come with the backend work. Practices that carry over from StokMate are listed in [conventions.md](conventions.md).
 
 ## Layers
+
 ```mermaid
 flowchart TB
     UI["Pages + components<br/>(routes/, features/*/components)"]
@@ -25,11 +26,13 @@ flowchart TB
 ```
 
 Rules:
+
 - Components never call axios or `api/` directly; they use feature hooks.
 - Remote data → TanStack Query. Local-only / user-owned data → Zustand. See [data-and-state.md](data-and-state.md) for the exact split.
 - The only place remote + local are merged is `features/products/hooks/use-catalog.ts` (the overlay merge).
 
 ## Folder structure
+
 ```text
 ays-case/
 ├── .github/workflows/ci.yml
@@ -95,6 +98,7 @@ ays-case/
 Feature rule: a feature may import from `lib/`, `components/`, and another feature's **public** hooks/types only (e.g. `cart` imports `products` types). No deep imports into another feature's internals.
 
 ## Auth flow
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -118,6 +122,7 @@ sequenceDiagram
 `authStore.bootstrap()` is idempotent (one promise, like StokMate's `ensureRestored`). Route guards `await` it in `beforeLoad`, so there's no flash of protected content.
 
 ## Product write flow (admin)
+
 ```mermaid
 sequenceDiagram
     participant A as Admin form
@@ -138,17 +143,18 @@ sequenceDiagram
 ```
 
 ## Key libraries and why
-| Need | Library | Why |
-|---|---|---|
-| Routing | TanStack Router | Typed routes + typed search params (`?q&category&sort&page`), `beforeLoad` guards, loaders that prefetch Query data. Same as StokMate |
-| Server cache | TanStack Query | Loading/error/retry/cache for DummyJSON reads, `useMutation` for writes. Same as StokMate |
-| Local state | Zustand + `persist` | Required by brief; small, no provider, works outside React (axios interceptor reads tokens) |
-| HTTP | Axios | Required by brief; interceptors for token + refresh |
-| Forms | TanStack Form + Zod | Same as StokMate; Zod schemas shared between form validation and API response parsing |
-| UI | shadcn/ui + Tailwind 4 + lucide | Same as StokMate; accessible Radix primitives |
-| Tables | TanStack Table | Admin table sorting/pagination; same as StokMate |
-| Toasts | sonner (shadcn) | |
-| i18n | i18next + react-i18next | Same as StokMate |
-| Tests | Vitest, RTL, MSW, Playwright | MSW mocks DummyJSON so tests don't hit the network |
+
+| Need         | Library                         | Why                                                                                                                                   |
+| ------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Routing      | TanStack Router                 | Typed routes + typed search params (`?q&category&sort&page`), `beforeLoad` guards, loaders that prefetch Query data. Same as StokMate |
+| Server cache | TanStack Query                  | Loading/error/retry/cache for DummyJSON reads, `useMutation` for writes. Same as StokMate                                             |
+| Local state  | Zustand + `persist`             | Required by brief; small, no provider, works outside React (axios interceptor reads tokens)                                           |
+| HTTP         | Axios                           | Required by brief; interceptors for token + refresh                                                                                   |
+| Forms        | TanStack Form + Zod             | Same as StokMate; Zod schemas shared between form validation and API response parsing                                                 |
+| UI           | shadcn/ui + Tailwind 4 + lucide | Same as StokMate; accessible Radix primitives                                                                                         |
+| Tables       | TanStack Table                  | Admin table sorting/pagination; same as StokMate                                                                                      |
+| Toasts       | sonner (shadcn)                 |                                                                                                                                       |
+| i18n         | i18next + react-i18next         | Same as StokMate                                                                                                                      |
+| Tests        | Vitest, RTL, MSW, Playwright    | MSW mocks DummyJSON so tests don't hit the network                                                                                    |
 
 See ADRs in [decisions/](decisions/) for the contested choices.

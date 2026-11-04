@@ -42,7 +42,7 @@ describe('favorites store', () => {
 
   it('persists under the versioned key and is emptied by Reset demo data', () => {
     useFavoritesStore.getState().toggle('user-1', 5)
-    expect(JSON.parse(localStorage.getItem('ays-case:v1:favorites') ?? '{}').version).toBe(2)
+    expect(JSON.parse(localStorage.getItem('ays-case:v1:favorites') ?? '{}').version).toBe(1)
     resetDemoData()
     expect(useFavoritesStore.getState().byUser).toEqual({})
   })

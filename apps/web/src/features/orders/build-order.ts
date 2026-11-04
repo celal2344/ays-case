@@ -1,5 +1,4 @@
 import type { CartItem, CartTotals } from '@/features/cart/selectors'
-import { toCents } from '@ays/validators'
 
 import type { Order, Shipping } from './schemas'
 
@@ -20,7 +19,7 @@ export function buildOrder({ items, totals, shipping, ...rest }: BuildOrderInput
       productId: product.id,
       title: product.title,
       thumbnail: product.thumbnail,
-      listCents: toCents(product.price),
+      listCents: product.priceCents,
       unitCents,
       discountPercentage: product.discountPercentage,
       quantity,

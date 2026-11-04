@@ -14,7 +14,8 @@ export function ProductImage({
   className,
   eager = false,
 }: {
-  src: string
+  /** Null when a product has no image: the placeholder shows. */
+  src: string | null | undefined
   alt: string
   className?: string
   eager?: boolean
@@ -22,10 +23,10 @@ export function ProductImage({
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
   const broken = !src || failedSrc === src
-  const loading = !broken && loadedSrc !== src
+  const loading = Boolean(src) && !broken && loadedSrc !== src
   return (
     <div className={cn('relative aspect-square overflow-hidden bg-white', className)}>
-      {broken ? (
+      {broken || !src ? (
         <div className="flex size-full items-center justify-center bg-muted text-muted-foreground">
           <ImageOff className="size-8" aria-hidden="true" />
         </div>

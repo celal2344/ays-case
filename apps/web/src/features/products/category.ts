@@ -1,4 +1,4 @@
-/** `home-decoration` → `Home Decoration` (DummyJSON category slugs to display names). */
+/** `home-decoration` → `Home Decoration` (category slugs to display names). */
 export function categoryLabel(slug: string) {
   return slug
     .split('-')

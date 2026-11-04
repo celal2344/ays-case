@@ -59,7 +59,7 @@ describe('checkout (CART-5)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Place order' }))
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/orders\/.+/))
 
-    useProductOverlayStore.getState().update(2, { price: 999, title: 'Renamed' })
+    useProductOverlayStore.getState().update(2, { priceCents: 99900, title: 'Renamed' })
     await router.navigate({ to: '/orders' })
     await userEvent.click(await screen.findByRole('link', { name: /Order #/ }))
     expect(await screen.findByText('groceries item 02')).toBeInTheDocument()
@@ -103,7 +103,9 @@ describe('checkout (CART-5)', () => {
     signInAs('averyp')
     const local = useProductOverlayStore
       .getState()
-      .create(productInput({ title: 'Local gadget', price: 10, discountPercentage: 0, stock: 5 }))
+      .create(
+        productInput({ title: 'Local gadget', priceCents: 1000, discountPercentage: 0, stock: 5 }),
+      )
     useCartStore.getState().add('user-16', local.id, 2, 5)
     const { router } = await renderApp('/checkout')
     await screen.findByTestId('checkout-total')

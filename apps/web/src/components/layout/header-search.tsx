@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { InputGroupAddon } from '@/components/ui/input-group'
 import { normalize } from '@/features/products/catalog'
 import { useCatalog } from '@/features/products/hooks/use-catalog'
+import { ProductImage } from '@/features/products/components/product-image'
 import { useCategories } from '@/features/products/hooks/use-categories'
 import { salePriceCents } from '@ays/validators'
 import { productSearchSchema } from '@/features/products/schemas'
@@ -27,7 +28,7 @@ import {
 } from '@/features/products/suggestions'
 import { FocusPanel } from '@/features/search/components/focus-panel'
 import { useSearchStore } from '@/features/search/store'
-import { formatPrice, type Language } from '@/lib/format'
+import { formatMoney, type Language } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { cn } from '@/lib/utils'
 import { selectLanguage, usePreferencesStore } from '@/preferences/store'
@@ -320,11 +321,10 @@ export function HeaderSearch({ className }: { className?: string }) {
                     <ComboboxItem key={option.key} value={option} className="py-1.5 pr-2">
                       {option.kind === 'product' ? (
                         <>
-                          <img
+                          <ProductImage
                             src={option.product.thumbnail}
                             alt=""
-                            loading="lazy"
-                            className="size-9 shrink-0 rounded-md bg-muted object-cover"
+                            className="size-9 shrink-0 rounded-md"
                           />
                           <span className="min-w-0">
                             <span className="block truncate">
@@ -336,7 +336,7 @@ export function HeaderSearch({ className }: { className?: string }) {
                             </span>
                             <span className="block truncate text-xs text-muted-foreground">
                               {option.product.brand ? `${option.product.brand} · ` : ''}
-                              {formatPrice(salePriceCents(option.product) / 100, language)}
+                              {formatMoney(salePriceCents(option.product), language)}
                             </span>
                           </span>
                         </>

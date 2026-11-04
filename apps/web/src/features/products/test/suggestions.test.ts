@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { fixtureProducts } from '@/test/fixtures/products'
+import { brand, cat, fixtureProducts, tags } from '@/test/fixtures/products'
 
 import type { Category, Product } from '../schemas'
 import { getSuggestions } from '../suggestions'
@@ -9,22 +9,26 @@ const base = fixtureProducts[0]!
 const make = (id: number, over: Partial<Product>): Product => ({
   ...base,
   id,
-  brand: undefined,
+  brand: null,
   tags: [],
   ...over,
 })
 const categories: Category[] = [
-  { slug: 'beauty', name: 'Beauty' },
-  { slug: 'beach-gear', name: 'Beach gear' },
-  { slug: 'empty', name: 'Empty shelf' },
+  cat('beauty', 'Beauty'),
+  cat('beach-gear', 'Beach gear'),
+  cat('empty', 'Empty shelf'),
 ]
 
 describe('getSuggestions', () => {
   const catalog = [
-    make(1, { title: 'Red Essence', category: 'beauty' }),
-    make(2, { title: 'Essence Mascara', category: 'beauty' }),
-    make(3, { title: 'Lipstick', category: 'beauty', brand: 'Essence Co' }),
-    make(4, { title: 'Tag match', category: 'beach-gear', tags: ['essence'] }),
+    make(1, { title: 'Red Essence', category: cat('beauty', 'Beauty') }),
+    make(2, { title: 'Essence Mascara', category: cat('beauty', 'Beauty') }),
+    make(3, { title: 'Lipstick', category: cat('beauty', 'Beauty'), brand: brand('Essence Co') }),
+    make(4, {
+      title: 'Tag match',
+      category: cat('beach-gear', 'Beach gear'),
+      tags: tags('essence'),
+    }),
   ]
 
   it('needs at least 2 characters', () => {
@@ -39,7 +43,7 @@ describe('getSuggestions', () => {
 
   it('caps products and categories and counts products per category', () => {
     const many = Array.from({ length: 9 }, (_, i) =>
-      make(10 + i, { title: `Beach ${i}`, category: 'beach-gear' }),
+      make(10 + i, { title: `Beach ${i}`, category: cat('beach-gear', 'Beach gear') }),
     )
     const result = getSuggestions(many, categories, 'be', 'en', { products: 5, categories: 1 })
     expect(result.products).toHaveLength(5)

@@ -47,7 +47,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { filterByCategory, filterByQuery } from '@/features/products/catalog'
-import { categoryLabel } from '@/features/products/category'
 import { StockBadge } from '@/features/products/components/product-badges'
 import { ProductImage } from '@/features/products/components/product-image'
 import { ProductPrice } from '@/features/products/components/product-price'
@@ -108,7 +107,7 @@ function ProductCell({ product }: { product: Product }) {
         {product.title}
       </Link>
       {product.brand ? (
-        <span className="text-xs text-muted-foreground">{product.brand}</span>
+        <span className="text-xs text-muted-foreground">{product.brand.name}</span>
       ) : null}
     </div>
   )
@@ -153,12 +152,14 @@ const columns = helper.columns([
     cell: ({ row }) => <ProductCell product={row.original} />,
     sortFn: 'text',
   }),
-  helper.accessor('category', {
+  helper.accessor((row) => row.category.name, {
+    id: 'category',
     header: ({ column }) => <SortHeader column={column} label="category" />,
-    cell: ({ getValue }) => categoryLabel(getValue()),
+    cell: ({ getValue }) => getValue(),
     sortFn: 'text',
   }),
-  helper.accessor('price', {
+  helper.accessor('priceCents', {
+    id: 'price',
     header: ({ column }) => <SortHeader column={column} label="price" />,
     cell: ({ row }) => <ProductPrice product={row.original} />,
   }),

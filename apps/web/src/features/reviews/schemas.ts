@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const REVIEW_MIN_LENGTH = 10
 export const REVIEW_MAX_LENGTH = 500
 
-/** A review written in this app (DummyJSON reviews are read-only and come with the product). */
+/** A review written in this app (API reviews are read-only and come with the product). */
 export const localReviewSchema = z.object({
   id: z.string(),
   productId: z.number().int(),
@@ -21,7 +21,7 @@ export const reviewFormSchema = z.object({
 })
 export type ReviewFormValues = z.infer<typeof reviewFormSchema>
 
-/** One row in the reviews list, whether it came from DummyJSON or was written here. */
+/** One row in the reviews list, whether it came from the API or was written here. */
 export interface ReviewItem {
   key: string
   rating: number

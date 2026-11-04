@@ -14,7 +14,7 @@ export function getSuggestedTags(
   )
   const counts = new Map<string, number>()
   for (const product of products) {
-    for (const tag of new Set(product.tags.map((t) => t.trim().toLowerCase()))) {
+    for (const tag of new Set(product.tags.map((t) => t.slug.trim().toLowerCase()))) {
       if (tag && !skip.has(tag)) counts.set(tag, (counts.get(tag) ?? 0) + 1)
     }
   }

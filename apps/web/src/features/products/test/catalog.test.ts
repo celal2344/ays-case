@@ -46,11 +46,11 @@ describe('applyOverlay', () => {
   it('hides deleted products and applies patches', () => {
     const merged = applyOverlay(fixtureProducts, {
       created: {},
-      patched: { 2: { price: 1 } },
+      patched: { 2: { priceCents: 100 } },
       deleted: [1],
     })
     expect(merged.some((p) => p.id === 1)).toBe(false)
-    expect(merged.find((p) => p.id === 2)?.price).toBe(1)
+    expect(merged.find((p) => p.id === 2)?.priceCents).toBe(100)
   })
 
   it('puts created products first, newest first, and honours patches and deletes on them', () => {
@@ -90,7 +90,7 @@ describe('filterByQuery', () => {
   })
 
   it('is Turkish-safe: İ lowercases to i only in Turkish mode', () => {
-    const product = { ...fixtureProducts[0]!, title: 'İstanbul Çayı', brand: undefined, tags: [] }
+    const product = { ...fixtureProducts[0]!, title: 'İstanbul Çayı', brand: null, tags: [] }
     expect(filterByQuery([product], 'istanbul', 'tr')).toHaveLength(1)
     expect(filterByQuery([product], 'istanbul', 'en')).toHaveLength(0)
   })

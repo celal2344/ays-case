@@ -7,7 +7,7 @@ import { useProductOverlayStore } from '@/features/products/overlay-store'
 import { useReviewsStore } from '@/features/reviews/store'
 import { useUserOverlayStore } from '@/features/users/overlay-store'
 import { signInAs } from '@/test/auth'
-import { productInput } from '@/test/fixtures/products'
+import { cat, productInput, tags } from '@/test/fixtures/products'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
@@ -150,7 +150,7 @@ describe('create a product (PROD-3)', () => {
     expect(created[0]).toMatchObject({
       id: 100_000,
       title: 'Brand new gadget',
-      price: 49.9,
+      priceCents: 4990,
       stock: 12,
     })
 
@@ -193,7 +193,7 @@ describe('edit a product (PROD-4)', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/admin/products'))
 
     expect(requests.filter((r) => /^(PUT|POST|DELETE)/.test(r))).toEqual([])
-    expect(useProductOverlayStore.getState().patched[1]).toMatchObject({ price: 12.5 })
+    expect(useProductOverlayStore.getState().patched[1]).toMatchObject({ priceCents: 1250 })
 
     await router.navigate({ to: '/products/$productId', params: { productId: '1' } })
     expect((await screen.findAllByText('$12.50')).length).toBeGreaterThan(0)
@@ -205,12 +205,12 @@ describe('edit a product (PROD-4)', () => {
       productInput({
         title: 'Local thing',
         description: 'A product made by the admin earlier.',
-        category: 'beauty',
-        price: 5,
+        category: cat('beauty', 'Beauty'),
+        priceCents: 500,
         discountPercentage: 0,
         stock: 3,
-        thumbnail: '',
-        tags: ['beauty'],
+        thumbnail: null,
+        tags: tags('beauty'),
       }),
     )
     const requests = recordRequests()
@@ -306,12 +306,12 @@ describe('delete a product (PROD-5)', () => {
       productInput({
         title: 'Short lived',
         description: 'A product that will not last.',
-        category: 'beauty',
-        price: 5,
+        category: cat('beauty', 'Beauty'),
+        priceCents: 500,
         discountPercentage: 0,
         stock: 3,
-        thumbnail: '',
-        tags: ['beauty'],
+        thumbnail: null,
+        tags: tags('beauty'),
       }),
     )
     const requests = recordRequests()
@@ -329,7 +329,7 @@ describe('delete a product (PROD-5)', () => {
 describe('dashboard (EX-13, EX-15)', () => {
   it('shows product, low-stock, out-of-stock and local-change counts', async () => {
     signInAs('emilys')
-    useProductOverlayStore.getState().update(1, { price: 11 })
+    useProductOverlayStore.getState().update(1, { priceCents: 1100 })
     useProductOverlayStore.getState().remove(2)
     await renderApp('/admin')
     // "Products" is also the nav link, so pick the label that sits inside a stat card
@@ -348,7 +348,7 @@ describe('dashboard (EX-13, EX-15)', () => {
   it('Reset demo data restores the original catalog and clears reviews and carts, after confirming', async () => {
     signInAs('emilys')
     useProductOverlayStore.getState().remove(2)
-    useProductOverlayStore.getState().update(1, { price: 99 })
+    useProductOverlayStore.getState().update(1, { priceCents: 9900 })
     useUserOverlayStore.getState().remove('user-5')
     useCartStore.getState().add('user-16', 4, 1, 50)
     useReviewsStore.getState().add({
