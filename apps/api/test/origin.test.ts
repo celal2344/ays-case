@@ -27,6 +27,16 @@ describe('resolveOrigins', () => {
     expect(trustedOrigins).toContain('https://ayscase-abc123.vercel.app')
   })
 
+  it('also trusts the branch alias a preview is opened through', () => {
+    const { baseURL, trustedOrigins } = resolveOrigins({
+      VERCEL_ENV: 'preview',
+      VERCEL_URL: 'ayscase-abc123.vercel.app',
+      VERCEL_BRANCH_URL: 'ayscase-git-feature.vercel.app',
+    })
+    expect(baseURL).toBe('https://ayscase-abc123.vercel.app')
+    expect(trustedOrigins).toContain('https://ayscase-git-feature.vercel.app')
+  })
+
   it('uses the deployment URL on previews', () => {
     expect(
       resolveOrigins({
