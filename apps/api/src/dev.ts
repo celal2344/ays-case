@@ -2,6 +2,9 @@ import { serve } from '@hono/node-server'
 
 import { root } from './root'
 import { logger } from './utils/logger'
+import { installProcessGuards } from './utils/process-guards'
+
+installProcessGuards()
 
 const port = Number(process.env.PORT ?? 3000)
 
