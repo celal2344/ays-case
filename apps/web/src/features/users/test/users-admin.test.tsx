@@ -207,13 +207,13 @@ describe('edit a user (USER-3)', () => {
     await userEvent.clear(screen.getByLabelText('First name'))
     await userEvent.type(screen.getByLabelText('First name'), 'Averie')
     await userEvent.click(screen.getByRole('combobox', { name: 'Role' }))
-    await userEvent.click(await screen.findByRole('option', { name: 'Moderator' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Admin' }))
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/admin/users'))
 
     expect(admin.users.find((u) => u.id === 'user-16')).toMatchObject({
       firstName: 'Averie',
-      role: 'moderator',
+      role: 'admin',
     })
     expect(await screen.findByText('Averie Perez')).toBeInTheDocument()
   })

@@ -53,6 +53,58 @@ export const authHandlers = [
     serverSession.userId = account.id
     return HttpResponse.json({ redirect: false, token: 'token', user: toPublicUser(account) })
   }),
+  http.post(`${BASE}/auth/sign-in/email`, async ({ request }) => {
+    const body = (await request.json()) as { email: string; password: string }
+    const account = Object.values(fixtureUsers).find((u) => u.email === body.email.toLowerCase())
+    if (!account || account.password !== body.password) {
+      return HttpResponse.json(
+        { code: 'INVALID_EMAIL_OR_PASSWORD', message: 'Invalid email or password' },
+        { status: 401 },
+      )
+    }
+    serverSession.userId = account.id
+    return HttpResponse.json({ redirect: false, token: 'token', user: toPublicUser(account) })
+  }),
+  http.post(`${BASE}/auth/sign-up/email`, async ({ request }) => {
+    const body = (await request.json()) as {
+      email: string
+      password: string
+      firstName: string
+      lastName: string
+      username: string
+    }
+    const username = body.username.toLowerCase()
+    const email = body.email.toLowerCase()
+    if (admin.users.some((u) => u.username?.toLowerCase() === username)) {
+      return HttpResponse.json(
+        {
+          code: 'USERNAME_IS_ALREADY_TAKEN',
+          message: 'Username is already taken. Please try another.',
+        },
+        { status: 400 },
+      )
+    }
+    if (admin.users.some((u) => u.email.toLowerCase() === email)) {
+      return HttpResponse.json(
+        {
+          code: 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL',
+          message: 'User already exists. Use another email.',
+        },
+        { status: 422 },
+      )
+    }
+    const created = admin.createUser({
+      username,
+      email,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      role: 'user',
+      password: body.password,
+    })
+    if (isFailure(created)) return failure(created)
+    serverSession.userId = created.id
+    return HttpResponse.json({ token: 'token', user: created })
+  }),
   http.get(`${BASE}/auth/get-session`, () => {
     const user = sessionUser()
     return HttpResponse.json(user ? sessionBody(user) : null)

@@ -25,7 +25,7 @@ Source: `Frontend_Case.pdf` (case brief, Turkish). Each requirement has an ID us
 | AUTH-4           | Not logged in → no access to protected pages  | Visiting `/cart`, `/checkout`, `/orders`, `/admin/*` while logged out redirects to `/login?redirect=<path>`                                                                                                                        |
 | AUTH-5           | Logout                                        | Header menu → Logout clears tokens, user, and in-memory query cache; redirects to `/login`                                                                                                                                         |
 | AUTH-6           | Login state survives refresh (localStorage)   | Tokens + user persisted; on boot `/auth/me` validates the token; expired → refresh → any remaining failure logs out. A session that dies mid-use is handled by the route guard on the next navigation                              |
-| AUTH-7 (derived) | Admin vs user                                 | Role comes from DummyJSON `user.role`. `admin` → admin routes; every other role (incl. `moderator`, which has no special logic) → shop only. Non-admin on `/admin/*` → `/forbidden`. Admins can also shop (cart, checkout, orders) |
+| AUTH-7 (derived) | Admin vs user                                 | Role comes from DummyJSON `user.role`. `admin` → admin routes; every other role (`user`) → shop only. Non-admin on `/admin/*` → `/forbidden`. Admins can also shop (cart, checkout, orders) |
 
 ## 3. Products
 

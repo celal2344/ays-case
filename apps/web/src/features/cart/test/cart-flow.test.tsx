@@ -97,7 +97,7 @@ describe('cart (CART-1..4)', () => {
     expect(router.state.location.search).toEqual({ redirect: '/products/2' })
     expect(sessionStorage.getItem('ays-case:v1:pending-action')).toContain('"productId":2')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Fill user' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Customer' }))
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/products/2'))
     await waitFor(() => expect(cartOf('user-16')).toHaveLength(1))

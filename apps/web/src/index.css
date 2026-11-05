@@ -341,6 +341,21 @@ html body [data-sonner-toaster][data-sonner-theme='light'] {
     padding-inline: clamp(16px, 3vw, 40px);
   }
 
+  /* the brand panel of the login and register pages */
+  .auth-panel {
+    background:
+      radial-gradient(circle at 75% 35%, rgba(251, 146, 60, 0.45), transparent 45%),
+      radial-gradient(circle at 25% 90%, rgba(244, 114, 182, 0.25), transparent 42%),
+      radial-gradient(circle at 8% 8%, rgba(253, 186, 116, 0.35), transparent 38%), #fff8f1;
+  }
+
+  .dark .auth-panel {
+    background:
+      radial-gradient(circle at 75% 35%, rgba(249, 115, 22, 0.28), transparent 45%),
+      radial-gradient(circle at 25% 90%, rgba(244, 114, 182, 0.12), transparent 42%),
+      radial-gradient(circle at 8% 8%, rgba(253, 186, 116, 0.1), transparent 38%), #151311;
+  }
+
   /* strong soft background for the hero and checkout */
   .soft-bg {
     background: var(--page-glow-strong);

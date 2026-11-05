@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as ForbiddenRouteImport } from './routes/forbidden'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as AuthAdminRouteImport } from './routes/_auth/_admin'
 import { Route as AuthCartRouteImport } from './routes/_auth/cart'
 import { Route as AuthCheckoutRouteImport } from './routes/_auth/checkout'
@@ -48,6 +49,11 @@ const ForbiddenRoute = ForbiddenRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthAdminRoute = AuthAdminRouteImport.update({
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/forbidden': typeof ForbiddenRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/cart': typeof AuthCartRoute
   '/checkout': typeof AuthCheckoutRoute
   '/favorites': typeof AuthFavoritesRoute
@@ -166,6 +173,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/forbidden': typeof ForbiddenRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/cart': typeof AuthCartRoute
   '/checkout': typeof AuthCheckoutRoute
   '/favorites': typeof AuthFavoritesRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/forbidden': typeof ForbiddenRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/_auth/_admin': typeof AuthAdminRouteWithChildren
   '/_auth/cart': typeof AuthCartRoute
   '/_auth/checkout': typeof AuthCheckoutRoute
@@ -212,6 +221,7 @@ export interface FileRouteTypes {
     | '/'
     | '/forbidden'
     | '/login'
+    | '/register'
     | '/cart'
     | '/checkout'
     | '/favorites'
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
     | '/'
     | '/forbidden'
     | '/login'
+    | '/register'
     | '/cart'
     | '/checkout'
     | '/favorites'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/forbidden'
     | '/login'
+    | '/register'
     | '/_auth/_admin'
     | '/_auth/cart'
     | '/_auth/checkout'
@@ -278,6 +290,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   ForbiddenRoute: typeof ForbiddenRoute
   LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
   ProductsProductIdRoute: typeof ProductsProductIdRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
 }
@@ -310,6 +323,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth/_admin': {
@@ -498,6 +518,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   ForbiddenRoute: ForbiddenRoute,
   LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
   ProductsProductIdRoute: ProductsProductIdRoute,
   ProductsIndexRoute: ProductsIndexRoute,
 }

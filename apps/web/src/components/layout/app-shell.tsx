@@ -17,8 +17,21 @@ export function AppShell({ children }: { children?: ReactNode }) {
   }, [])
   // the homepage's sections span the window and use the page container themselves
   const home = useRouterState({ select: (s) => s.location.pathname === '/' })
+  // login and register are full-screen pages with their own layout
+  const bare = useRouterState({
+    select: (s) => s.location.pathname === '/login' || s.location.pathname === '/register',
+  })
   usePendingCartAction()
   usePendingFavoriteAction()
+  if (bare) {
+    return (
+      <>
+        <RouteProgress />
+        {children ?? <Outlet />}
+        <Toaster richColors closeButton />
+      </>
+    )
+  }
   return (
     <div className="flex min-h-svh flex-col text-foreground">
       <RouteProgress />

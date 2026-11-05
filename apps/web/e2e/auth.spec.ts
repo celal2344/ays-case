@@ -5,7 +5,7 @@ test('a logged-out visit to a protected page goes to login and back after signin
 }) => {
   await page.goto('/orders')
   await expect(page).toHaveURL(/\/login\?redirect=%2Forders/)
-  await page.getByRole('button', { name: 'Fill user' }).click()
+  await page.getByRole('button', { name: 'Customer' }).click()
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/orders$/)
   await expect(page.getByRole('heading', { name: 'Orders', exact: true })).toBeVisible()
@@ -14,7 +14,7 @@ test('a logged-out visit to a protected page goes to login and back after signin
 test('invalid credentials show the server message', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel('Username').fill('emilys')
-  await page.getByLabel('Password').fill('nope')
+  await page.getByLabel('Password', { exact: true }).fill('nope')
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByRole('alert')).toContainText('Invalid username or password')
 })

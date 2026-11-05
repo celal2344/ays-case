@@ -11,9 +11,9 @@ export function useLogin(redirectTo: string | undefined) {
   const router = useRouter()
   const login = useAuthStore((s) => s.login)
   return useMutation<User, AppError, LoginFormValues>({
-    mutationFn: async ({ username, password }: LoginFormValues) => {
+    mutationFn: async ({ identifier, password }: LoginFormValues) => {
       try {
-        return await login(username, password)
+        return await login(identifier, password)
       } catch (error) {
         throw toAppError(error)
       }

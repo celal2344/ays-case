@@ -43,6 +43,56 @@ export async function mockApi(page: Page) {
       signedInAs = account.id
       return json(route, { redirect: false, token: 'token' })
     }
+    if (pathname === '/api/auth/sign-in/email' && method === 'POST') {
+      const body = request.postDataJSON() as { email: string; password: string }
+      const found = admin.users.find((u) => u.email === body.email.toLowerCase())
+      const account = found && Object.values(accounts).find((a) => a.id === found.id)
+      if (!account || account.password !== body.password) {
+        return json(
+          route,
+          { code: 'INVALID_EMAIL_OR_PASSWORD', message: 'Invalid email or password' },
+          401,
+        )
+      }
+      signedInAs = account.id
+      return json(route, { redirect: false, token: 'token' })
+    }
+    if (pathname === '/api/auth/sign-up/email' && method === 'POST') {
+      const body = request.postDataJSON() as {
+        email: string
+        password: string
+        firstName: string
+        lastName: string
+        username: string
+      }
+      const username = body.username.toLowerCase()
+      if (admin.users.some((u) => u.username?.toLowerCase() === username)) {
+        return json(
+          route,
+          { code: 'USERNAME_IS_ALREADY_TAKEN', message: 'Username is already taken.' },
+          400,
+        )
+      }
+      if (admin.users.some((u) => u.email.toLowerCase() === body.email.toLowerCase())) {
+        return json(
+          route,
+          { code: 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL', message: 'User already exists.' },
+          422,
+        )
+      }
+      const created = admin.createUser({
+        username,
+        email: body.email.toLowerCase(),
+        firstName: body.firstName,
+        lastName: body.lastName,
+        role: 'user',
+        password: body.password,
+      })
+      if (isFailure(created))
+        return json(route, { code: created.code, message: created.message }, created.status)
+      signedInAs = created.id
+      return json(route, { token: 'token' })
+    }
     if (pathname === '/api/auth/get-session') {
       return json(
         route,

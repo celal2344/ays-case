@@ -21,7 +21,7 @@ export { expect }
 
 export async function signIn(page: Page, who: 'admin' | 'user') {
   await page.goto('/login')
-  await page.getByRole('button', { name: who === 'admin' ? 'Fill admin' : 'Fill user' }).click()
+  await page.getByRole('button', { name: who === 'admin' ? 'Admin' : 'Customer' }).click()
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/products/)
 }

@@ -8,7 +8,7 @@ export type { Role, User }
 export const sessionUserSchema = apiUserSchema
 
 export const loginFormSchema = z.object({
-  username: z.string().trim().min(1, 'required'),
+  identifier: z.string().trim().min(1, 'required'),
   password: z.string().min(1, 'required'),
 })
 export type LoginFormValues = z.infer<typeof loginFormSchema>

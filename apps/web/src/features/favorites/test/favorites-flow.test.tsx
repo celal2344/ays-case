@@ -59,7 +59,7 @@ describe('favorites (heart and page)', () => {
       await screen.findByRole('button', { name: 'Add groceries item 02 to favorites' }),
     )
     await waitFor(() => expect(router.state.location.pathname).toBe('/login'))
-    await userEvent.click(screen.getByRole('button', { name: 'Fill user' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Customer' }))
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/products/2'))
     await waitFor(() => expect(mine()).toEqual([2]))

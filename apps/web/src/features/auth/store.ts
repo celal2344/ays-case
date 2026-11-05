@@ -6,6 +6,8 @@ import { authClient } from '@/lib/auth-client'
 import { AppError, toAppError } from '@/lib/http-error'
 import { queryClient } from '@/lib/query-client'
 
+import type { RegisterInput } from '@ays/validators'
+
 import { sessionUserSchema, type User } from './schemas'
 
 export type AuthStatus = 'idle' | 'restoring' | 'authenticated' | 'anonymous'
@@ -14,7 +16,9 @@ interface AuthState {
   user: User | null
   status: AuthStatus
   bootstrap: () => Promise<void>
-  login: (username: string, password: string) => Promise<User>
+  /** A value with an `@` is an email, anything else a username. */
+  login: (identifier: string, password: string) => Promise<User>
+  register: (input: RegisterInput) => Promise<User>
   logout: () => void
   /** Re-reads the signed-in user (after an admin edits their own account). */
   refresh: () => Promise<void>
@@ -36,6 +40,16 @@ async function readSession(): Promise<User | null> {
   if (!data) return null
   const parsed = sessionUserSchema.safeParse(data.user)
   return parsed.success ? parsed.data : null
+}
+
+/** A Better Auth error as an AppError that keeps its code, so a page can tell which field it is about. */
+function authError(error: { status: number; message?: string; code?: string }, fallback: string) {
+  if (error.status === 429) {
+    return new AppError('server', error.message ?? fallback, 429, 'rate_limited')
+  }
+  const kind =
+    error.status === 401 || error.status === 400 || error.status === 422 ? 'validation' : 'server'
+  return new AppError(kind, error.message ?? fallback, error.status, error.code)
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
@@ -64,26 +78,43 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     return attempt
   },
 
-  login: async (username, password) => {
+  login: async (identifier, password) => {
     let result
     try {
-      result = await authClient.signIn.username({ username, password })
+      result = identifier.includes('@')
+        ? await authClient.signIn.email({ email: identifier, password })
+        : await authClient.signIn.username({ username: identifier, password })
     } catch (error) {
       throw toAppError(error)
     }
-    if (result.error) {
-      const status = result.error.status
-      throw new AppError(
-        status === 401 || status === 400 ? 'validation' : 'server',
-        result.error.message ?? 'Sign-in failed',
-        status,
-      )
-    }
+    if (result.error) throw authError(result.error, 'Sign-in failed')
     const user = await readSession().catch(() => null)
     if (!user) {
       await authClient.signOut().catch(() => undefined)
       throw new AppError('unauthorized', 'This account was removed by an administrator.')
     }
+    set({ user, status: 'authenticated' })
+    return user
+  },
+
+  register: async (input) => {
+    let result
+    try {
+      result = await authClient.signUp.email({
+        email: input.email,
+        password: input.password,
+        name: `${input.firstName} ${input.lastName}`,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        username: input.username,
+        displayUsername: input.username,
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+    if (result.error) throw authError(result.error, 'Sign-up failed')
+    const user = await readSession().catch(() => null)
+    if (!user) throw new AppError('server', 'The account was created, but signing in failed.')
     set({ user, status: 'authenticated' })
     return user
   },
