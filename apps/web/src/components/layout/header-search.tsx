@@ -251,7 +251,7 @@ export function HeaderSearch({ className }: { className?: string }) {
             placeholder={t('products.search.headerPlaceholder')}
             showTrigger={false}
             showClear={draft.length > 0}
-            className="w-full flex-1"
+            className="h-11 w-full flex-1 rounded-xl border-stone-200/90 bg-white/70 dark:border-white/10 dark:bg-white/5"
             onFocus={() => setOpen(true)}
             onClick={() => setOpen(true)}
             onKeyDownCapture={(event) => {

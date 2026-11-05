@@ -1,77 +1,107 @@
 import { Link } from '@tanstack/react-router'
-import { Menu } from 'lucide-react'
-import { useState } from 'react'
+import { Heart, LayoutDashboard, Store, LogIn, Menu, Package } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { selectIsAuthenticated, useAuthStore } from '@/features/auth/store'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { selectUser, useAuthStore } from '@/features/auth/store'
 
 import { CategoryAccordion } from './category-accordion'
-import { useAdminNavItems, useNavItems } from './nav-items'
 import { PreferencesControls } from './preferences-controls'
+
+const ROW =
+  'flex items-center gap-3 rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-accent [&_svg]:size-[18px] [&_svg]:text-muted-foreground'
+
+function NavLink({
+  to,
+  onNavigate,
+  children,
+}: {
+  to: '/products' | '/orders' | '/favorites' | '/admin' | '/login'
+  onNavigate: () => void
+  children: ReactNode
+}) {
+  return (
+    <Link to={to} onClick={onNavigate} className={ROW} activeProps={{ className: 'bg-accent' }}>
+      {children}
+    </Link>
+  )
+}
 
 export function MobileNav() {
   const { t } = useTranslation()
-  const navItems = useNavItems()
-  const isAuthenticated = useAuthStore(selectIsAuthenticated)
-  const adminItems = useAdminNavItems()
+  const user = useAuthStore(selectUser)
   const [open, setOpen] = useState(false)
+  const close = () => setOpen(false)
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         render={
-          <Button variant="outline" size="icon" className="lg:hidden" aria-label={t('nav.menu')} />
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-11 rounded-xl lg:hidden"
+            aria-label={t('nav.menu')}
+          />
         }
       >
-        <Menu className="size-4" />
+        <Menu className="size-[18px]" />
       </SheetTrigger>
-      <SheetContent side="left">
+      <SheetContent side="left" className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>{t('app.name')}</SheetTitle>
         </SheetHeader>
-        <nav aria-label={t('nav.main')} className="flex flex-col gap-1 px-4">
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              onClick={() => setOpen(false)}
-              className="rounded-md px-2 py-2 text-sm font-medium hover:bg-accent"
-              activeProps={{ className: 'bg-accent' }}
+        {user ? (
+          <div className="mx-4 flex items-center gap-3 rounded-xl bg-orange-50 p-3 dark:bg-orange-500/10">
+            <span
+              aria-hidden="true"
+              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-primary dark:bg-orange-500/20 dark:text-orange-300"
             >
-              {t(item.labelKey)}
-            </Link>
-          ))}
-          {isAuthenticated ? (
-            <Link
-              to="/favorites"
-              onClick={() => setOpen(false)}
-              className="rounded-md px-2 py-2 text-sm font-medium hover:bg-accent"
-              activeProps={{ className: 'bg-accent' }}
-            >
-              {t('favorites.title')}
-            </Link>
-          ) : null}
-          {adminItems ? (
+              {`${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()}
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-semibold">
+                {user.firstName} {user.lastName}
+              </span>
+              <span className="truncate text-xs text-muted-foreground">@{user.username}</span>
+            </span>
+            <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+              {t(`userMenu.role.${user.role}`)}
+            </Badge>
+          </div>
+        ) : null}
+        <nav aria-label={t('nav.main')} className="flex flex-col gap-0.5 px-4">
+          {user ? (
             <>
-              <p className="mt-3 px-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                {t('nav.admin')}
-              </p>
-              {adminItems.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setOpen(false)}
-                  className="rounded-md px-2 py-2 text-sm font-medium hover:bg-accent"
-                  activeProps={{ className: 'bg-accent' }}
-                >
-                  {t(item.labelKey)}
-                </Link>
-              ))}
+              <NavLink to="/orders" onNavigate={close}>
+                <Package aria-hidden="true" />
+                {t('nav.myOrders')}
+              </NavLink>
+              <NavLink to="/favorites" onNavigate={close}>
+                <Heart aria-hidden="true" />
+                {t('favorites.title')}
+              </NavLink>
+              {user.role === 'admin' ? (
+                <NavLink to="/admin" onNavigate={close}>
+                  <LayoutDashboard aria-hidden="true" />
+                  {t('nav.adminPanel')}
+                </NavLink>
+              ) : null}
             </>
-          ) : null}
+          ) : (
+            <NavLink to="/login" onNavigate={close}>
+              <LogIn aria-hidden="true" />
+              {t('nav.login')}
+            </NavLink>
+          )}
+          <NavLink to="/products" onNavigate={close}>
+            <Store aria-hidden="true" />
+            {t('nav.allProducts')}
+          </NavLink>
         </nav>
-        <CategoryAccordion onNavigate={() => setOpen(false)} />
+        <CategoryAccordion onNavigate={close} />
         <div className="mt-auto px-4 pb-4">
           <PreferencesControls />
         </div>
