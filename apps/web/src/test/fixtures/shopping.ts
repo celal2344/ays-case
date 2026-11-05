@@ -273,6 +273,13 @@ export class FakeShopping {
       : { status: 404, body: { code: 'not_found', message: 'Order not found' } }
   }
 
+  myReviewedIds(userId: string): Reply {
+    const ids = [...this.reviews]
+      .filter(([, list]) => list.some((r) => r.author.id === userId))
+      .map(([productId]) => productId)
+    return { status: 200, body: { data: ids } }
+  }
+
   private isVerified(userId: string, productId: number) {
     return this.ordersOf(userId).some((o) => o.lines.some((l) => l.productId === productId))
   }
