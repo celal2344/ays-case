@@ -1,20 +1,10 @@
 import type { ProductBody, ProductDetail, ProductPatchBody } from '@ays/validators'
-import { eq, sql } from 'drizzle-orm'
 
-import { getDb } from '../../../db/client'
-import {
-  cartItems,
-  favorites,
-  productImages,
-  productTags,
-  products,
-  recentlyViewed,
-} from '../../../db/schema'
+import { getDb, type Database } from '../../../db/client'
 import { dbError, duplicateField, toConflict } from '../../../utils/db-errors'
 import { AppError, appError, type ErrorMeta } from '../../../utils/errors'
 import { getProduct } from '../../catalog/service'
-
-type Tx = Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0]
+import * as repository from './repository'
 
 const missing = (op: string, id: number) => appError('not_found', 'Product not found', op, { id })
 
@@ -32,30 +22,6 @@ function writeError(error: unknown, op: string, meta: ErrorMeta) {
     return appError('unknown_reference', message, op, meta)
   }
   return dbError(error, op, meta)
-}
-
-async function replaceTags(tx: Tx, productId: number, tagIds: number[]) {
-  await tx.delete(productTags).where(eq(productTags.productId, productId))
-  const unique = [...new Set(tagIds)]
-  if (unique.length > 0) {
-    await tx.insert(productTags).values(unique.map((tagId) => ({ productId, tagId })))
-  }
-}
-
-/** The array order is the position; exactly one image is primary (the flagged one, else the first). */
-async function replaceImages(tx: Tx, productId: number, images: ProductBody['images']) {
-  await tx.delete(productImages).where(eq(productImages.productId, productId))
-  if (images.length === 0) return
-  const flagged = images.findIndex((image) => image.isPrimary)
-  const primary = flagged === -1 ? 0 : flagged
-  await tx.insert(productImages).values(
-    images.map((image, position) => ({
-      productId,
-      url: image.url,
-      position,
-      isPrimary: position === primary,
-    })),
-  )
 }
 
 const columns = (body: ProductPatchBody) => ({
@@ -83,17 +49,23 @@ const columns = (body: ProductPatchBody) => ({
   ...(body.returnPolicyId === undefined ? {} : { returnPolicyId: body.returnPolicyId }),
 })
 
+const replaceTags = (db: Database, productId: number, tagIds: number[]) =>
+  repository.replaceTags(db, productId, [...new Set(tagIds)])
+
+/** The array order is the position; exactly one image is primary (the flagged one, else the first). */
+function replaceImages(db: Database, productId: number, images: ProductBody['images']) {
+  const flagged = images.findIndex((image) => image.isPrimary)
+  return repository.replaceImages(db, productId, images, flagged === -1 ? 0 : flagged)
+}
+
 export async function createProduct(body: ProductBody): Promise<ProductDetail> {
   const db = getDb()
   try {
     const id = await db.transaction(async (tx) => {
-      const [created] = await tx
-        .insert(products)
-        .values({ ...columns(body), title: body.title } as typeof products.$inferInsert)
-        .returning({ id: products.id })
-      await replaceTags(tx, created!.id, body.tagIds)
-      await replaceImages(tx, created!.id, body.images)
-      return created!.id
+      const created = await repository.insertProduct(tx, { ...columns(body), title: body.title })
+      await replaceTags(tx, created, body.tagIds)
+      await replaceImages(tx, created, body.images)
+      return created
     })
     return await getProduct(id, true)
   } catch (error) {
@@ -105,12 +77,7 @@ export async function updateProduct(id: number, body: ProductPatchBody): Promise
   const db = getDb()
   try {
     const found = await db.transaction(async (tx) => {
-      const [row] = await tx
-        .update(products)
-        .set({ ...columns(body), updatedAt: sql`now()` })
-        .where(eq(products.id, id))
-        .returning({ id: products.id })
-      if (!row) return false
+      if (!(await repository.updateProduct(tx, id, columns(body)))) return false
       if (body.tagIds !== undefined) await replaceTags(tx, id, body.tagIds)
       if (body.images !== undefined) await replaceImages(tx, id, body.images)
       return true
@@ -126,26 +93,14 @@ export async function updateProduct(id: number, body: ProductPatchBody): Promise
 export async function softDeleteProduct(id: number): Promise<void> {
   const db = getDb()
   const found = await db.transaction(async (tx) => {
-    const [row] = await tx
-      .update(products)
-      .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
-      .where(eq(products.id, id))
-      .returning({ id: products.id })
-    if (!row) return false
-    await tx.delete(cartItems).where(eq(cartItems.productId, id))
-    await tx.delete(favorites).where(eq(favorites.productId, id))
-    await tx.delete(recentlyViewed).where(eq(recentlyViewed.productId, id))
+    if (!(await repository.markDeleted(tx, id))) return false
+    await repository.removeFromLists(tx, id)
     return true
   })
   if (!found) throw missing('admin.products.softDelete', id)
 }
 
 export async function restoreProduct(id: number): Promise<ProductDetail> {
-  const [row] = await getDb()
-    .update(products)
-    .set({ deletedAt: null, updatedAt: sql`now()` })
-    .where(eq(products.id, id))
-    .returning({ id: products.id })
-  if (!row) throw missing('admin.products.restore', id)
+  if (!(await repository.clearDeleted(getDb(), id))) throw missing('admin.products.restore', id)
   return await getProduct(id, true)
 }
