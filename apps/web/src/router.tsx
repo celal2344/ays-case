@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { createRouter, type RouterHistory } from '@tanstack/react-router'
 
-import { ErrorState, NotFound } from '@/components/feedback/feedback'
+import { ErrorState, NotFound, PageSkeleton } from '@/components/feedback/feedback'
 import { authContext, type AuthContext } from '@/features/auth/context'
 import { queryClient } from '@/lib/query-client'
 
@@ -21,6 +21,10 @@ export function createAppRouter(options?: {
     history: options?.history,
     context: { queryClient, auth: authContext, ...options?.context },
     defaultPreload: false,
+    // fast loads show no skeleton; one that appears stays long enough not to flicker
+    defaultPendingComponent: PageSkeleton,
+    defaultPendingMs: 200,
+    defaultPendingMinMs: 400,
     defaultNotFoundComponent: NotFound,
     defaultErrorComponent: ({ error, reset }) => (
       <ErrorState message={error instanceof Error ? error.message : undefined} onRetry={reset} />

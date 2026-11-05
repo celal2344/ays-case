@@ -1,5 +1,6 @@
 import { useForm } from '@tanstack/react-form'
-import { getRouteApi } from '@tanstack/react-router'
+import { getRouteApi, useNavigate } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,8 @@ import { Label } from '@/components/ui/label'
 import { errorMessageKey } from '@/lib/error-message'
 import { runExclusive } from '@/lib/in-flight'
 
+import { DEFAULT_LANDING } from '../context'
+import { selectIsAuthenticated, useAuthStore } from '../store'
 import { DEMO_ACCOUNTS } from '../demo-accounts'
 import { useLogin } from '../hooks/use-login'
 import { loginFormSchema } from '../schemas'
@@ -20,6 +23,13 @@ export function LoginPage() {
   const { t } = useTranslation()
   const { redirect } = route.useSearch()
   const login = useLogin(redirect)
+  const navigate = useNavigate()
+  const signedIn = useAuthStore(selectIsAuthenticated)
+
+  // the route does not wait for the session; once it is known to be a signed-in user, leave
+  useEffect(() => {
+    if (signedIn) void navigate({ href: redirect ?? DEFAULT_LANDING, replace: true })
+  }, [signedIn, redirect, navigate])
 
   const form = useForm({
     defaultValues: { username: '', password: '' },

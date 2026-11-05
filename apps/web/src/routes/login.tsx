@@ -10,8 +10,8 @@ export const Route = createFileRoute('/login')({
     // only same-site paths: an external target would make the login page an open redirect
     redirect: z.string().optional().transform(safeRedirect).catch(undefined),
   }),
-  beforeLoad: async ({ context, search }) => {
-    await context.auth.bootstrap()
+  // never waits for the session: the page itself redirects once it knows the user is signed in
+  beforeLoad: ({ context, search }) => {
     if (context.auth.getState().status === 'authenticated') {
       throw redirect({ href: search.redirect ?? DEFAULT_LANDING })
     }

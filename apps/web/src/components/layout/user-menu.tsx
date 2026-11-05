@@ -15,12 +15,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useLogout } from '@/features/auth/hooks/use-logout'
+import { Skeleton } from '@/components/ui/skeleton'
 import { selectUser, useAuthStore } from '@/features/auth/store'
 
 export function UserMenu() {
   const { t } = useTranslation()
   const user = useAuthStore(selectUser)
+  const status = useAuthStore((s) => s.status)
   const logout = useLogout()
+
+  // the session is still being checked: keep the header's width and avoid a login-button flash
+  if (!user && (status === 'idle' || status === 'restoring')) {
+    return <Skeleton className="h-9 w-20" data-testid="user-menu-skeleton" aria-hidden="true" />
+  }
 
   if (!user) {
     return (
