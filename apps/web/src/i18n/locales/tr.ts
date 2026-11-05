@@ -377,8 +377,11 @@ export const tr = {
     },
     dashboard: {
       orders: 'Siparişler',
-      manageProducts: 'Ürünleri yönet',
-      manageUsers: 'Kullanıcıları yönet',
+      viewProducts: 'Ürünleri gör',
+      allGood: 'Burada stoklanacak ürün yok.',
+      outList: 'Stokta yok',
+      lowList: 'Azalıyor',
+      left: '{{count}} adet kaldı',
       users: 'Kullanıcılar',
       total: 'Ürünler',
       low: 'Az stok',

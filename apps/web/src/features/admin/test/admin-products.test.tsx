@@ -364,16 +364,13 @@ describe('dashboard (EX-13, EX-15)', () => {
     signInAs('emilys')
     admin.deleteProduct(2)
     await renderApp('/admin')
-    // the labels also appear as nav links, so pick the one that sits inside a stat card
-    const stat = (label: string) =>
-      screen
-        .getAllByText(label)
-        .map((el) => el.closest('[data-slot="card"]'))
-        .find((card): card is HTMLElement => card !== null)!
-    await waitFor(() => expect(within(stat('Products')).getByText('29')).toBeInTheDocument())
-    expect(within(stat('Users')).getByText('25')).toBeInTheDocument()
-    expect(within(stat('Low stock')).getByText('1')).toBeInTheDocument() // id 6 has stock 4
-    expect(within(stat('Out of stock')).getByText('1')).toBeInTheDocument() // id 3
+    // each stat card is one link named "<label> <number>"
+    const stat = (label: string, value: number) =>
+      screen.findByRole('link', { name: `${label} ${value}` })
+    await stat('Products', 29)
+    await stat('Users', 25)
+    await stat('Low stock', 1) // id 6 has stock 4
+    await stat('Out of stock', 1) // id 3
   })
 
   it('links to every lookup list', async () => {

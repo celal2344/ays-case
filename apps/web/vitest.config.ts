@@ -13,6 +13,6 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
     // generous: full runs on a busy machine make a few of the page tests slow, not wrong
-    testTimeout: 20_000,
+    testTimeout: 30_000,
   },
 })

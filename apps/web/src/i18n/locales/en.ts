@@ -370,8 +370,11 @@ export const en = {
     },
     dashboard: {
       orders: 'Orders',
-      manageProducts: 'Manage products',
-      manageUsers: 'Manage users',
+      viewProducts: 'View products',
+      allGood: 'Nothing to restock here.',
+      outList: 'Out of stock',
+      lowList: 'Running low',
+      left: '{{count}} left',
       users: 'Users',
       total: 'Products',
       low: 'Low stock',

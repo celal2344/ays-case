@@ -59,6 +59,24 @@ describe('admin layout', () => {
   })
 })
 
+describe('dashboard restock lists', () => {
+  it('lists the out-of-stock and low-stock products, each linking to its edit form', async () => {
+    signInAs('emilys')
+    await renderApp('/admin')
+    const out = admin.liveProduct(3)!
+    const low = admin.liveProduct(6)!
+    expect(await screen.findByRole('link', { name: `Edit ${out.title}` })).toHaveAttribute(
+      'href',
+      '/admin/products?edit=3',
+    )
+    expect(screen.getByRole('link', { name: `Edit ${low.title}` })).toHaveAttribute(
+      'href',
+      '/admin/products?edit=6',
+    )
+    expect(screen.getByText('4 left')).toBeInTheDocument()
+  })
+})
+
 describe('lookup dialogs', () => {
   it('open from the New button and the pencil, and from the URL', async () => {
     signInAs('emilys')
