@@ -4,14 +4,13 @@ A full-stack online shop: catalog and search, accounts, cart, checkout, orders, 
 
 **Live:** https://ayscase.vercel.app · **API docs:** https://ayscase.vercel.app/api/docs
 
-## Demo accounts
+## Yapay zekasız türkçe proje açıklaması:
+Projede 3 farklı agent kullandım biri proje yöneticisi diğer ikisi ise frontend ve backend agentları. Project manager agentı issueları oluşturup diğer iki agent ı orkestre etmede ve aynı zamanda danışman olarak kullandım sorularımı ve aldığım kararları doğrulama amaçlı.
+Proje yöneticisinin oluşturduğu issueları ise developer agentlara verdim burda çalıştıkları alanlara göre paralel veya ardışık olarak çalıştırdım.
+Developer agentların oluşturdukları prları kendim test ettim ve kodu kontrol ettim. 
+Agent hatalarını minimalize etmek için her feature ve pr için birçok test ve lint kontrolleri oluşturdum.
+Tasarım konusunda da proje yönetici agent dan yardım aldım, örnek screenshotlar ve detaylı anlatımlar sağlayarak genel tasarımı oluşturttum
 
-| Role  | Username | Password     |
-| ----- | -------- | ------------ |
-| Admin | `emilys` | `emilyspass` |
-| User  | `averyp` | `averyppass` |
-
-Public on purpose; the login page has one-click demo buttons. You can also register your own account.
 
 ## Features
 
