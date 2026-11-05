@@ -60,6 +60,13 @@ const newProduct = (over: Record<string, unknown> = {}) => ({
   ...over,
 })
 
+/** The browser's cookies minus Better Auth's session cache: the server must check the database. */
+const withoutCache = (cookie: string) =>
+  cookie
+    .split('; ')
+    .filter((c) => !c.includes('session_data'))
+    .join('; ')
+
 describe('every admin endpoint needs an admin', () => {
   const calls: [string, string, unknown?][] = [
     ['POST', '/api/products', newProduct()],
@@ -445,7 +452,8 @@ describe('users', () => {
 
     const demoted = await call(admin, 'PATCH', `/api/users/${id}`, { role: 'user' })
     expect(await data(demoted)).toMatchObject({ role: 'user' })
-    expect((await call(login.cookie, 'GET', '/api/users')).status).toBe(401)
+    // the 5 minute cookie cache may still vouch for the old role; the stored session is gone
+    expect((await call(withoutCache(login.cookie), 'GET', '/api/users')).status).toBe(401)
     expect((await call(admin, 'PATCH', '/api/users/nobody', { firstName: 'X' })).status).toBe(404)
     expect((await call(admin, 'PATCH', `/api/users/${id}`, { username: 'emilys' })).status).toBe(
       409,
@@ -487,7 +495,10 @@ describe('users', () => {
     const login = await signIn(request, 'gone', 'initial-pass-1')
     await call(login.cookie, 'POST', '/api/cart/items', { productId: 1, quantity: 1 })
     expect((await call(admin, 'DELETE', `/api/users/${victim.id}`)).status).toBe(204)
-    expect((await call(login.cookie, 'GET', '/api/cart')).status).toBe(401)
+    expect((await call(withoutCache(login.cookie), 'GET', '/api/cart')).status).toBe(401)
+    // inside the cache window the old cookie is still accepted, but a write must fail cleanly
+    const stale = await call(login.cookie, 'POST', '/api/cart/items', { productId: 1, quantity: 1 })
+    expect(stale.status).toBeLessThan(500)
     expect(await getDb().select().from(cartItems).where(eq(cartItems.userId, victim.id))).toEqual(
       [],
     )
