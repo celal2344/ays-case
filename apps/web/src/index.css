@@ -187,3 +187,23 @@ html body [data-sonner-toaster][data-sonner-theme='light'] {
 .cart-bump {
   animation: cart-bump 0.35s ease-out;
 }
+
+@keyframes route-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.route-progress-bar {
+  animation: route-progress 1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-progress-bar {
+    width: 100%;
+    animation: none;
+  }
+}
