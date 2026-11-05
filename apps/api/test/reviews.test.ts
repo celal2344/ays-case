@@ -107,6 +107,25 @@ describe('POST /products/:id/reviews', () => {
   })
 })
 
+describe('GET /reviews/mine', () => {
+  it('needs a session', async () => {
+    expect((await request('/api/reviews/mine')).status).toBe(401)
+  })
+
+  it('lists the product ids I reviewed, and only mine', async () => {
+    const mine = async (cookie: string) =>
+      (
+        (await (await request('/api/reviews/mine', { headers: { cookie } })).json()) as {
+          data: number[]
+        }
+      ).data
+    expect(await mine(avery)).not.toContain(PRODUCT)
+    expect((await create(avery)).status).toBe(201)
+    expect(await mine(avery)).toContain(PRODUCT)
+    expect(await mine(emily)).not.toContain(PRODUCT)
+  })
+})
+
 describe('PATCH /reviews/:id', () => {
   it('edits my own review and the rating follows', async () => {
     const id = await idOf(await create(avery))

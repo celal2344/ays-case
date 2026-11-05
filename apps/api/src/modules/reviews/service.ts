@@ -9,6 +9,9 @@ export type CreateResult =
 export type ChangeResult<T> =
   { ok: true; value: T } | { ok: false; reason: 'not_found' | 'forbidden' }
 
+export const listMyReviewedProductIds = (userId: string) =>
+  repository.listReviewedProductIds(getDb(), userId)
+
 /** One review per user and product. */
 export async function createReview(
   userId: string,

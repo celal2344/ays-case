@@ -1,4 +1,9 @@
-import { reviewBodySchema, reviewResponseSchema, reviewUpdateBodySchema } from '@ays/validators'
+import {
+  productIdListResponseSchema,
+  reviewBodySchema,
+  reviewResponseSchema,
+  reviewUpdateBodySchema,
+} from '@ays/validators'
 import { Hono } from 'hono'
 import { describeRoute, resolver, validator } from 'hono-openapi'
 import { z } from 'zod'
@@ -6,7 +11,7 @@ import { z } from 'zod'
 import { requireAuth, type AuthEnv } from '../../middlewares/auth'
 import { errorResponse } from '../../utils/openapi'
 import { validationHook } from '../../utils/validation'
-import { createReview, deleteReview, updateReview } from './service'
+import { createReview, deleteReview, listMyReviewedProductIds, updateReview } from './service'
 
 const json = (description: string, schema: Parameters<typeof resolver>[0]) => ({
   description,
@@ -50,6 +55,18 @@ export const productReviewRoutes = new Hono<AuthEnv>().post(
 // Editing is for the author only; deleting is for the author or an admin.
 export const reviewRoutes = new Hono<AuthEnv>()
   .use(requireAuth)
+  .get(
+    '/mine',
+    describeRoute({
+      tags: ['reviews'],
+      summary: 'The product ids I have reviewed, newest review first',
+      responses: {
+        200: json('Product ids', productIdListResponseSchema),
+        401: errorResponse('Not signed in'),
+      },
+    }),
+    async (c) => c.json({ data: await listMyReviewedProductIds(c.var.user.id) }, 200),
+  )
   .patch(
     '/:id',
     describeRoute({

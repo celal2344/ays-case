@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 
 import type { Database } from '../../db/client'
 import { orderLines, orders, products, reviews, user } from '../../db/schema'
@@ -48,6 +48,16 @@ export async function productExists(db: Database, productId: number) {
     .from(products)
     .where(and(eq(products.id, productId), sql`${products.deletedAt} is null`))
   return row !== undefined
+}
+
+/** Ids of the products the user has reviewed, newest review first. */
+export async function listReviewedProductIds(db: Database, userId: string) {
+  const rows = await db
+    .select({ productId: reviews.productId })
+    .from(reviews)
+    .where(eq(reviews.userId, userId))
+    .orderBy(desc(reviews.createdAt), desc(reviews.id))
+  return rows.map((row) => row.productId)
 }
 
 export async function findOwner(db: Database, id: number) {
