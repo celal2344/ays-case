@@ -1,11 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { PageSkeleton } from '@/components/feedback/feedback'
-import { EditUserPage } from '@/features/users/components/user-form-pages'
-import { usersQueryOptions } from '@/features/users/queries'
-
+/** The user form is a dialog on the list now; old links land there with it open. */
 export const Route = createFileRoute('/_auth/_admin/admin/users/$userId/edit')({
-  loader: ({ context }) => context.queryClient.query(usersQueryOptions),
-  pendingComponent: PageSkeleton,
-  component: EditUserPage,
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: '/admin/users', search: { edit: params.userId }, replace: true })
+  },
 })

@@ -25,23 +25,33 @@ afterEach(() => server.events.removeAllListeners())
 const search = (router: { state: { location: { search: unknown } } }) =>
   router.state.location.search
 
-async function fillForm(values: {
-  title: string
-  price: string
-  sku?: string
-  stock?: string
-  category?: string
-}) {
-  await userEvent.type(screen.getByLabelText('Title'), values.title)
+const next = async () => userEvent.click(await screen.findByRole('button', { name: 'Next' }))
+/** A section button; its name gains "Has errors" while it is flagged. */
+const section = (name: string) => screen.getByRole('button', { name: new RegExp('^' + name) })
+
+async function fillGeneral(values: { title: string; sku?: string; category?: string }) {
+  await userEvent.type(await screen.findByLabelText('Title'), values.title)
   await userEvent.type(screen.getByLabelText('Description'), 'A perfectly reasonable description.')
   await userEvent.type(screen.getByLabelText('SKU'), values.sku ?? 'NEW-1')
   await userEvent.click(screen.getByRole('combobox', { name: 'Category' }))
   await userEvent.click(await screen.findByRole('option', { name: values.category ?? 'Beauty' }))
-  await userEvent.type(screen.getByLabelText('Price'), values.price)
+}
+
+/** Walks the create steps to the review; the price and stock come from `values`. */
+async function fillToReview(values: {
+  title: string
+  price: string
+  sku?: string
+  stock?: string
+}) {
+  await fillGeneral(values)
+  await next()
+  await userEvent.type(await screen.findByLabelText('Price'), values.price)
   if (values.stock) {
     await userEvent.clear(screen.getByLabelText('Stock'))
     await userEvent.type(screen.getByLabelText('Stock'), values.stock)
   }
+  for (let i = 0; i < 4; i++) await next() // size, tags, images, review
 }
 
 describe('admin access', () => {
@@ -80,7 +90,7 @@ describe('admin product table (PROD-2)', () => {
     expect(first.getByText('$10.00')).toBeInTheDocument()
     expect(first.getByRole('link', { name: 'Edit beauty item 01' })).toHaveAttribute(
       'href',
-      '/admin/products/1/edit',
+      '/admin/products?edit=1',
     )
     expect(first.getByRole('button', { name: 'Delete beauty item 01' })).toBeInTheDocument()
   })
@@ -126,26 +136,55 @@ describe('admin product table (PROD-2)', () => {
   })
 })
 
+const formDialog = () => screen.findByRole('dialog', { name: /product/i })
+
 describe('create a product (PROD-3)', () => {
-  it('validates before sending anything', async () => {
+  it('opens from the New product button, and from the URL; the old /new route redirects', async () => {
+    signInAs('emilys')
+    const { router, unmount } = await renderApp('/admin/products')
+    await userEvent.click(await screen.findByRole('link', { name: 'New product' }))
+    expect(await formDialog()).toHaveTextContent('New product')
+    expect(search(router)).toEqual({ new: 1 })
+    unmount()
+
+    for (const path of ['/admin/products?new=1', '/admin/products/new']) {
+      const view = await renderApp(path)
+      expect(await formDialog()).toHaveTextContent('New product')
+      expect(view.router.state.location.pathname).toBe('/admin/products')
+      expect(search(view.router)).toEqual({ new: 1 })
+      view.unmount()
+    }
+  })
+
+  it('blocks Next on invalid fields and shows what to fix, then moves on when they are fine', async () => {
     signInAs('emilys')
     const requests = recordRequests()
-    await renderApp('/admin/products/new')
-    await userEvent.click(await screen.findByRole('button', { name: 'Create product' }))
+    await renderApp('/admin/products?new=1')
+    await next()
     expect(await screen.findByText('Enter a title of 2 to 100 characters.')).toBeInTheDocument()
     expect(screen.getByText('Choose a category.')).toBeInTheDocument()
     expect(screen.getByText('Enter a SKU of 1 to 64 characters.')).toBeInTheDocument()
-    expect(screen.getByText('Enter a price above 0 with at most 2 decimals.')).toBeInTheDocument()
+    expect(section('General')).toHaveAttribute('aria-current', 'step')
+    expect(screen.queryByLabelText('Price')).not.toBeVisible()
+    expect(section('Price and stock')).toBeDisabled() // later steps wait until this one is valid
+
+    await fillGeneral({ title: 'Brand new gadget' })
+    await next()
+    expect(await screen.findByLabelText('Price')).toBeVisible()
+    expect(section('Price and stock')).toHaveAttribute('aria-current', 'step')
+    await next() // price is empty
+    expect(await screen.findByText('Enter a price above 0 with at most 2 decimals.')).toBeVisible()
     expect(writes(requests)).toEqual([])
   })
 
   it('creates the product on the server and shows it in the admin table and the shop', async () => {
     signInAs('emilys')
-    const { router } = await renderApp('/admin/products/new')
-    await fillForm({ title: 'Brand new gadget', price: '49.9', stock: '12' })
+    const { router } = await renderApp('/admin/products?new=1')
+    await fillToReview({ title: 'Brand new gadget', price: '49.9', stock: '12' })
+    expect(await screen.findByText('Check the summary, then create the product.')).toBeVisible()
     await userEvent.click(screen.getByRole('button', { name: 'Create product' }))
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/admin/products'))
+    await waitFor(() => expect(search(router)).toEqual({}))
     expect(admin.adminProducts()[0]).toMatchObject({
       title: 'Brand new gadget',
       sku: 'NEW-1',
@@ -160,75 +199,121 @@ describe('create a product (PROD-3)', () => {
     expect(await screen.findByText('Brand new gadget')).toBeInTheDocument()
   })
 
-  it('shows the server refusal when the SKU is taken', async () => {
+  it('shows the server refusal when the SKU is taken, and stays open', async () => {
     signInAs('emilys')
-    const { router } = await renderApp('/admin/products/new')
-    await fillForm({ title: 'Twin', price: '5', sku: 'SKU-1' })
+    const { router } = await renderApp('/admin/products?new=1')
+    await fillToReview({ title: 'Twin', price: '5', sku: 'SKU-1' })
     await userEvent.click(screen.getByRole('button', { name: 'Create product' }))
     expect(await screen.findByRole('alert')).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/admin/products/new')
+    expect(search(router)).toEqual({ new: 1 })
     expect(admin.adminProducts()).toHaveLength(30)
   })
 
   it('previews an image URL as you add it', async () => {
     signInAs('emilys')
-    await renderApp('/admin/products/new')
+    await renderApp('/admin/products?edit=1&section=images')
     await userEvent.click(await screen.findByRole('button', { name: 'Add image' }))
-    await userEvent.type(screen.getByLabelText('Image 1 URL'), 'https://img.test/x.webp')
-    expect(screen.getByLabelText('Image 1 URL')).toHaveValue('https://img.test/x.webp')
+    const added = screen.getAllByLabelText(/^Image \d+ URL$/).at(-1)!
+    await userEvent.type(added, 'https://img.test/x.webp')
+    expect(added).toHaveValue('https://img.test/x.webp')
   })
 })
 
 describe('edit a product (PROD-4)', () => {
-  it('pre-fills the form; saving updates the shop and the detail page', async () => {
+  it('opens from the Edit button and from the URL, pre-filled; the old edit route redirects', async () => {
     signInAs('emilys')
-    const { router } = await renderApp('/admin/products/1/edit')
+    const { router, unmount } = await renderApp('/admin/products')
+    await userEvent.click(await screen.findByRole('link', { name: 'Edit beauty item 01' }))
     expect(await screen.findByLabelText('Title')).toHaveValue('beauty item 01')
+    expect(search(router)).toEqual({ edit: 1 })
+    unmount()
+
+    for (const path of ['/admin/products?edit=1', '/admin/products/1/edit']) {
+      const view = await renderApp(path)
+      expect(await screen.findByLabelText('Title')).toHaveValue('beauty item 01')
+      expect(screen.getByLabelText('SKU')).toHaveValue('SKU-1')
+      expect(view.router.state.location.pathname).toBe('/admin/products')
+      expect(search(view.router)).toEqual({ edit: 1 })
+      view.unmount()
+    }
+  })
+
+  it('moves freely between sections (kept in the URL) and saves from any of them', async () => {
+    signInAs('emilys')
+    const { router } = await renderApp('/admin/products?edit=1')
+    await screen.findByLabelText('Title')
+    await userEvent.click(section('Price and stock'))
+    await waitFor(() => expect(search(router)).toEqual({ edit: 1, section: 'pricing' }))
     expect(screen.getByLabelText('Price')).toHaveValue('10')
-    expect(screen.getByLabelText('SKU')).toHaveValue('SKU-1')
 
     await userEvent.clear(screen.getByLabelText('Price'))
     await userEvent.type(screen.getByLabelText('Price'), '12.5')
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/admin/products'))
-
+    await waitFor(() => expect(search(router)).toEqual({}))
     expect(admin.liveProduct(1)).toMatchObject({ priceCents: 1250 })
 
     await router.navigate({ to: '/products/$productId', params: { productId: '1' } })
     expect((await screen.findAllByText('$12.50')).length).toBeGreaterThan(0)
   })
 
-  it('an unknown product id shows 404', async () => {
+  it('an unknown product id shows 404 in the dialog', async () => {
     signInAs('emilys')
-    await renderApp('/admin/products/99999/edit')
+    await renderApp('/admin/products?edit=99999')
     expect(await screen.findByText('Page not found')).toBeInTheDocument()
+  })
+
+  it('on a failed save, flags the section with the problem and opens it', async () => {
+    signInAs('emilys')
+    const requests = recordRequests()
+    const { router } = await renderApp('/admin/products?edit=1')
+    await screen.findByLabelText('Title')
+    await userEvent.click(section('Price and stock'))
+    await userEvent.clear(await screen.findByLabelText('Price'))
+    await userEvent.click(section('General'))
+    expect(screen.queryByRole('img', { name: 'Has errors' })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await waitFor(() => expect(search(router)).toEqual({ edit: 1, section: 'pricing' }))
+    expect(await screen.findByText('Enter a price above 0 with at most 2 decimals.')).toBeVisible()
+    const flagged = screen.getByRole('img', { name: 'Has errors' })
+    expect(section('Price and stock')).toContainElement(flagged)
+    expect(section('General')).not.toContainElement(flagged)
+    expect(writes(requests)).toEqual([])
   })
 
   it('asks before discarding unsaved changes', async () => {
     signInAs('emilys')
-    const { router } = await renderApp('/admin/products/1/edit')
+    const { router } = await renderApp('/admin/products?edit=1')
     await userEvent.type(await screen.findByLabelText('Title'), ' changed')
-    await userEvent.click(screen.getByRole('link', { name: 'Cancel' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     const dialog = await screen.findByRole('alertdialog')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Keep editing' }))
-    expect(router.state.location.pathname).toBe('/admin/products/1/edit')
+    expect(search(router)).toEqual({ edit: 1 })
 
-    await userEvent.click(screen.getByRole('link', { name: 'Cancel' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     await userEvent.click(
       within(await screen.findByRole('alertdialog')).getByRole('button', {
         name: 'Discard changes',
       }),
     )
-    await waitFor(() => expect(router.state.location.pathname).toBe('/admin/products'))
+    await waitFor(() => expect(search(router)).toEqual({}))
     expect(admin.liveProduct(1)?.title).toBe('beauty item 01')
   })
 
-  it('does not ask when nothing changed', async () => {
+  it('does not ask when nothing changed, and switching section is not a way out', async () => {
     signInAs('emilys')
-    const { router } = await renderApp('/admin/products/1/edit')
-    await userEvent.click(await screen.findByRole('link', { name: 'Cancel' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/admin/products'))
+    const { router } = await renderApp('/admin/products?edit=1')
+    await userEvent.type(await screen.findByLabelText('Title'), ' changed')
+    await userEvent.click(section('Images'))
+    await waitFor(() => expect(search(router)).toEqual({ edit: 1, section: 'images' }))
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    await userEvent.click(section('General'))
+    await userEvent.clear(screen.getByLabelText('Title'))
+    await userEvent.type(screen.getByLabelText('Title'), 'beauty item 01')
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(search(router)).toEqual({}))
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
   })
 })
 
@@ -279,16 +364,13 @@ describe('dashboard (EX-13, EX-15)', () => {
     signInAs('emilys')
     admin.deleteProduct(2)
     await renderApp('/admin')
-    // the labels also appear as nav links, so pick the one that sits inside a stat card
-    const stat = (label: string) =>
-      screen
-        .getAllByText(label)
-        .map((el) => el.closest('[data-slot="card"]'))
-        .find((card): card is HTMLElement => card !== null)!
-    await waitFor(() => expect(within(stat('Products')).getByText('29')).toBeInTheDocument())
-    expect(within(stat('Users')).getByText('25')).toBeInTheDocument()
-    expect(within(stat('Low stock')).getByText('1')).toBeInTheDocument() // id 6 has stock 4
-    expect(within(stat('Out of stock')).getByText('1')).toBeInTheDocument() // id 3
+    // each stat card is one link named "<label> <number>"
+    const stat = (label: string, value: number) =>
+      screen.findByRole('link', { name: `${label} ${value}` })
+    await stat('Products', 29)
+    await stat('Users', 25)
+    await stat('Low stock', 1) // id 6 has stock 4
+    await stat('Out of stock', 1) // id 3
   })
 
   it('links to every lookup list', async () => {

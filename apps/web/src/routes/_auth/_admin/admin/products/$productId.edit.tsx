@@ -1,15 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { PageSkeleton } from '@/components/feedback/feedback'
-import { EditProductPage } from '@/features/admin/components/product-form-pages'
-import { catalogQueryOptions, categoriesQueryOptions } from '@/features/products/queries'
-
+/** The product form is a modal on the list now; old links land there with it open. */
 export const Route = createFileRoute('/_auth/_admin/admin/products/$productId/edit')({
-  loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.query(catalogQueryOptions),
-      context.queryClient.query(categoriesQueryOptions),
-    ]),
-  pendingComponent: PageSkeleton,
-  component: EditProductPage,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/admin/products',
+      search: { edit: Number(params.productId) },
+      replace: true,
+    })
+  },
 })

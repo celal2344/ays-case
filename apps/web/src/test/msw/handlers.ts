@@ -119,7 +119,22 @@ export const productHandlers = [
 ]
 
 const lookupHandlers = LOOKUP_TABLES.flatMap((table) => [
-  http.get(`${BASE}/admin/${table}`, () => asAdmin(() => asJson({ data: admin.lookups[table] }))),
+  http.get(`${BASE}/admin/${table}`, () =>
+    asAdmin(() =>
+      asJson({
+        data:
+          table === 'tags'
+            ? // like the real API: each tag comes with how many live products use it
+              admin.lookups.tags.map((tag) => ({
+                ...tag,
+                productCount: admin
+                  .liveProducts()
+                  .filter((product) => product.tags.some((t) => t.slug === tag.slug)).length,
+              }))
+            : admin.lookups[table],
+      }),
+    ),
+  ),
   http.post(`${BASE}/admin/${table}`, async ({ request }) =>
     asAdmin(async () => {
       const result = admin.createLookup(table, (await request.json()) as Omit<LookupRecord, 'id'>)

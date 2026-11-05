@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest'
 
 import '@/i18n'
@@ -38,6 +38,9 @@ class NoopObserver {
 Element.prototype.scrollIntoView = () => {}
 vi.stubGlobal('ResizeObserver', NoopObserver)
 vi.stubGlobal('IntersectionObserver', NoopObserver)
+
+// the admin pages are heavy (sidebar, tables, modals), so under a loaded CI runner `findBy` needs longer
+configure({ asyncUtilTimeout: 5000 })
 
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))
 afterAll(() => server.close())

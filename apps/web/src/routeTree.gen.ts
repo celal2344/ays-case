@@ -19,6 +19,7 @@ import { Route as AuthCheckoutRouteImport } from './routes/_auth/checkout'
 import { Route as AuthFavoritesRouteImport } from './routes/_auth/favorites'
 import { Route as ProductsIndexRouteImport } from './routes/products/index'
 import { Route as ProductsProductIdRouteImport } from './routes/products/$productId'
+import { Route as AuthAdminAdminRouteImport } from './routes/_auth/_admin/admin'
 import { Route as AuthOrdersIndexRouteImport } from './routes/_auth/orders/index'
 import { Route as AuthOrdersOrderIdRouteImport } from './routes/_auth/orders/$orderId'
 import { Route as AuthAdminAdminIndexRouteImport } from './routes/_auth/_admin/admin/index'
@@ -78,6 +79,11 @@ const ProductsProductIdRoute = ProductsProductIdRouteImport.update({
   path: '/products/$productId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthAdminAdminRoute = AuthAdminAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthAdminRoute,
+} as any)
 const AuthOrdersIndexRoute = AuthOrdersIndexRouteImport.update({
   id: '/orders/',
   path: '/orders/',
@@ -89,50 +95,50 @@ const AuthOrdersOrderIdRoute = AuthOrdersOrderIdRouteImport.update({
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthAdminAdminIndexRoute = AuthAdminAdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => AuthAdminRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthAdminAdminRoute,
 } as any)
 const AuthAdminAdminLookupsKindRoute =
   AuthAdminAdminLookupsKindRouteImport.update({
-    id: '/admin/lookups/$kind',
-    path: '/admin/lookups/$kind',
-    getParentRoute: () => AuthAdminRoute,
+    id: '/lookups/$kind',
+    path: '/lookups/$kind',
+    getParentRoute: () => AuthAdminAdminRoute,
   } as any)
 const AuthAdminAdminProductsIndexRoute =
   AuthAdminAdminProductsIndexRouteImport.update({
-    id: '/admin/products/',
-    path: '/admin/products/',
-    getParentRoute: () => AuthAdminRoute,
+    id: '/products/',
+    path: '/products/',
+    getParentRoute: () => AuthAdminAdminRoute,
   } as any)
 const AuthAdminAdminProductsNewRoute =
   AuthAdminAdminProductsNewRouteImport.update({
-    id: '/admin/products/new',
-    path: '/admin/products/new',
-    getParentRoute: () => AuthAdminRoute,
+    id: '/products/new',
+    path: '/products/new',
+    getParentRoute: () => AuthAdminAdminRoute,
   } as any)
 const AuthAdminAdminUsersIndexRoute =
   AuthAdminAdminUsersIndexRouteImport.update({
-    id: '/admin/users/',
-    path: '/admin/users/',
-    getParentRoute: () => AuthAdminRoute,
+    id: '/users/',
+    path: '/users/',
+    getParentRoute: () => AuthAdminAdminRoute,
   } as any)
 const AuthAdminAdminUsersNewRoute = AuthAdminAdminUsersNewRouteImport.update({
-  id: '/admin/users/new',
-  path: '/admin/users/new',
-  getParentRoute: () => AuthAdminRoute,
+  id: '/users/new',
+  path: '/users/new',
+  getParentRoute: () => AuthAdminAdminRoute,
 } as any)
 const AuthAdminAdminProductsProductIdEditRoute =
   AuthAdminAdminProductsProductIdEditRouteImport.update({
-    id: '/admin/products/$productId/edit',
-    path: '/admin/products/$productId/edit',
-    getParentRoute: () => AuthAdminRoute,
+    id: '/products/$productId/edit',
+    path: '/products/$productId/edit',
+    getParentRoute: () => AuthAdminAdminRoute,
   } as any)
 const AuthAdminAdminUsersUserIdEditRoute =
   AuthAdminAdminUsersUserIdEditRouteImport.update({
-    id: '/admin/users/$userId/edit',
-    path: '/admin/users/$userId/edit',
-    getParentRoute: () => AuthAdminRoute,
+    id: '/users/$userId/edit',
+    path: '/users/$userId/edit',
+    getParentRoute: () => AuthAdminAdminRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/favorites': typeof AuthFavoritesRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/': typeof ProductsIndexRoute
+  '/admin': typeof AuthAdminAdminRouteWithChildren
   '/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/orders/': typeof AuthOrdersIndexRoute
   '/admin/': typeof AuthAdminAdminIndexRoute
@@ -187,6 +194,7 @@ export interface FileRoutesById {
   '/_auth/favorites': typeof AuthFavoritesRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/': typeof ProductsIndexRoute
+  '/_auth/_admin/admin': typeof AuthAdminAdminRouteWithChildren
   '/_auth/orders/$orderId': typeof AuthOrdersOrderIdRoute
   '/_auth/orders/': typeof AuthOrdersIndexRoute
   '/_auth/_admin/admin/': typeof AuthAdminAdminIndexRoute
@@ -209,6 +217,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/products/$productId'
     | '/products/'
+    | '/admin'
     | '/orders/$orderId'
     | '/orders/'
     | '/admin/'
@@ -251,6 +260,7 @@ export interface FileRouteTypes {
     | '/_auth/favorites'
     | '/products/$productId'
     | '/products/'
+    | '/_auth/_admin/admin'
     | '/_auth/orders/$orderId'
     | '/_auth/orders/'
     | '/_auth/_admin/admin/'
@@ -344,6 +354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/_admin/admin': {
+      id: '/_auth/_admin/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthAdminAdminRouteImport
+      parentRoute: typeof AuthAdminRoute
+    }
     '/_auth/orders/': {
       id: '/_auth/orders/'
       path: '/orders'
@@ -360,64 +377,64 @@ declare module '@tanstack/react-router' {
     }
     '/_auth/_admin/admin/': {
       id: '/_auth/_admin/admin/'
-      path: '/admin'
+      path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthAdminAdminIndexRouteImport
-      parentRoute: typeof AuthAdminRoute
+      parentRoute: typeof AuthAdminAdminRoute
     }
     '/_auth/_admin/admin/lookups/$kind': {
       id: '/_auth/_admin/admin/lookups/$kind'
-      path: '/admin/lookups/$kind'
+      path: '/lookups/$kind'
       fullPath: '/admin/lookups/$kind'
       preLoaderRoute: typeof AuthAdminAdminLookupsKindRouteImport
-      parentRoute: typeof AuthAdminRoute
+      parentRoute: typeof AuthAdminAdminRoute
     }
     '/_auth/_admin/admin/products/': {
       id: '/_auth/_admin/admin/products/'
-      path: '/admin/products'
+      path: '/products'
       fullPath: '/admin/products/'
       preLoaderRoute: typeof AuthAdminAdminProductsIndexRouteImport
-      parentRoute: typeof AuthAdminRoute
+      parentRoute: typeof AuthAdminAdminRoute
     }
     '/_auth/_admin/admin/products/new': {
       id: '/_auth/_admin/admin/products/new'
-      path: '/admin/products/new'
+      path: '/products/new'
       fullPath: '/admin/products/new'
       preLoaderRoute: typeof AuthAdminAdminProductsNewRouteImport
-      parentRoute: typeof AuthAdminRoute
+      parentRoute: typeof AuthAdminAdminRoute
     }
     '/_auth/_admin/admin/users/': {
       id: '/_auth/_admin/admin/users/'
-      path: '/admin/users'
+      path: '/users'
       fullPath: '/admin/users/'
       preLoaderRoute: typeof AuthAdminAdminUsersIndexRouteImport
-      parentRoute: typeof AuthAdminRoute
+      parentRoute: typeof AuthAdminAdminRoute
     }
     '/_auth/_admin/admin/users/new': {
       id: '/_auth/_admin/admin/users/new'
-      path: '/admin/users/new'
+      path: '/users/new'
       fullPath: '/admin/users/new'
       preLoaderRoute: typeof AuthAdminAdminUsersNewRouteImport
-      parentRoute: typeof AuthAdminRoute
+      parentRoute: typeof AuthAdminAdminRoute
     }
     '/_auth/_admin/admin/products/$productId/edit': {
       id: '/_auth/_admin/admin/products/$productId/edit'
-      path: '/admin/products/$productId/edit'
+      path: '/products/$productId/edit'
       fullPath: '/admin/products/$productId/edit'
       preLoaderRoute: typeof AuthAdminAdminProductsProductIdEditRouteImport
-      parentRoute: typeof AuthAdminRoute
+      parentRoute: typeof AuthAdminAdminRoute
     }
     '/_auth/_admin/admin/users/$userId/edit': {
       id: '/_auth/_admin/admin/users/$userId/edit'
-      path: '/admin/users/$userId/edit'
+      path: '/users/$userId/edit'
       fullPath: '/admin/users/$userId/edit'
       preLoaderRoute: typeof AuthAdminAdminUsersUserIdEditRouteImport
-      parentRoute: typeof AuthAdminRoute
+      parentRoute: typeof AuthAdminAdminRoute
     }
   }
 }
 
-interface AuthAdminRouteChildren {
+interface AuthAdminAdminRouteChildren {
   AuthAdminAdminIndexRoute: typeof AuthAdminAdminIndexRoute
   AuthAdminAdminLookupsKindRoute: typeof AuthAdminAdminLookupsKindRoute
   AuthAdminAdminProductsNewRoute: typeof AuthAdminAdminProductsNewRoute
@@ -428,7 +445,7 @@ interface AuthAdminRouteChildren {
   AuthAdminAdminUsersUserIdEditRoute: typeof AuthAdminAdminUsersUserIdEditRoute
 }
 
-const AuthAdminRouteChildren: AuthAdminRouteChildren = {
+const AuthAdminAdminRouteChildren: AuthAdminAdminRouteChildren = {
   AuthAdminAdminIndexRoute: AuthAdminAdminIndexRoute,
   AuthAdminAdminLookupsKindRoute: AuthAdminAdminLookupsKindRoute,
   AuthAdminAdminProductsNewRoute: AuthAdminAdminProductsNewRoute,
@@ -438,6 +455,18 @@ const AuthAdminRouteChildren: AuthAdminRouteChildren = {
   AuthAdminAdminProductsProductIdEditRoute:
     AuthAdminAdminProductsProductIdEditRoute,
   AuthAdminAdminUsersUserIdEditRoute: AuthAdminAdminUsersUserIdEditRoute,
+}
+
+const AuthAdminAdminRouteWithChildren = AuthAdminAdminRoute._addFileChildren(
+  AuthAdminAdminRouteChildren,
+)
+
+interface AuthAdminRouteChildren {
+  AuthAdminAdminRoute: typeof AuthAdminAdminRouteWithChildren
+}
+
+const AuthAdminRouteChildren: AuthAdminRouteChildren = {
+  AuthAdminAdminRoute: AuthAdminAdminRouteWithChildren,
 }
 
 const AuthAdminRouteWithChildren = AuthAdminRoute._addFileChildren(

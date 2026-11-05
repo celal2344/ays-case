@@ -81,7 +81,7 @@ describe('user table (USER-1)', () => {
     expect(emily.getByText('Admin')).toBeInTheDocument()
     expect(emily.getByRole('link', { name: 'Edit Emily Johnson' })).toHaveAttribute(
       'href',
-      '/admin/users/user-1/edit',
+      '/admin/users?edit=user-1',
     )
   })
 
@@ -120,7 +120,7 @@ describe('create a user (USER-2)', () => {
   it('validates before sending anything', async () => {
     signInAs('emilys')
     const requests = recordRequests()
-    await renderApp('/admin/users/new')
+    await renderApp('/admin/users?new=1')
     await userEvent.click(await screen.findByRole('button', { name: 'Create user' }))
     expect(await screen.findByText('Enter a username of 3 to 30 characters.')).toBeInTheDocument()
     expect(screen.getByText('Enter a valid email address.')).toBeInTheDocument()
@@ -130,14 +130,14 @@ describe('create a user (USER-2)', () => {
 
   it('refuses a username that is already taken, case-insensitively, as you type', async () => {
     signInAs('emilys')
-    await renderApp('/admin/users/new')
+    await renderApp('/admin/users?new=1')
     await userEvent.type(await screen.findByLabelText('Username'), 'EMILYS')
     expect(await screen.findByText('That username is already taken.')).toBeInTheDocument()
   })
 
   it('creates the user on the server and lists it', async () => {
     signInAs('emilys')
-    const { router } = await renderApp('/admin/users/new')
+    const { router } = await renderApp('/admin/users?new=1')
     await screen.findByLabelText('Username')
     await fillUser({ username: 'nina' })
     await userEvent.click(screen.getByRole('button', { name: 'Create user' }))
@@ -152,7 +152,7 @@ describe('create a user (USER-2)', () => {
 
   it('creates an admin when the role is chosen', async () => {
     signInAs('emilys')
-    await renderApp('/admin/users/new')
+    await renderApp('/admin/users?new=1')
     await screen.findByLabelText('Username')
     await fillUser({ username: 'boss' })
     await userEvent.click(screen.getByRole('combobox', { name: 'Role' }))
@@ -163,21 +163,45 @@ describe('create a user (USER-2)', () => {
 
   it('shows the server refusal when the email is already used', async () => {
     signInAs('emilys')
-    const { router } = await renderApp('/admin/users/new')
+    const { router } = await renderApp('/admin/users?new=1')
     await screen.findByLabelText('Username')
     await fillUser({ username: 'someone', email: 'emilys@example.com' })
     await userEvent.click(screen.getByRole('button', { name: 'Create user' }))
     expect(
       await screen.findByText('A user with that username or email already exists.'),
     ).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/admin/users/new')
+    expect(router.state.location.search).toEqual({ new: 1 })
+  })
+})
+
+describe('user dialogs and old routes', () => {
+  it('opens from the New user button and from the URL; the old routes redirect', async () => {
+    signInAs('emilys')
+    const first = await renderApp('/admin/users')
+    await userEvent.click(await screen.findByRole('link', { name: 'New user' }))
+    expect(await screen.findByRole('dialog', { name: 'New user' })).toBeInTheDocument()
+    expect(first.router.state.location.search).toEqual({ new: 1 })
+    first.unmount()
+
+    for (const [path, search] of [
+      ['/admin/users?new=1', { new: 1 }],
+      ['/admin/users/new', { new: 1 }],
+      ['/admin/users?edit=user-16', { edit: 'user-16' }],
+      ['/admin/users/user-16/edit', { edit: 'user-16' }],
+    ] as const) {
+      const view = await renderApp(path)
+      expect(await screen.findByRole('dialog')).toBeInTheDocument()
+      expect(view.router.state.location.pathname).toBe('/admin/users')
+      expect(view.router.state.location.search).toEqual(search)
+      view.unmount()
+    }
   })
 })
 
 describe('edit a user (USER-3)', () => {
   it('pre-fills the form; saving updates the user on the server, role included', async () => {
     signInAs('emilys')
-    const { router } = await renderApp('/admin/users/user-16/edit')
+    const { router } = await renderApp('/admin/users?edit=user-16')
     expect(await screen.findByLabelText('First name')).toHaveValue('Avery')
     expect(screen.getByLabelText('Username')).toHaveValue('averyp')
 
@@ -197,7 +221,7 @@ describe('edit a user (USER-3)', () => {
 
   it('a user can keep their own username while editing, but not take another one', async () => {
     signInAs('emilys')
-    await renderApp('/admin/users/user-16/edit')
+    await renderApp('/admin/users?edit=user-16')
     const username = await screen.findByLabelText('Username')
     await userEvent.type(username, 'x')
     expect(screen.queryByText('That username is already taken.')).not.toBeInTheDocument()
@@ -206,21 +230,22 @@ describe('edit a user (USER-3)', () => {
     expect(await screen.findByText('That username is already taken.')).toBeInTheDocument()
   })
 
-  it('an unknown user shows 404', async () => {
+  it('an unknown user id opens no dialog', async () => {
     signInAs('emilys')
-    await renderApp('/admin/users/user-99999/edit')
-    expect(await screen.findByText('Page not found')).toBeInTheDocument()
+    await renderApp('/admin/users?edit=user-99999')
+    await screen.findByText('Manage users')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('asks before discarding unsaved changes', async () => {
     signInAs('emilys')
-    const { router } = await renderApp('/admin/users/user-16/edit')
+    const { router } = await renderApp('/admin/users?edit=user-16')
     await userEvent.type(await screen.findByLabelText('First name'), 'x')
-    await userEvent.click(screen.getByRole('link', { name: 'Cancel' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     const dialog = await screen.findByRole('alertdialog')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Keep editing' }))
-    expect(router.state.location.pathname).toBe('/admin/users/user-16/edit')
-    await userEvent.click(screen.getByRole('link', { name: 'Cancel' }))
+    expect(router.state.location.search).toEqual({ edit: 'user-16' })
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     await userEvent.click(
       within(await screen.findByRole('alertdialog')).getByRole('button', {
         name: 'Discard changes',
@@ -232,7 +257,7 @@ describe('edit a user (USER-3)', () => {
 
   it('editing your own account updates the signed-in user (header) right away', async () => {
     signInAs('emilys')
-    await renderApp('/admin/users/user-1/edit')
+    await renderApp('/admin/users?edit=user-1')
     const first = await screen.findByLabelText('First name')
     await userEvent.clear(first)
     await userEvent.type(first, 'Emmie')
@@ -299,7 +324,7 @@ describe('guardrails (USER-5)', () => {
 
   it('the role select is locked on your own account', async () => {
     signInAs('emilys')
-    await renderApp('/admin/users/user-1/edit')
+    await renderApp('/admin/users?edit=user-1')
     await screen.findByLabelText('First name')
     expect(screen.getByRole('combobox', { name: 'Role' })).toBeDisabled()
     expect(screen.getByText('You cannot delete or demote your own account.')).toBeInTheDocument()

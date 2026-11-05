@@ -52,6 +52,7 @@ import { Badge } from '@/components/ui/badge'
 import { StockBadge } from '@/features/products/components/product-badges'
 import { ProductImage } from '@/features/products/components/product-image'
 import { ProductPrice } from '@/features/products/components/product-price'
+import { ProductModal } from './product-modal'
 import { useAdminProducts } from '@/features/products/hooks/use-admin-products'
 import { useCategories } from '@/features/products/hooks/use-categories'
 import type { AdminProduct as Product } from '@ays/validators'
@@ -148,8 +149,8 @@ function ActionsCell({ product }: { product: Product }) {
   return (
     <div className="flex justify-end gap-1">
       <Link
-        to="/admin/products/$productId/edit"
-        params={{ productId: String(product.id) }}
+        to="/admin/products"
+        search={(prev) => ({ ...prev, edit: product.id })}
         aria-label={t('admin.products.edit', { title: product.title })}
         className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
       >
@@ -327,7 +328,11 @@ export function AdminProductsPage() {
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold">{t('admin.products.title')}</h1>
-          <Link to="/admin/products/new" className={buttonVariants({})}>
+          <Link
+            to="/admin/products"
+            search={(prev) => ({ ...prev, new: 1 as const })}
+            className={buttonVariants({})}
+          >
             <Plus className="size-4" />
             {t('admin.products.new')}
           </Link>
@@ -453,6 +458,24 @@ export function AdminProductsPage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      <ProductModal
+        target={
+          search.edit !== undefined
+            ? { kind: 'edit', id: search.edit }
+            : search.new === 1
+              ? { kind: 'new' }
+              : null
+        }
+        section={search.section}
+        onSectionChange={(section) =>
+          void navigate({ search: (prev) => ({ ...prev, section }), replace: true })
+        }
+        onClose={() =>
+          void navigate({
+            search: (prev) => ({ ...prev, new: undefined, edit: undefined, section: undefined }),
+          })
+        }
+      />
     </DeleteRequest.Provider>
   )
 }

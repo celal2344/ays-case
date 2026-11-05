@@ -199,6 +199,9 @@ export function toProductBody(values: ProductFormValues): ProductBody {
   }
 }
 
+/** The product form's sections, in menu order (also the `section` URL parameter). */
+export const PRODUCT_SECTIONS = ['general', 'pricing', 'size', 'tags', 'images'] as const
+
 export const ADMIN_SORTS = ['title', 'category', 'price', 'stock', 'rating'] as const
 export type AdminSort = (typeof ADMIN_SORTS)[number]
 export const ADMIN_PAGE_SIZE = 20
@@ -212,5 +215,9 @@ export const adminProductSearchSchema = z.object({
   page: z.coerce.number().int().min(2).optional().catch(undefined),
   /** Show soft-deleted products too (and nothing else when `only`). */
   deleted: z.enum(['include', 'only']).optional().catch(undefined),
+  /** The product form is open: `new=1` to create, `edit=<id>` to edit, `section` is the open section. */
+  new: z.literal(1).optional().catch(undefined),
+  edit: z.coerce.number().int().positive().optional().catch(undefined),
+  section: z.enum(PRODUCT_SECTIONS).optional().catch(undefined),
 })
 export type AdminProductSearch = z.infer<typeof adminProductSearchSchema>

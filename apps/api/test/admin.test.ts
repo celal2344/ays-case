@@ -493,3 +493,16 @@ describe('users', () => {
     expect((await signIn(request, 'gone', 'initial-pass-1')).res.status).toBe(401)
   })
 })
+
+describe('tag list (admin)', () => {
+  it('says how many products use each tag, for the tag picker', async () => {
+    const res = await call(admin, 'GET', '/api/admin/tags')
+    expect(res.status).toBe(200)
+    const { data: tags } = (await res.json()) as {
+      data: { slug: string; productCount?: number }[]
+    }
+    expect(tags.length).toBeGreaterThan(0)
+    expect(tags.every((tag) => typeof tag.productCount === 'number')).toBe(true)
+    expect(tags.some((tag) => (tag.productCount ?? 0) > 0)).toBe(true)
+  })
+})

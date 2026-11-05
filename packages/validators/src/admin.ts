@@ -100,7 +100,13 @@ export const adminCategorySchema = z.object({
   name: z.string(),
   sortOrder: z.number().int(),
 })
-export const adminSluggedSchema = z.object({ id, slug: z.string(), name: z.string() })
+/** `productCount` (how many products use it) comes with the tag list, for the tag picker's "most used". */
+export const adminSluggedSchema = z.object({
+  id,
+  slug: z.string(),
+  name: z.string(),
+  productCount: z.number().int().optional(),
+})
 export const adminPolicySchema = z.object({ id, label: z.string() })
 
 export const adminCategoryResponseSchema = envelope(adminCategorySchema)
