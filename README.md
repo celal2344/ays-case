@@ -5,11 +5,12 @@ A full-stack online shop: catalog and search, accounts, cart, checkout, orders, 
 **Live:** https://ayscase.vercel.app · **API docs:** https://ayscase.vercel.app/api/docs
 
 ## Yapay zekasız türkçe proje açıklaması:
-Projede 3 farklı agent kullandım biri proje yöneticisi diğer ikisi ise frontend ve backend agentları. Project manager agentı issueları oluşturup diğer iki agent ı orkestre etmede ve aynı zamanda danışman olarak kullandım sorularımı ve aldığım kararları doğrulama amaçlı.
-Proje yöneticisinin oluşturduğu issueları ise developer agentlara verdim burda çalıştıkları alanlara göre paralel veya ardışık olarak çalıştırdım.
-Developer agentların oluşturdukları prları kendim test ettim ve kodu kontrol ettim. 
-Agent hatalarını minimalize etmek için her feature ve pr için birçok test ve lint kontrolleri oluşturdum.
-Tasarım konusunda da proje yönetici agent dan yardım aldım, örnek screenshotlar ve detaylı anlatımlar sağlayarak genel tasarımı oluşturttum
+- Projede 3 farklı agent kullandım biri proje yöneticisi diğer ikisi ise frontend ve backend agentları. 
+- Project manager agentı issueları oluşturup diğer iki agent ı orkestre etmede ve aynı zamanda sorularımı ve aldığım kararları doğrulama amaçlı danışman olarak kullandım.
+- Proje yöneticisinin oluşturduğu issueları ise developer agentlara verdim, çalıştıkları alanlara göre paralel veya ardışık olarak çalıştırdım.
+- Developer agentların oluşturdukları prları kendim test ettim ve kodu kontrol ettim. 
+- Agent hatalarını minimalize etmek için her feature ve pr için birçok test ve lint kontrolleri oluşturdum zamanımın çoğu da zaten bu test ve lintlerin codebase i taramasını beklemekle geçti. Burda proje büyüdükçe testleri daha odaklı ve parçalı şekilde yapmaya başladım.
+- Tasarım konusunda da proje yönetici agent dan yardım aldım, örnek screenshotlar ve detaylı anlatımlar sağlayarak genel tasarımı oluşturttum
 
 
 ## Features
