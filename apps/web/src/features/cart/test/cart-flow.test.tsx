@@ -56,15 +56,14 @@ describe('cart (CART-1..4)', () => {
     await waitFor(() => expect(cartOf('user-16')[0]?.quantity).toBe(4))
   })
 
-  it('CART-1: Add to cart on the detail page uses the chosen quantity', async () => {
+  it('CART-1: Add to cart on the detail page adds one and shows no quantity before that', async () => {
     signInAs('averyp')
     await renderApp('/products/2')
-    const quantity = await screen.findByRole('textbox', { name: 'Quantity' })
-    await userEvent.clear(quantity)
-    await userEvent.type(quantity, '3')
+    await screen.findAllByRole('button', { name: 'Add to cart' })
+    expect(screen.queryByRole('textbox', { name: 'Quantity' })).not.toBeInTheDocument()
     await userEvent.click(screen.getAllByRole('button', { name: 'Add to cart' })[0]!)
     await waitFor(() =>
-      expect(cartOf('user-16')).toEqual([expect.objectContaining({ productId: 2, quantity: 3 })]),
+      expect(cartOf('user-16')).toEqual([expect.objectContaining({ productId: 2, quantity: 1 })]),
     )
     expect(await screen.findByText('groceries item 02 was added to your cart.')).toBeInTheDocument()
   })
@@ -73,13 +72,13 @@ describe('cart (CART-1..4)', () => {
     signInAs('averyp')
     await renderApp('/products/6') // stock 4
     const add = (await screen.findAllByRole('button', { name: 'Add to cart' }))[0]!
-    const quantity = screen.getByRole('textbox', { name: 'Quantity' })
-    await userEvent.clear(quantity)
-    await userEvent.type(quantity, '3')
     await userEvent.click(add)
-    await waitFor(() => expect(cartOf('user-16')[0]?.quantity).toBe(3))
-    const plus = await screen.findByRole('button', { name: 'Increase quantity' }) // now the in-cart row
-    await userEvent.click(plus)
+    await waitFor(() => expect(cartOf('user-16')[0]?.quantity).toBe(1))
+    const quantity = await screen.findByRole('textbox', { name: 'Quantity' }) // now the in-cart row
+    await userEvent.clear(quantity)
+    await userEvent.type(quantity, '99')
+    expect(quantity).toHaveValue('4')
+    const plus = screen.getByRole('button', { name: 'Increase quantity' })
     await waitFor(() => expect(cartOf('user-16')[0]?.quantity).toBe(4))
     expect(plus).toBeDisabled()
   })

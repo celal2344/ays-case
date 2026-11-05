@@ -17,15 +17,7 @@ import { ProductPrice } from '../product-price'
  * Thumbnail, title, price and Add to cart in one row (the sticky buy bar and the section bar share it).
  * Once the product is in the cart the button becomes the cart's stepper and a "Go to cart" link.
  */
-export function CompactBuy({
-  product,
-  quantity,
-  className,
-}: {
-  product: Product
-  quantity: number
-  className?: string
-}) {
+export function CompactBuy({ product, className }: { product: Product; className?: string }) {
   const { t } = useTranslation()
   const { add, pending, atMax } = useAddButton(product)
   const { lines } = useCart()
@@ -47,7 +39,7 @@ export function CompactBuy({
           size="sm"
           pending={pending}
           disabled={product.stock <= 0 || atMax}
-          onClick={() => void add(quantity)}
+          onClick={() => void add()}
         >
           <ShoppingCart className="size-4" />
           {atMax ? t('cart.maxInCart') : t('products.addToCart')}

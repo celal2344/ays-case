@@ -1,5 +1,5 @@
 import { getRouteApi, useLocation, useNavigate } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ErrorState, NotFound, PageSkeleton } from '@/components/feedback/feedback'
@@ -37,7 +37,6 @@ export function ProductDetailPage() {
   const id = Number(productId)
   const { product, notFound, isPending, query } = useProduct(id)
 
-  const [quantity, setQuantity] = useState(1)
   const actionsRef = useRef<HTMLDivElement>(null)
   const actionsVisible = useInView(actionsRef)
   useRecordView(id, product !== undefined)
@@ -137,7 +136,7 @@ export function ProductDetailPage() {
               <StockBadge product={product} />
             </div>
             <div className="flex flex-wrap items-center gap-3" ref={actionsRef}>
-              <BuyActions product={product} quantity={quantity} onQuantity={setQuantity} />
+              <BuyActions product={product} />
             </div>
           </div>
           <DeliveryInfo product={product} />
@@ -152,7 +151,6 @@ export function ProductDetailPage() {
           onSelect={goToSection}
           product={product}
           showBuy={!actionsVisible}
-          quantity={quantity}
         />
         <DetailSection id="details" title={t('products.tabs.info')}>
           <Specs product={product} />
@@ -169,7 +167,7 @@ export function ProductDetailPage() {
       </div>
       <RecentlyViewedStrip excludeId={id} />
 
-      <StickyBar product={product} visible={!actionsVisible} quantity={quantity} />
+      <StickyBar product={product} visible={!actionsVisible} />
     </div>
   )
 }

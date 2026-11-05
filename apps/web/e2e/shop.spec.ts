@@ -243,10 +243,10 @@ test('the language is chosen from a dropdown', async ({ page, isMobile }) => {
   test.skip(isMobile, 'phones reach the language menu through the navigation drawer')
   await page.goto('/')
   await page
-    .getByRole('button', { name: /^Language/ })
+    .getByRole('button', { name: /Language/ })
     .first()
     .click()
   await page.getByRole('menuitemradio', { name: 'Türkçe' }).click()
-  await expect(page.getByRole('button', { name: /^Dil/ }).first()).toBeVisible()
+  await expect(page.getByRole('button', { name: /Dil/ }).first()).toBeVisible()
   await expect(page.locator('html')).toHaveAttribute('lang', 'tr')
 })

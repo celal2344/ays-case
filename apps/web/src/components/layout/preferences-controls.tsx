@@ -49,7 +49,7 @@ export function LanguageMenu({ className }: { className?: string }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(HEADER_BUTTON, 'px-3', className)}
-        aria-label={`${t('prefs.language.label')}: ${t(`prefs.language.${language}`)}`}
+        aria-label={`${language.toUpperCase()} · ${t('prefs.language.label')}: ${t(`prefs.language.${language}`)}`}
       >
         <Languages aria-hidden="true" className="size-4" />
         <span aria-hidden="true">{language.toUpperCase()}</span>

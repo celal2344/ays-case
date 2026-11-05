@@ -3,7 +3,6 @@ import { ArrowRight, ShoppingCart, Zap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { PendingButton } from '@/components/pending-button'
-import { QuantityStepper } from '@/components/quantity-stepper'
 import { buttonVariants } from '@/components/ui/button'
 import { CartLineStepper } from '@/features/cart/components/cart-line-stepper'
 import { useAddButton, useBuyNow } from '@/features/cart/hooks/use-add-to-cart'
@@ -12,19 +11,10 @@ import { useCart } from '@/features/cart/hooks/use-cart'
 import type { Product } from '../../schemas'
 
 /**
- * The product page's purchase row. Until the product is in the cart: the quantity to add, "Add to
- * cart" and "Buy now". Once it is: "In cart" with the cart's own stepper, "Go to cart" and "Buy now"
+ * The product page's purchase row. Until the product is in the cart: "Add to cart" and "Buy now". Once it is: "In cart" with the cart's own stepper, "Go to cart" and "Buy now"
  * (which just goes to checkout). Each button ignores repeat clicks while it is sending.
  */
-export function BuyActions({
-  product,
-  quantity,
-  onQuantity,
-}: {
-  product: Product
-  quantity: number
-  onQuantity: (quantity: number) => void
-}) {
+export function BuyActions({ product }: { product: Product }) {
   const { t } = useTranslation()
   const { add, pending, atMax } = useAddButton(product)
   const { buyNow, pending: buying } = useBuyNow()
@@ -53,12 +43,11 @@ export function BuyActions({
 
   return (
     <>
-      <QuantityStepper value={quantity} max={Math.max(1, product.stock)} onChange={onQuantity} />
       <PendingButton
         size="lg"
         pending={pending}
         disabled={outOfStock || atMax || buying}
-        onClick={() => void add(quantity)}
+        onClick={() => void add()}
       >
         <ShoppingCart className="size-4" />
         {atMax ? t('cart.maxInCart') : t('products.addToCart')}
@@ -68,7 +57,7 @@ export function BuyActions({
         variant="outline"
         pending={buying}
         disabled={outOfStock || pending}
-        onClick={() => void buyNow(product, quantity)}
+        onClick={() => void buyNow(product)}
       >
         <Zap className="size-4" />
         {t('products.buyNow')}
