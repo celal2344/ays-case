@@ -56,27 +56,27 @@
 
 :root {
   --header-h: 4rem;
-  --background: #f6f6f6;
-  --foreground: #2b2b2b;
+  --background: #f6f5f4;
+  --foreground: #1c1917;
   --card: #ffffff;
-  --card-foreground: #2b2b2b;
+  --card-foreground: #1c1917;
   --popover: #ffffff;
-  --popover-foreground: #2b2b2b;
+  --popover-foreground: #1c1917;
   /* strong orange: white text on it passes AA (white on the bright brand orange is ~2.8:1) */
-  --primary: #c2530a;
+  --primary: #c2410c;
   --primary-foreground: #ffffff;
-  --secondary: #ededed;
-  --secondary-foreground: #2b2b2b;
-  --muted: #efefef;
+  --secondary: #f0eeec;
+  --secondary-foreground: #1c1917;
+  --muted: #f0eeec;
   /* a touch darker than the marketplace #777 so it stays AA on the grey page background */
-  --muted-foreground: #666666;
-  --accent: #fff1e6;
-  --accent-foreground: #2b2b2b;
+  --muted-foreground: #5f5a56;
+  --accent: #fff7ed;
+  --accent-foreground: #1c1917;
   /* darker than the shadcn default so destructive text passes WCAG AA on its tint */
   --destructive: oklch(0.52 0.22 27);
-  --border: #e6e6e6;
-  --input: #e6e6e6;
-  --ring: #f27a1a;
+  --border: #e7e5e4;
+  --input: #e7e5e4;
+  --ring: #f97316;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -84,24 +84,50 @@
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #2b2b2b;
-  --sidebar-primary: #c2530a;
+  --sidebar-foreground: #1c1917;
+  --sidebar-primary: #c2410c;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #fff1e6;
-  --sidebar-accent-foreground: #2b2b2b;
-  --sidebar-border: #e6e6e6;
-  --sidebar-ring: #f27a1a;
+  --sidebar-accent: #fff7ed;
+  --sidebar-accent-foreground: #1c1917;
+  --sidebar-border: #e7e5e4;
+  --sidebar-ring: #f97316;
 
-  --brand: #f27a1a; /* logo, underlines, badges: decorative, never body text */
-  --brand-soft: #fff1e6;
-  --brand-text: #b34a08; /* prices and other orange text, AA on white and on the page grey */
-  --success: #17794a;
+  --brand: #f97316; /* logo, underlines, badges: decorative, never body text */
+  --brand-soft: #fff7ed;
+  --brand-text: #c2410c; /* prices and other orange text, AA on white and on the page */
+  --success: #15803d;
   --success-foreground: #ffffff;
   --star: #f5a623;
+
+  /* glass: light surfaces over content. Opacities keep text AA over a worst-case white or black behind */
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --glass-bg-strong: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.9);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 24px 48px -20px rgba(124, 45, 18, 0.35);
+  --glass-blur: 16px;
+  --glass-blur-strong: 20px;
+  --glass-muted: #44403c; /* muted text on glass (AA over black or white behind) */
+
+  /* soft page background: three blobs over the page colour; the strong one is for hero and checkout */
+  --page-glow:
+    radial-gradient(circle at 78% 6%, rgba(251, 146, 60, 0.2), transparent 38%),
+    radial-gradient(circle at 58% 96%, rgba(244, 114, 182, 0.08), transparent 38%),
+    radial-gradient(circle at 6% 4%, rgba(253, 186, 116, 0.18), transparent 34%);
+  --page-glow-strong:
+    radial-gradient(circle at 78% 28%, rgba(251, 146, 60, 0.38), transparent 42%),
+    radial-gradient(circle at 58% 92%, rgba(244, 114, 182, 0.2), transparent 38%),
+    radial-gradient(circle at 8% 12%, rgba(253, 186, 116, 0.32), transparent 38%), #fff8f1;
+
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-slow: 250ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
 }
 
 .dark {
-  --background: #121212;
+  --background: #0f0e0d;
   --foreground: #f2f2f2;
   --card: #1c1c1e;
   --card-foreground: #f2f2f2;
@@ -139,6 +165,21 @@
   --success: #34c27a;
   --success-foreground: #06210f;
   --star: #f5a623;
+
+  --glass-bg: rgba(28, 28, 30, 0.8);
+  --glass-bg-strong: rgba(28, 28, 30, 0.9);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 24px 48px -20px rgba(0, 0, 0, 0.7);
+  --glass-muted: #d6d3d1;
+  --page-glow:
+    radial-gradient(circle at 78% 6%, rgba(249, 115, 22, 0.14), transparent 38%),
+    radial-gradient(circle at 58% 96%, rgba(244, 114, 182, 0.05), transparent 38%),
+    radial-gradient(circle at 6% 4%, rgba(253, 186, 116, 0.07), transparent 34%);
+  --page-glow-strong:
+    radial-gradient(circle at 78% 28%, rgba(249, 115, 22, 0.26), transparent 42%),
+    radial-gradient(circle at 58% 92%, rgba(244, 114, 182, 0.1), transparent 38%),
+    radial-gradient(circle at 8% 12%, rgba(253, 186, 116, 0.12), transparent 38%), #0f0e0d;
 }
 
 @layer base {
@@ -147,6 +188,16 @@
   }
   body {
     @apply bg-background text-foreground;
+    isolation: isolate;
+  }
+  /* the soft glow sits behind everything and never repaints on scroll */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--page-glow);
   }
   html {
     @apply font-sans;
@@ -205,5 +256,71 @@ html body [data-sonner-toaster][data-sonner-theme='light'] {
   .route-progress-bar {
     width: 100%;
     animation: none;
+  }
+}
+
+/* Glass: floating, layered surfaces over content (header, menus, dialogs, image overlay buttons).
+   Data-dense surfaces stay solid. The solid fallbacks below do not depend on any media query. */
+@layer components {
+  .glass,
+  .glass-strong,
+  .glass-flat {
+    --muted-foreground: var(--glass-muted);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-highlight), var(--glass-shadow);
+  }
+
+  /* small overlays repeated in grids (hearts, arrows): the glass look without a blur per card */
+  .glass-flat {
+    background-color: var(--glass-bg-strong);
+    box-shadow:
+      var(--glass-highlight),
+      0 4px 12px -6px rgba(124, 45, 18, 0.3);
+  }
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .glass {
+      background-color: var(--glass-bg);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+      backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    }
+
+    .glass-strong {
+      background-color: var(--glass-bg-strong);
+      -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.4);
+      backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.4);
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+    .glass,
+    .glass-strong,
+    .glass-flat {
+      background-color: var(--popover);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+
+  /* only one blurred layer at a time: while a menu is open the header turns almost opaque */
+  .glass-header:has([data-popup-open]) {
+    background-color: var(--popover);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  /* the shared page container: wide, with side padding that grows with the screen */
+  .page-container {
+    width: 100%;
+    max-width: 1536px;
+    margin-inline: auto;
+    padding-inline: clamp(16px, 3vw, 40px);
+  }
+
+  /* strong soft background for the hero and checkout */
+  .soft-bg {
+    background: var(--page-glow-strong);
   }
 }

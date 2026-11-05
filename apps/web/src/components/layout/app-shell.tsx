@@ -17,10 +17,10 @@ export function AppShell({ children }: { children?: ReactNode }) {
   usePendingCartAction()
   usePendingFavoriteAction()
   return (
-    <div className="flex min-h-svh flex-col bg-background text-foreground">
+    <div className="flex min-h-svh flex-col text-foreground">
       <RouteProgress />
       <Header />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children ?? <Outlet />}</main>
+      <main className="page-container flex-1 py-6">{children ?? <Outlet />}</main>
       <Toaster richColors closeButton />
     </div>
   )

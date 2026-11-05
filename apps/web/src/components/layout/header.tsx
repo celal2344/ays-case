@@ -19,8 +19,11 @@ export function Header() {
   const ref = useRef<HTMLElement>(null)
   useHeaderHeight(ref)
   return (
-    <header ref={ref} className="sticky top-0 z-40 border-b bg-card">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2">
+    <header
+      ref={ref}
+      className="glass glass-header sticky top-0 z-40 rounded-none border-x-0 border-t-0 shadow-[0_1px_0_rgba(28,25,23,0.04)]"
+    >
+      <div className="page-container flex flex-wrap items-center gap-x-3 gap-y-2 py-2">
         <MobileNav />
         <Link to="/" className="flex shrink-0 items-center gap-2 text-lg font-bold">
           <span
@@ -55,8 +58,8 @@ export function Header() {
           <UserMenu />
         </div>
       </div>
-      <div className="hidden border-t lg:block">
-        <div className="mx-auto max-w-7xl px-2">
+      <div className="hidden border-t border-white/60 lg:block dark:border-white/10">
+        <div className="page-container">
           <MegaMenu />
         </div>
       </div>

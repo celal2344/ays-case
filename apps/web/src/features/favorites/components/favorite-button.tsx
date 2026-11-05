@@ -35,7 +35,7 @@ export function FavoriteButton({
       }}
       className={cn(
         'inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50',
-        overlay && 'border bg-card/90 shadow-sm',
+        overlay && 'glass-flat',
         isFavorite && 'text-destructive hover:text-destructive',
         className,
       )}
