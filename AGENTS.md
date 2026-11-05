@@ -18,6 +18,13 @@
 - Don't edit `docs/` unless the gate says so. If the docs are wrong or block you, stop and report.
 - Don't edit `apps/web/src/components/ui/*` (shadcn) except via the shadcn CLI.
 
+## API layers
+Every API module (`src/modules/<name>/`, `src/modules/admin/<name>/`) is `routes → service → repository`; lint enforces it (`apps/api/eslint.config.js`).
+- `routes.ts`: HTTP only (validators, auth, one service call, `c.json`). No `getDb`, `db/schema`, `drizzle-orm`, no business rules.
+- `service.ts`: rules, ownership checks, transactions. Calls repositories. No Drizzle query building.
+- `repository.ts`: all Drizzle code; every function takes a `db: Database` (a transaction works too). No HTTP.
+- **No controller layer**: the inline Hono handler is the controller; separate handler files break `hc` type inference.
+
 ## Before handing off
 ```bash
 pnpm lint && pnpm typecheck && pnpm test && pnpm check:translations

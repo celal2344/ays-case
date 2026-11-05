@@ -1,12 +1,11 @@
 import type { Role, UserCreateBody, UserPatchBody } from '@ays/validators'
 import { roleSchema } from '@ays/validators'
-import { eq, sql } from 'drizzle-orm'
 
 import { getAuth } from '../../../auth'
 import { getDb } from '../../../db/client'
-import { session, user } from '../../../db/schema'
 import { dbError, duplicateField, toConflict } from '../../../utils/db-errors'
 import { appError } from '../../../utils/errors'
+import * as repository from './repository'
 
 type PublicUser = {
   id: string
@@ -16,16 +15,6 @@ type PublicUser = {
   email: string
   role: Role
   image: string | null
-}
-
-const columns = {
-  id: user.id,
-  username: user.username,
-  firstName: user.firstName,
-  lastName: user.lastName,
-  email: user.email,
-  role: user.role,
-  image: user.image,
 }
 
 const toPublic = (row: {
@@ -43,17 +32,15 @@ const duplicate = (op: string, field: string) =>
     field,
   })
 
-async function adminCount() {
-  const [row] = await getDb()
-    .select({ n: sql<number>`count(*)::int` })
-    .from(user)
-    .where(eq(user.role, 'admin'))
-  return row!.n
-}
+const adminCount = () => repository.countAdmins(getDb())
 
 async function find(id: string) {
-  const [row] = await getDb().select(columns).from(user).where(eq(user.id, id))
+  const row = await repository.findUser(getDb(), id)
   return row ? toPublic(row) : undefined
+}
+
+export async function listUsers(): Promise<PublicUser[]> {
+  return (await repository.listUsers(getDb())).map(toPublic)
 }
 
 /** Better Auth hashes the initial password and creates the credential account. */
@@ -78,7 +65,7 @@ export async function createUser(body: UserCreateBody, headers: Headers): Promis
       },
     })
     if (body.role === 'moderator') {
-      await getDb().update(user).set({ role: 'moderator' }).where(eq(user.id, created.user.id))
+      await repository.setRole(getDb(), created.user.id, 'moderator')
     }
     return (await find(created.user.id))!
   } catch (error) {
@@ -130,13 +117,13 @@ export async function updateUser(
   try {
     await getDb().transaction(async (tx) => {
       if (Object.keys(set).length > 0) {
-        await tx
-          .update(user)
-          .set({ ...set, name: `${names.firstName} ${names.lastName}`, updatedAt: sql`now()` })
-          .where(eq(user.id, id))
+        await repository.updateUser(tx, id, {
+          ...set,
+          name: `${names.firstName} ${names.lastName}`,
+        })
       }
       // a demoted user must sign in again: their old sessions stop working
-      if (demoting) await tx.delete(session).where(eq(session.userId, id))
+      if (demoting) await repository.deleteSessions(tx, id)
     })
   } catch (error) {
     const conflict = toConflict(error)
@@ -162,5 +149,5 @@ export async function deleteUser(id: string, actorId: string): Promise<void> {
   if (current.role === 'admin' && (await adminCount()) <= 1) {
     throw appError('last_admin', 'The last admin cannot be deleted', 'admin.users.delete', { id })
   }
-  await getDb().delete(user).where(eq(user.id, id))
+  await repository.deleteUser(getDb(), id)
 }

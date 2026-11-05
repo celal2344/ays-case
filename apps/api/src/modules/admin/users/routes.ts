@@ -1,21 +1,17 @@
 import {
-  roleSchema,
   userCreateBodySchema,
   userListResponseSchema,
   userPatchBodySchema,
   userResponseSchema,
 } from '@ays/validators'
-import { asc } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { describeRoute, resolver, validator } from 'hono-openapi'
 import { z } from 'zod'
 
-import { getDb } from '../../../db/client'
-import { user } from '../../../db/schema'
 import { requireRole, type AuthEnv } from '../../../middlewares/auth'
 import { errorResponse, errorResponses } from '../../../utils/openapi'
 import { validationHook } from '../../../utils/validation'
-import { createUser, deleteUser, updateUser } from './service'
+import { createUser, deleteUser, listUsers, updateUser } from './service'
 
 const json = (description: string, schema: Parameters<typeof resolver>[0]) => ({
   description,
@@ -48,24 +44,7 @@ export const userRoutes = new Hono<AuthEnv>()
       },
     }),
     requireRole('admin'),
-    async (c) => {
-      const rows = await getDb()
-        .select({
-          id: user.id,
-          username: user.username,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          role: user.role,
-          image: user.image,
-        })
-        .from(user)
-        .orderBy(asc(user.createdAt), asc(user.id))
-      return c.json(
-        { data: rows.map((row) => ({ ...row, role: roleSchema.catch('user').parse(row.role) })) },
-        200,
-      )
-    },
+    async (c) => c.json({ data: await listUsers() }, 200),
   )
   .post(
     '/',

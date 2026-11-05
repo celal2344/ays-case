@@ -1,8 +1,33 @@
 # Architecture
 
-A pnpm + Turborepo workspace. Today only `apps/web` (the Vite SPA) exists; `apps/api` and shared `packages/*` come with the backend work. Practices that carry over from StokMate are listed in [conventions.md](conventions.md).
+A pnpm + Turborepo workspace. `apps/web` is the Vite SPA, `apps/api` the Hono API on Postgres, and shared contracts live in `packages/*`. Practices that carry over from StokMate are listed in [conventions.md](conventions.md).
 
-## Layers
+## System
+
+```mermaid
+flowchart LR
+    WEB["apps/web<br/>Vite SPA"]
+    CLIENT["@ays/api-client<br/>hc&lt;AppType&gt;"]
+    API["apps/api<br/>Hono: routes → service → repository"]
+    PG[("Postgres<br/>Drizzle")]
+
+    WEB --> CLIENT --> API --> PG
+```
+
+The diagram in "Web layers" below predates the API: its DummyJSON/axios node is superseded by the picture above.
+
+## API layers
+
+Every module in `apps/api/src/modules/<name>/` (and `modules/admin/<name>/`) has the same three layers. Lint enforces the import rules (`apps/api/eslint.config.js`).
+
+- `routes.ts`: HTTP only. `describeRoute`, validators, auth middleware, one service call, `c.json(...)`. No `getDb`, `db/schema`, `drizzle-orm`, or business rules.
+- `service.ts`: business rules, permission and ownership checks, orchestration and transactions (`getDb().transaction(...)`). Calls repositories; throws `AppError` / `dbError`. No Drizzle query building.
+- `repository.ts`: all Drizzle code. Every function takes a `db: Database` argument (a transaction satisfies it too), returns plain rows, knows nothing about HTTP.
+- `schemas.ts` only for schemas local to a module; shared contracts stay in `@ays/validators`.
+
+**No controller layer.** In Hono the inline route handler is the controller; moving handlers into separate files breaks `hc` (RPC) type inference. Do not add controllers.
+
+## Web layers
 
 ```mermaid
 flowchart TB

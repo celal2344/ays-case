@@ -2,11 +2,10 @@ import { productIdListResponseSchema } from '@ays/validators'
 import { Hono } from 'hono'
 import { describeRoute, resolver, validator } from 'hono-openapi'
 
-import { getDb } from '../../db/client'
 import { requireAuth, type AuthEnv } from '../../middlewares/auth'
 import { errorResponse } from '../../utils/openapi'
 import { productIdParam, validationHook } from '../../utils/validation'
-import * as repository from './repository'
+import { addFavorite, listFavorites, removeFavorite } from './service'
 
 // Every route is scoped to the signed-in user (`c.var.user`); no user id is ever read from the request.
 export const favoriteRoutes = new Hono<AuthEnv>()
@@ -24,7 +23,7 @@ export const favoriteRoutes = new Hono<AuthEnv>()
         401: errorResponse('Not signed in'),
       },
     }),
-    async (c) => c.json({ data: await repository.listFavorites(getDb(), c.var.user.id) }, 200),
+    async (c) => c.json({ data: await listFavorites(c.var.user.id) }, 200),
   )
   .put(
     '/:productId',
@@ -41,11 +40,9 @@ export const favoriteRoutes = new Hono<AuthEnv>()
     validator('param', productIdParam, validationHook),
     async (c) => {
       const { productId } = c.req.valid('param')
-      const db = getDb()
-      if (!(await repository.productExists(db, productId))) {
+      if (!(await addFavorite(c.var.user.id, productId))) {
         return c.json({ code: 'not_found', message: 'Product not found' }, 404)
       }
-      await repository.addFavorite(db, c.var.user.id, productId)
       return c.body(null, 204)
     },
   )
@@ -62,7 +59,7 @@ export const favoriteRoutes = new Hono<AuthEnv>()
     }),
     validator('param', productIdParam, validationHook),
     async (c) => {
-      await repository.removeFavorite(getDb(), c.var.user.id, c.req.valid('param').productId)
+      await removeFavorite(c.var.user.id, c.req.valid('param').productId)
       return c.body(null, 204)
     },
   )
