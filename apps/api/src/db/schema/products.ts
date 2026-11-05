@@ -25,7 +25,7 @@ import {
 export const products = pgTable(
   'products',
   {
-    // Seeded rows keep their DummyJSON ids (1 to 194); new rows continue above the max.
+    // The first 194 rows keep the ids of the original catalog import; new rows continue above the max.
     id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
     title: text('title').notNull(),
     description: text('description').notNull(),

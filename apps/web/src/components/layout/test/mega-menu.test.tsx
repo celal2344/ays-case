@@ -43,7 +43,7 @@ describe('groupCategories', () => {
     expect(groupCategories([], [])).toEqual([])
   })
 
-  it('maps all 24 DummyJSON categories to a real group (none falls into Other)', () => {
+  it('maps all 24 catalog categories to a real group (none falls into Other)', () => {
     const slugs =
       `beauty fragrances furniture groceries home-decoration kitchen-accessories laptops mens-shirts mens-shoes mens-watches mobile-accessories motorcycle skin-care smartphones sports-accessories sunglasses tablets tops vehicle womens-bags womens-dresses womens-jewellery womens-shoes womens-watches`.split(
         ' ',

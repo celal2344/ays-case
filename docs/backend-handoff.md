@@ -1,5 +1,8 @@
 # Backend handoff
 
+> **Superseded:** this describes the DummyJSON-era setup, kept as history. The current backend is in [backend.md](backend.md).
+
+
 For the agent (or person) building a real backend for `ays-case`. Read this first, then `docs/api.md`, `docs/data-and-state.md`, `docs/conventions.md` and the ADRs in `docs/decisions/`. Everything here was derived from the code on `main`; where a statement is a recommendation rather than a fact, it says so.
 
 ## 1. Where the project stands

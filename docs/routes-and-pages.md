@@ -1,5 +1,8 @@
 # Routes and pages
 
+> **Historical:** written for the DummyJSON-era plan. Where it disagrees with [backend.md](backend.md) and [api.md](api.md), those win.
+
+
 ## Route table
 
 | Path                              | Access                                       | Page                                    | Search params                          |

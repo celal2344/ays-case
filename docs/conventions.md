@@ -1,5 +1,8 @@
 # Conventions
 
+> **Historical:** written for the DummyJSON-era plan. Where it disagrees with [backend.md](backend.md) and [api.md](api.md), those win.
+
+
 Most of these are lifted from **StokMate** (`celal2344/stokmate`, Aug 2026: React 19, Vite, TanStack Router/Query/Form/Table, shadcn, Tailwind 4, Zod, i18next). Where this project differs, the reason is noted.
 
 ## Carried over from StokMate

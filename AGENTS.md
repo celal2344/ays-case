@@ -7,9 +7,8 @@
 
 ## Hard rules
 - Components never import `lib/http` or `features/*/api` directly → use feature hooks.
-- Never read product data from Query without the overlay merge (`useCatalog` / `useProduct`).
-- No network call for local product ids (`isLocal(id)`).
-- Zustand: always select slices; persisted stores have `version` + `migrate`; keys from `lib/storage.ts`.
+- The API owns every write and all shop data: read product data through the feature hooks (`useCatalog` / `useProduct`); there is no local overlay and no simulated writes.
+- Zustand holds UI state only (auth session status, preferences, search); always select slices. Persisted stores have `version` + `migrate` and keys from `lib/storage.ts`.
 - All user-facing text through i18n; add keys to **both** `en.ts` and `tr.ts`.
 - API responses are typed by the shared client (`hc<AppType>` from `@ays/api-client`) and `@ays/validators`: call it only inside `features/*/api.ts`, through `call()` from `lib/api.ts`. Do not hand-write response types or re-parse responses, and never compute ratings, availability or other API-owned figures in the browser.
 - API errors: throw `appError(...)` / `dbError(...)` from repositories and services; never return error bodies from services; never put values in `message` (they go in `meta`). See `docs/errors.md`.

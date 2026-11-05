@@ -1,6 +1,6 @@
 # 0006 Admin user management via a local overlay
 
-- **Status:** Accepted (2026-11-03)
+- **Status:** Superseded by the real backend (see [backend.md](../backend.md)); kept as history. Was: Accepted (2026-11-03)
 
 ## Context
 The admin panel must add, edit and remove users. DummyJSON's `POST/PUT/DELETE /users` are simulated and persist nothing; `role` is accepted in the body but never saved.
