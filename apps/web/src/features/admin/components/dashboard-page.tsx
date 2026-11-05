@@ -27,7 +27,6 @@ function Stat({
   return (
     <Link
       to={to}
-      aria-label={`${label}: ${value}`}
       className="rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <StatCard icon={icon} label={label} value={value} />
@@ -125,24 +124,6 @@ export function DashboardPage() {
           value={orderCount}
         />
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('admin.lookups.title')}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          {LOOKUP_KINDS.map((kind) => (
-            <Link
-              key={kind.id}
-              to="/admin/lookups/$kind"
-              params={{ kind: kind.id }}
-              className={buttonVariants({ variant: 'outline' })}
-            >
-              {t(`admin.lookups.kinds.${kind.id}`)}
-            </Link>
-          ))}
-        </CardContent>
-      </Card>
     </div>
   )
 }

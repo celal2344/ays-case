@@ -47,15 +47,15 @@ describe('admin layout', () => {
   it('the dashboard stat cards link to their pages', async () => {
     signInAs('emilys')
     await renderApp('/admin')
-    expect(await screen.findByRole('link', { name: /^Products: \d+$/ })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: /^Products \d+$/ })).toHaveAttribute(
       'href',
       '/admin/products',
     )
-    expect(screen.getByRole('link', { name: /^Users: \d+$/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /^Users \d+$/ })).toHaveAttribute(
       'href',
       '/admin/users',
     )
-    expect(screen.getByRole('link', { name: /^Orders: \d+$/ })).toHaveAttribute('href', '/orders')
+    expect(screen.getByRole('link', { name: /^Orders \d+$/ })).toHaveAttribute('href', '/orders')
   })
 })
 
