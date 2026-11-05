@@ -217,8 +217,8 @@ export function CartPage() {
       </div>
 
       {/* mobile / tablet: summary pinned to the bottom */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background p-3 shadow-lg lg:hidden">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+      <div className="glass fixed inset-x-0 bottom-0 z-30 rounded-none border-x-0 border-b-0 p-3 lg:hidden">
+        <div className="page-container flex items-center justify-between gap-3">
           <div>
             <p className="text-xs text-muted-foreground">{t('cart.summary.total')}</p>
             <p className="font-semibold">

@@ -22,7 +22,7 @@ export function StickyBar({
     <div
       role="region"
       aria-label={t('products.sticky')}
-      className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 shadow-lg backdrop-blur md:hidden"
+      className="glass fixed inset-x-0 bottom-0 z-30 rounded-none border-x-0 border-b-0 md:hidden"
     >
       <CompactBuy product={product} quantity={quantity} className="mx-auto max-w-7xl px-4 py-2" />
     </div>
