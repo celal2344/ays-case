@@ -328,9 +328,9 @@ html body [data-sonner-toaster][data-sonner-theme='light'] {
     backdrop-filter: none;
   }
 
-  /* checkout and cart sit on the stronger glow */
-  body[data-glow='strong']::before {
-    background: var(--page-glow-strong);
+  /* cart and checkout: a flat background */
+  body[data-flat]::before {
+    display: none;
   }
 
   /* the shared page container: wide, with side padding that grows with the screen */

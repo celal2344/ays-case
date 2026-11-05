@@ -21,7 +21,7 @@ import { Money } from '@/components/money'
 import { useInFlight } from '@/lib/in-flight'
 import { ProductImage } from '@/features/products/components/product-image'
 
-import { useStrongGlow } from '@/lib/use-strong-glow'
+import { useFlatBackground } from '@/lib/use-flat-background'
 import { CheckoutSteps } from '@/features/orders/components/checkout-steps'
 import { useCartView } from '../hooks/use-cart-view'
 import type { CartItem, CartTotals } from '../selectors'
@@ -39,7 +39,7 @@ function Summary({
 }) {
   const { t } = useTranslation()
   return (
-    <div className="glass-strong flex flex-col gap-4 rounded-[22px] py-4 text-card-foreground">
+    <div className="glass-strong flex flex-col gap-4 rounded-[22px] py-(--card-spacing) text-card-foreground [--card-spacing:--spacing(6)]">
       <CardHeader>
         <CardTitle>{t('cart.summary.title')}</CardTitle>
       </CardHeader>
@@ -139,7 +139,7 @@ function CartRow({
 
 export function CartPage() {
   const { t } = useTranslation()
-  useStrongGlow()
+  useFlatBackground()
   const cart = useCartView()
   const router = useRouter()
   const clearing = useInFlight('cart:clear')

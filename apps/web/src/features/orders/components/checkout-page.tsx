@@ -14,7 +14,7 @@ import { useCartView } from '@/features/cart/hooks/use-cart-view'
 import { ProductImage } from '@/features/products/components/product-image'
 import { errorCodeKey } from '@/lib/error-message'
 import { runExclusive } from '@/lib/in-flight'
-import { useStrongGlow } from '@/lib/use-strong-glow'
+import { useFlatBackground } from '@/lib/use-flat-background'
 
 import { usePlaceOrder } from '../hooks/use-place-order'
 import { emptyShipping, shippingSchema, type Shipping } from '../schemas'
@@ -32,7 +32,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 export function CheckoutPage() {
   const { t } = useTranslation()
   const router = useRouter()
-  useStrongGlow()
+  useFlatBackground()
   const cart = useCartView()
   const placeOrder = usePlaceOrder()
 
