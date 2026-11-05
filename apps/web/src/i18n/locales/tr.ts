@@ -80,7 +80,7 @@ export const tr = {
     },
     language: {
       label: 'Dil',
-      switch: 'Dili değiştir (şu an {{current}})',
+      switch: '{{code}} · Dili değiştir (şu an {{current}})',
       tr: 'Türkçe',
       en: 'İngilizce',
     },

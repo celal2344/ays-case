@@ -40,7 +40,10 @@ export function LanguageToggle({ className }: { className?: string }) {
     <button
       type="button"
       className={cn(HEADER_BUTTON, 'px-3', className)}
-      aria-label={t('prefs.language.switch', { current: t(`prefs.language.${language}`) })}
+      aria-label={t('prefs.language.switch', {
+        code: language.toUpperCase(),
+        current: t(`prefs.language.${language}`),
+      })}
       onClick={() => setLanguage(language === 'tr' ? 'en' : 'tr')}
     >
       <Languages aria-hidden="true" className="size-4" />

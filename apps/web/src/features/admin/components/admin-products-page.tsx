@@ -149,6 +149,7 @@ function ActionsCell({ product }: { product: Product }) {
   return (
     <div className="flex justify-end gap-1">
       <Link
+        from="/admin/products/"
         to="/admin/products"
         search={(prev) => ({ ...prev, edit: product.id })}
         aria-label={t('admin.products.edit', { title: product.title })}
@@ -329,6 +330,7 @@ export function AdminProductsPage() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold">{t('admin.products.title')}</h1>
           <Link
+            from="/admin/products/"
             to="/admin/products"
             search={(prev) => ({ ...prev, new: 1 as const })}
             className={buttonVariants({})}

@@ -79,7 +79,7 @@ export const en = {
     },
     language: {
       label: 'Language',
-      switch: 'Switch language (now {{current}})',
+      switch: '{{code}} · Switch language (now {{current}})',
       tr: 'Turkish',
       en: 'English',
     },

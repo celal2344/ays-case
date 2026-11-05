@@ -94,10 +94,10 @@ describe('strips', () => {
 
 describe('tiles, brands and stats', () => {
   const products = [
-    item(1, 'laptops', { brand: { id: 1, name: 'Apple' }, rating: 4.5 }),
-    item(2, 'smartphones', { brand: { id: 1, name: 'Apple' }, rating: 4.9 }),
-    item(3, 'tablets', { brand: { id: 2, name: 'Asus' } }),
-    item(4, 'beauty', { brand: { id: 3, name: 'Chanel' } }),
+    item(1, 'laptops', { brand: { id: 1, slug: 'apple', name: 'Apple' }, rating: 4.5 }),
+    item(2, 'smartphones', { brand: { id: 1, slug: 'apple', name: 'Apple' }, rating: 4.9 }),
+    item(3, 'tablets', { brand: { id: 2, slug: 'asus', name: 'Asus' } }),
+    item(4, 'beauty', { brand: { id: 3, slug: 'chanel', name: 'Chanel' } }),
   ]
 
   it('one tile per group with a count and up to two images, best rated first', () => {
