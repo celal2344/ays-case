@@ -54,12 +54,12 @@ export function UserMenu() {
         aria-label={fullName}
         className="group/profile inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-stone-200/90 bg-white/70 py-0 pr-2.5 pl-1.5 font-semibold text-foreground transition-colors outline-none hover:bg-white focus-visible:ring-3 focus-visible:ring-ring/50 data-popup-open:border-orange-300 data-popup-open:bg-orange-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:data-popup-open:border-orange-400/50 dark:data-popup-open:bg-orange-500/15"
       >
+        {/* the initials come from CSS, so the only visible text is the first name that the label contains (WCAG 2.5.3) */}
         <span
           aria-hidden="true"
-          className="flex size-8 items-center justify-center rounded-full bg-orange-100 text-[13px] font-bold text-primary dark:bg-orange-500/20 dark:text-orange-300"
-        >
-          {initials}
-        </span>
+          data-initials={initials}
+          className="flex size-8 items-center justify-center rounded-full bg-orange-100 text-[13px] font-bold text-primary before:content-[attr(data-initials)] dark:bg-orange-500/20 dark:text-orange-300"
+        />
         {/* the button is named with the full name; the visible first name is part of it (WCAG 2.5.3) */}
         <span aria-hidden="true" className="hidden max-w-32 truncate sm:inline">
           {user.firstName}

@@ -34,6 +34,38 @@ export const tr = {
     productCount_one: '{{count}} ürün',
     productCount_other: '{{count}} ürün',
   },
+  home: {
+    pill: '{{products}} ürün · {{categories}} kategori · {{brands}} marka',
+    heroTitle1: 'Aradığın her şey,',
+    heroTitle2: 'tek yerde.',
+    heroText:
+      'Elektronikten markete, güzellikten spora: sepetini doldur, siparişini tek adımda ver.',
+    shop: 'Alışverişe başla',
+    deals: 'Fırsatları gör',
+    featured: 'Öne çıkan ürünler',
+    categories: { title: 'Kategorilere göz at', all: 'Tüm ürünler →' },
+    seeAll: 'Tümünü gör →',
+    badgeNew: 'Yeni',
+    sections: {
+      deals: { title: 'Fırsatlar', sub: 'En yüksek indirimli ürünler' },
+      top: { title: 'En çok beğenilenler', sub: 'En yüksek puanlı ürünler' },
+      newest: { title: 'Yeni gelenler', sub: 'Kataloğa en son eklenenler' },
+    },
+    banners: {
+      label: 'Kampanyalar',
+      beauty: '{{brands}} ve daha fazlası',
+      electronics: '{{brands}}: yeni cihazını seç',
+      discover: 'Keşfet →',
+    },
+  },
+  footer: {
+    label: 'Alt bilgi',
+    about: "Bir demo online mağaza. Ürün verileri DummyJSON'dan alınmıştır; gerçek ödeme alınmaz.",
+    categories: 'Kategoriler',
+    account: 'Hesabım',
+    cart: 'Sepetim',
+    copyright: '© 2026 ays-case',
+  },
   prefs: {
     theme: {
       label: 'Tema',
@@ -45,7 +77,7 @@ export const tr = {
     },
     language: {
       label: 'Dil',
-      switch: 'Dili değiştir (şu an {{current}})',
+      switch: '{{code}} · Dili değiştir (şu an {{current}})',
       tr: 'Türkçe',
       en: 'İngilizce',
     },
@@ -123,6 +155,8 @@ export const tr = {
       'price-asc': 'Fiyat: düşükten yükseğe',
       'price-desc': 'Fiyat: yüksekten düşüğe',
       'rating-desc': 'En yüksek puan',
+      'discount-desc': 'En yüksek indirim',
+      'newest-desc': 'En yeni',
       'title-asc': 'İsim: A-Z',
       'title-desc': 'İsim: Z-A',
     },

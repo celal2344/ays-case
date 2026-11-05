@@ -5,7 +5,7 @@ import { GROUP_IDS } from './category-groups'
 // The API's own types (shared validators) are the only product types: no second interface, no mapper.
 export type { Category, Product, ProductDetail, Review } from '@ays/validators'
 
-export const productSortSchema = z.enum(['price', 'rating', 'title'])
+export const productSortSchema = z.enum(['price', 'rating', 'title', 'discount', 'newest'])
 export type ProductSort = z.infer<typeof productSortSchema>
 export type SortOrder = 'asc' | 'desc'
 

@@ -32,6 +32,39 @@ export const en = {
     productCount_one: '{{count}} product',
     productCount_other: '{{count}} products',
   },
+  home: {
+    pill: '{{products}} products · {{categories}} categories · {{brands}} brands',
+    heroTitle1: 'Everything you need,',
+    heroTitle2: 'in one place.',
+    heroText:
+      'From electronics to groceries, beauty to sports: fill your cart and order in one step.',
+    shop: 'Start shopping',
+    deals: 'See deals',
+    featured: 'Featured products',
+    categories: { title: 'Browse categories', all: 'All products →' },
+    seeAll: 'See all →',
+    badgeNew: 'New',
+    sections: {
+      deals: { title: 'Deals', sub: 'Highest discounts' },
+      top: { title: 'Top rated', sub: 'Highest rated products' },
+      newest: { title: 'New arrivals', sub: 'Latest additions to the catalog' },
+    },
+    banners: {
+      label: 'Campaigns',
+      beauty: '{{brands}} and more',
+      electronics: '{{brands}}: pick your next device',
+      discover: 'Discover →',
+    },
+  },
+  footer: {
+    label: 'Footer',
+    about:
+      'A demo online shop. Product data was imported from DummyJSON; no real payments are taken.',
+    categories: 'Categories',
+    account: 'My account',
+    cart: 'My cart',
+    copyright: '© 2026 ays-case',
+  },
   prefs: {
     theme: {
       label: 'Theme',
@@ -43,7 +76,7 @@ export const en = {
     },
     language: {
       label: 'Language',
-      switch: 'Switch language (now {{current}})',
+      switch: '{{code}} · Switch language (now {{current}})',
       tr: 'Turkish',
       en: 'English',
     },
@@ -121,6 +154,8 @@ export const en = {
       'price-asc': 'Price: low to high',
       'price-desc': 'Price: high to low',
       'rating-desc': 'Top rated',
+      'discount-desc': 'Biggest discount',
+      'newest-desc': 'Newest',
       'title-asc': 'Name: A to Z',
       'title-desc': 'Name: Z to A',
     },

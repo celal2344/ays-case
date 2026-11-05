@@ -22,11 +22,7 @@ export function Header() {
     >
       <div className="page-container flex flex-wrap items-center gap-x-3 gap-y-2 py-2 md:h-[68px] md:flex-nowrap md:gap-x-5 md:py-0">
         <MobileNav />
-        <Link
-          to="/"
-          aria-label={t('nav.home')}
-          className="flex shrink-0 items-center gap-2.5 text-foreground"
-        >
+        <Link to="/" className="flex shrink-0 items-center gap-2.5 text-foreground">
           <span
             aria-hidden="true"
             className="flex size-9 items-center justify-center rounded-[10px] bg-brand text-lg font-extrabold text-white"

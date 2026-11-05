@@ -27,7 +27,7 @@ function Centered({
 export function PageSkeleton() {
   const { t } = useTranslation()
   return (
-    <div className="space-y-4" aria-busy="true" aria-label={t('feedback.loading')}>
+    <div role="status" className="space-y-4" aria-busy="true" aria-label={t('feedback.loading')}>
       <Skeleton className="h-8 w-1/3" />
       <Skeleton className="h-40 w-full" />
       <Skeleton className="h-40 w-full" />
