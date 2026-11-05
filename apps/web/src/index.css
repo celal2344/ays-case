@@ -231,12 +231,12 @@ html body [data-sonner-toaster][data-sonner-theme='light'] {
     transform: scale(1);
   }
   40% {
-    transform: scale(1.25);
+    transform: scale(1.15);
   }
 }
 
 .cart-bump {
-  animation: cart-bump 0.35s ease-out;
+  animation: cart-bump var(--motion-slow) var(--ease-out);
 }
 
 @keyframes route-progress {
@@ -322,5 +322,30 @@ html body [data-sonner-toaster][data-sonner-theme='light'] {
   /* strong soft background for the hero and checkout */
   .soft-bg {
     background: var(--page-glow-strong);
+  }
+}
+
+/* View transitions between pages: a short crossfade; the sticky header stays where it is. */
+.glass-header {
+  view-transition-name: site-header;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--motion-base);
+  animation-timing-function: var(--ease-out);
+}
+
+::view-transition-group(site-header),
+::view-transition-old(site-header),
+::view-transition-new(site-header) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

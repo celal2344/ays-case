@@ -1,4 +1,4 @@
-import { getRouteApi, Link } from '@tanstack/react-router'
+import { getRouteApi } from '@tanstack/react-router'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -42,7 +42,7 @@ import { useUnsavedChangesGuard } from '@/lib/use-unsaved-changes-guard'
 
 import { useLookupMutations, useLookups } from '../hooks/use-lookups'
 import type { LookupInput, LookupRow } from '../lookups-api'
-import { fieldsOf, LOOKUP_KINDS, type LookupField, type LookupKind } from '../lookups'
+import { fieldsOf, type LookupField, type LookupKind } from '../lookups'
 
 const route = getRouteApi('/_auth/_admin/admin/lookups/$kind')
 
@@ -192,16 +192,6 @@ function LookupsTable({ kind }: { kind: LookupKind }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">{t(`admin.lookups.kinds.${kind}`)}</h1>
         <div className="flex flex-wrap gap-2">
-          {LOOKUP_KINDS.filter((k) => k.id !== kind).map((k) => (
-            <Link
-              key={k.id}
-              to="/admin/lookups/$kind"
-              params={{ kind: k.id }}
-              className={buttonVariants({ variant: 'ghost', size: 'sm' })}
-            >
-              {t(`admin.lookups.kinds.${k.id}`)}
-            </Link>
-          ))}
           <Button onClick={() => open({ new: 1 })}>
             <Plus className="size-4" />
             {t('admin.lookups.new')}
@@ -210,7 +200,7 @@ function LookupsTable({ kind }: { kind: LookupKind }) {
       </div>
 
       {rows && rows.length > 0 ? (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="overflow-x-auto rounded-lg border bg-card [&_tbody_tr:nth-child(even)]:bg-muted/30">
           <Table>
             <TableHeader>
               <TableRow>

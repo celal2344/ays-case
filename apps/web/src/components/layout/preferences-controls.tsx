@@ -1,67 +1,51 @@
-import { Monitor, Moon, Sun } from 'lucide-react'
+import { Languages, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import type { Language } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { selectLanguage, usePreferencesStore } from '@/preferences/store'
 
-const THEMES = ['light', 'dark', 'system'] as const
+import { HEADER_BUTTON } from './header-button'
 
-export function ThemeToggle() {
+/** One click flips light and dark; the first visit follows the system until then. */
+export function ThemeToggle({ className }: { className?: string }) {
   const { t } = useTranslation()
-  const { theme = 'system', setTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
+  const dark = resolvedTheme === 'dark'
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={<Button variant="outline" size="icon" aria-label={t('prefs.theme.label')} />}
-      >
-        <Sun className="size-4 dark:hidden" />
-        <Moon className="hidden size-4 dark:block" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
-          {THEMES.map((value) => (
-            <DropdownMenuRadioItem key={value} value={value}>
-              {value === 'system' ? <Monitor className="size-4" /> : null}
-              {t(`prefs.theme.${value}`)}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <button
+      type="button"
+      className={cn(HEADER_BUTTON, className)}
+      aria-label={t(dark ? 'prefs.theme.toLight' : 'prefs.theme.toDark')}
+      onClick={() => setTheme(dark ? 'light' : 'dark')}
+    >
+      <Sun
+        aria-hidden="true"
+        className="size-[18px] scale-100 rotate-0 transition-all duration-(--motion-base) ease-(--ease-out) dark:scale-0 dark:-rotate-90"
+      />
+      <Moon
+        aria-hidden="true"
+        className="absolute size-[18px] scale-0 rotate-90 transition-all duration-(--motion-base) ease-(--ease-out) dark:scale-100 dark:rotate-0"
+      />
+    </button>
   )
 }
 
-export function LanguageToggle() {
+/** One button that switches TR and EN and shows the current language. */
+export function LanguageToggle({ className }: { className?: string }) {
   const { t } = useTranslation()
   const language = usePreferencesStore(selectLanguage)
   const setLanguage = usePreferencesStore((s) => s.setLanguage)
   return (
-    <ToggleGroup
-      variant="outline"
-      aria-label={t('prefs.language.label')}
-      value={[language]}
-      onValueChange={(next) => {
-        const value = next[0] as Language | undefined
-        if (value) setLanguage(value)
-      }}
+    <button
+      type="button"
+      className={cn(HEADER_BUTTON, 'px-3', className)}
+      aria-label={t('prefs.language.switch', { current: t(`prefs.language.${language}`) })}
+      onClick={() => setLanguage(language === 'tr' ? 'en' : 'tr')}
     >
-      <ToggleGroupItem value="tr" aria-label="TR Türkçe">
-        TR
-      </ToggleGroupItem>
-      <ToggleGroupItem value="en" aria-label="EN English">
-        EN
-      </ToggleGroupItem>
-    </ToggleGroup>
+      <Languages aria-hidden="true" className="size-4" />
+      <span aria-hidden="true">{language.toUpperCase()}</span>
+    </button>
   )
 }
 

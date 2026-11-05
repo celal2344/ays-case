@@ -50,21 +50,20 @@ describe('access', () => {
     }
   })
 
-  it('the header Admin menu offers Dashboard, Products and Users to admins only', async () => {
+  it('the profile menu offers the admin panel to admins only', async () => {
     signInAs('emilys')
     const { router } = await renderApp('/products')
-    await userEvent.click(await screen.findByRole('button', { name: /Admin/ }))
-    expect(await screen.findByRole('menuitem', { name: 'Dashboard' })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: 'Products' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('menuitem', { name: 'Users' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/admin/users'))
+    await userEvent.click(await screen.findByRole('button', { name: 'Emily Johnson' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Admin panel' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/admin'))
   })
 
-  it('a normal user has no Admin menu', async () => {
+  it('a normal user has no admin panel entry', async () => {
     signInAs('averyp')
     await renderApp('/products')
-    await screen.findByRole('heading', { name: 'Products' })
-    expect(screen.queryByRole('button', { name: /Admin/ })).not.toBeInTheDocument()
+    await userEvent.click(await screen.findByRole('button', { name: 'Avery Perez' }))
+    expect(await screen.findByRole('menuitem', { name: 'My orders' })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Admin panel' })).not.toBeInTheDocument()
   })
 })
 

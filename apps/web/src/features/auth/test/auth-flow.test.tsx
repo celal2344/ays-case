@@ -91,12 +91,13 @@ describe('auth flow (AUTH-1..7)', () => {
     expect(screen.getByText('Admins only')).toBeInTheDocument()
   })
 
-  it('AUTH-7: an admin reaches /admin and sees the Admin nav item', async () => {
+  it('AUTH-7: an admin reaches /admin and sees Admin panel in the profile menu', async () => {
     signInAs('admin')
     const { router } = await renderApp('/admin')
     expect(pathname(router)).toBe('/admin')
     expect(await screen.findByRole('heading', { name: 'Admin' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Admin' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Emily Johnson' }))
+    expect(await screen.findByRole('menuitem', { name: 'Admin panel' })).toBeInTheDocument()
   })
 
   it('AUTH-5: logout clears the session and returns to /login', async () => {

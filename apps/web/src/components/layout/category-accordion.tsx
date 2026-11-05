@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/accordion'
 import { useCategoryGroups } from '@/features/products/hooks/use-category-groups'
 
+import { categoryIcon, GROUP_ICONS } from './nav-icons'
 import { useActiveCategory } from './use-active-category'
 
 const LINK =
@@ -29,27 +30,39 @@ export function CategoryAccordion({ onNavigate }: { onNavigate: () => void }) {
       <Accordion>
         {groups.map((group) => {
           const name = t(`nav.groups.${group.id}`)
+          const GroupIcon = GROUP_ICONS[group.id]
           return (
             <AccordionItem key={group.id} value={group.id}>
-              <AccordionTrigger>{name}</AccordionTrigger>
+              <AccordionTrigger>
+                <span className="flex items-center gap-3">
+                  <GroupIcon className="size-[18px] text-muted-foreground" aria-hidden="true" />
+                  {name}
+                </span>
+              </AccordionTrigger>
               <AccordionContent>
                 <ul>
-                  {group.categories.map((category) => (
-                    <li key={category.slug}>
-                      <Link
-                        to="/products"
-                        search={{ category: category.slug }}
-                        onClick={onNavigate}
-                        className={LINK}
-                        aria-current={active.category === category.slug ? 'page' : undefined}
-                      >
-                        {category.name}
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {category.count}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
+                  {group.categories.map((category) => {
+                    const Icon = categoryIcon(category.slug)
+                    return (
+                      <li key={category.slug}>
+                        <Link
+                          to="/products"
+                          search={{ category: category.slug }}
+                          onClick={onNavigate}
+                          className={LINK}
+                          aria-current={active.category === category.slug ? 'page' : undefined}
+                        >
+                          <span className="flex items-center gap-3">
+                            <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
+                            {category.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {category.count}
+                          </span>
+                        </Link>
+                      </li>
+                    )
+                  })}
                   <li>
                     <Link
                       to="/products"

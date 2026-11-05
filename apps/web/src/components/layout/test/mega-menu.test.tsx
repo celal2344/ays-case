@@ -8,7 +8,13 @@ import { cat, fixtureCategories } from '@/test/fixtures/products'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
-import { GROUP_IDS, groupCategories, groupOf } from '@/features/products/category-groups'
+import {
+  featuredOf,
+  GROUP_IDS,
+  groupCategories,
+  groupOf,
+} from '@/features/products/category-groups'
+import type { Product } from '@/features/products/schemas'
 
 const search = (router: { state: { location: { search: unknown } } }) =>
   router.state.location.search
@@ -59,7 +65,7 @@ describe('mega-menu navigation', () => {
     const { router } = await renderApp('/products')
     const nav = await screen.findByRole('navigation', { name: 'Categories' })
     await userEvent.click(await within(nav).findByRole('button', { name: 'Groceries' }))
-    const link = await screen.findByRole('link', { name: /^Groceries\s*10$/ })
+    const link = await screen.findByRole('link', { name: /^Groceries\s*10 products$/ })
     await userEvent.click(link)
     await waitFor(() => expect(search(router)).toEqual({ category: 'groceries' }))
     expect(await screen.findByText('10 results')).toBeInTheDocument()
@@ -69,7 +75,9 @@ describe('mega-menu navigation', () => {
     const { router } = await renderApp('/products')
     const nav = await screen.findByRole('navigation', { name: 'Categories' })
     await userEvent.click(await within(nav).findByRole('button', { name: 'Beauty & Care' }))
-    await userEvent.click(await screen.findByRole('link', { name: /View all in Beauty & Care/ }))
+    await userEvent.click(
+      await screen.findByRole('link', { name: /All Beauty & Care products \(10\)/ }),
+    )
     await waitFor(() => expect(search(router)).toEqual({ group: 'beauty' }))
     expect(await screen.findByText('Group: Beauty & Care')).toBeInTheDocument()
     // beauty is the only fixture category of that group: ids 1, 4, 7 …
@@ -106,7 +114,7 @@ describe('mega-menu navigation', () => {
     await renderApp('/products?category=groceries')
     const nav = await screen.findByRole('navigation', { name: 'Categories' })
     const trigger = await within(nav).findByRole('button', { name: 'Groceries' })
-    expect(trigger.className).toContain('border-brand')
+    expect(trigger.classList.contains('after:scale-x-100')).toBe(true)
   })
 
   it('the phone menu lists the same groups as an accordion', async () => {
@@ -117,5 +125,55 @@ describe('mega-menu navigation', () => {
     await userEvent.click(await within(sheet).findByRole('link', { name: /^Groceries\s*10$/ }))
     await waitFor(() => expect(search(router)).toEqual({ category: 'groceries' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+})
+
+describe('featuredOf', () => {
+  const item = (id: number, category: string, over: Partial<Product> = {}) =>
+    ({
+      id,
+      category: cat(category),
+      thumbnail: `https://img.test/${id}.png`,
+      rating: null,
+      reviewCount: 0,
+      discountPercentage: 0,
+      ...over,
+    }) as Product
+
+  it('picks the two best rated products of the group plus the biggest discount', () => {
+    const picked = featuredOf('electronics', [
+      item(1, 'laptops', { rating: 4.5, reviewCount: 9 }),
+      item(2, 'tablets', { rating: 4.9, reviewCount: 2 }),
+      item(3, 'smartphones', { rating: 4.5, reviewCount: 3 }),
+      item(4, 'laptops', { discountPercentage: 30 }),
+      item(5, 'laptops', { discountPercentage: 10 }),
+      item(6, 'beauty', { rating: 5, discountPercentage: 50 }),
+    ])
+    expect(picked.map((f) => [f.product.id, f.reason])).toEqual([
+      [2, 'rating'],
+      [1, 'rating'],
+      [4, 'discount'],
+    ])
+  })
+
+  it('skips products without an image and returns nothing for an empty group', () => {
+    expect(featuredOf('men', [item(1, 'mens-shirts', { rating: 5, thumbnail: null })])).toEqual([])
+    expect(featuredOf('home', [])).toEqual([])
+  })
+})
+
+describe('mega-menu accessibility (disclosure navigation)', () => {
+  it('uses buttons with aria-expanded and a panel of plain links, closed by Escape', async () => {
+    await renderApp('/products')
+    const nav = await screen.findByRole('navigation', { name: 'Categories' })
+    const button = await within(nav).findByRole('button', { name: 'Groceries' })
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(button)
+    expect(button).toHaveAttribute('aria-expanded', 'true')
+    expect(await screen.findByRole('link', { name: /^Groceries\s*10 products$/ })).toBeVisible()
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.queryByRole('menuitem')).toBeNull()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(button).toHaveAttribute('aria-expanded', 'false'))
   })
 })

@@ -5,10 +5,12 @@ import { ChevronDownIcon } from 'lucide-react'
 
 function NavigationMenu({
   align = 'start',
+  anchor,
   className,
   children,
   ...props
-}: NavigationMenuPrimitive.Root.Props & Pick<NavigationMenuPrimitive.Positioner.Props, 'align'>) {
+}: NavigationMenuPrimitive.Root.Props &
+  Pick<NavigationMenuPrimitive.Positioner.Props, 'align' | 'anchor'>) {
   return (
     <NavigationMenuPrimitive.Root
       data-slot="navigation-menu"
@@ -19,7 +21,7 @@ function NavigationMenu({
       {...props}
     >
       {children}
-      <NavigationMenuPositioner align={align} />
+      <NavigationMenuPositioner align={align} anchor={anchor} />
     </NavigationMenuPrimitive.Root>
   )
 }

@@ -21,6 +21,8 @@ export function createAppRouter(options?: {
     history: options?.history,
     context: { queryClient, auth: authContext, ...options?.context },
     defaultPreload: false,
+    // smooth page changes where the browser supports view transitions; others just navigate
+    defaultViewTransition: true,
     // fast loads show no skeleton; one that appears stays long enough not to flicker
     defaultPendingComponent: PageSkeleton,
     defaultPendingMs: 200,
