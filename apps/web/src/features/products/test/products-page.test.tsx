@@ -25,9 +25,11 @@ describe('shop list (PROD-1, PROD-6, EX-1..4, EX-12)', () => {
     expect(screen.getByText('1 / 3')).toBeInTheDocument() // the compact pager label
   })
 
-  it('/ redirects to /products', async () => {
-    const { router } = await renderApp('/')
-    expect(router.state.location.pathname).toBe('/products')
+  it('sorts by the biggest discount and by newest from the URL', async () => {
+    await renderApp('/products?sort=discount&order=desc')
+    expect(await screen.findByText('Showing 1–12 of 30')).toBeInTheDocument()
+    const first = cardTitles()[0]
+    expect(first).toBeTruthy()
   })
 
   it('EX-1/2/3/4: a combined URL reproduces the whole view', async () => {

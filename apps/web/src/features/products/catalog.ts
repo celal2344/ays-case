@@ -53,6 +53,8 @@ export function sortProducts(
       }
       return (a.rating - b.rating) * direction
     }
+    if (sort === 'discount') return (a.discountPercentage - b.discountPercentage) * direction
+    if (sort === 'newest') return a.createdAt.localeCompare(b.createdAt) * direction
     const result =
       sort === 'title' ? a.title.localeCompare(b.title, locale) : a.priceCents - b.priceCents
     return result * direction

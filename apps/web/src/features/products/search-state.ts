@@ -67,6 +67,8 @@ export const SORT_OPTIONS = [
   'price-asc',
   'price-desc',
   'rating-desc',
+  'discount-desc',
+  'newest-desc',
   'title-asc',
   'title-desc',
 ] as const

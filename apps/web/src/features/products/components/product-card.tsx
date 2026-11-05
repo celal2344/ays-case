@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { Star, Truck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 
 import { CartControls } from '@/features/cart/components/cart-controls'
@@ -12,10 +13,10 @@ import { DiscountBadge, StockBadge } from './product-badges'
 import { ProductImage } from './product-image'
 import { ProductPrice } from './product-price'
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, isNew = false }: { product: Product; isNew?: boolean }) {
   const { t } = useTranslation()
   return (
-    <Card className="h-full gap-0 overflow-hidden p-0 transition-shadow hover:shadow-md">
+    <Card className="h-full gap-0 overflow-hidden p-0 transition-[transform,box-shadow] duration-(--motion-base) ease-(--ease-out) focus-within:-translate-y-0.5 focus-within:shadow-md hover:-translate-y-0.5 hover:shadow-md">
       <div className="relative">
         <Link
           to="/products/$productId"
@@ -27,6 +28,7 @@ export function ProductCard({ product }: { product: Product }) {
         >
           <ProductImage src={product.thumbnail} alt="" />
           <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
+            {isNew ? <Badge variant="secondary">{t('home.badgeNew')}</Badge> : null}
             <DiscountBadge product={product} />
             <StockBadge product={product} />
           </div>
