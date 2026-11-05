@@ -1,26 +1,41 @@
-import { relations } from 'drizzle-orm'
-import { pgTable, text, bigint, timestamp, boolean, integer, index } from 'drizzle-orm/pg-core'
+import { relations, sql } from 'drizzle-orm'
+import {
+  pgTable,
+  text,
+  bigint,
+  timestamp,
+  boolean,
+  integer,
+  index,
+  check,
+} from 'drizzle-orm/pg-core'
 
-export const user = pgTable('user', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified').default(false).notNull(),
-  image: text('image'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at')
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-  username: text('username').unique(),
-  displayUsername: text('display_username'),
-  role: text('role'),
-  banned: boolean('banned').default(false),
-  banReason: text('ban_reason'),
-  banExpires: timestamp('ban_expires'),
-  firstName: text('first_name').notNull(),
-  lastName: text('last_name').notNull(),
-}).enableRLS()
+// Roles are `admin` and `user` only. The CHECK below is added by hand: `pnpm auth:generate` rewrites this
+// file, and `test/auth.test.ts` fails if the constraint ever goes missing.
+export const user = pgTable(
+  'user',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    email: text('email').notNull().unique(),
+    emailVerified: boolean('email_verified').default(false).notNull(),
+    image: text('image'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+    username: text('username').unique(),
+    displayUsername: text('display_username'),
+    role: text('role'),
+    banned: boolean('banned').default(false),
+    banReason: text('ban_reason'),
+    banExpires: timestamp('ban_expires'),
+    firstName: text('first_name').notNull(),
+    lastName: text('last_name').notNull(),
+  },
+  (table) => [check('user_role_check', sql`${table.role} in ('admin', 'user')`)],
+).enableRLS()
 
 export const session = pgTable(
   'session',

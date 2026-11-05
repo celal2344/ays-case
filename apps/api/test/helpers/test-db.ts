@@ -34,6 +34,47 @@ export async function useSeededDatabase() {
 
 let nextClient = 0
 
+type Request = (path: string, init?: RequestInit) => Response | Promise<Response>
+
+/** A fresh client address, so the per-IP rate limits never get in the way. */
+export const freshIp = () => `198.51.100.${(nextClient++ % 250) + 1}`
+
+const cookieOf = (res: Response) =>
+  res.headers
+    .getSetCookie()
+    .map((c) => c.split(';')[0])
+    .join('; ')
+
+export async function signInWithEmail(request: Request, email: string, password: string) {
+  const res = await request('/api/auth/sign-in/email', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      origin: 'http://localhost:5173',
+      'x-forwarded-for': freshIp(),
+    },
+    body: JSON.stringify({ email, password }),
+  })
+  return { res, cookie: cookieOf(res) }
+}
+
+export async function signUp(
+  request: Request,
+  body: Record<string, unknown>,
+  ip: string = freshIp(),
+) {
+  const res = await request('/api/auth/sign-up/email', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      origin: 'http://localhost:5173',
+      'x-forwarded-for': ip,
+    },
+    body: JSON.stringify(body),
+  })
+  return { res, cookie: cookieOf(res) }
+}
+
 /** Each call comes from its own address, so the sign-in rate limit (5 per minute per IP) never gets in the way. */
 export async function signIn(
   request: (path: string, init?: RequestInit) => Response | Promise<Response>,

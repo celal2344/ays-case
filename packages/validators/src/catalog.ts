@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { envelope } from './http.js'
 
-export const roleSchema = z.enum(['admin', 'moderator', 'user'])
+export const roleSchema = z.enum(['admin', 'user'])
 export type Role = z.infer<typeof roleSchema>
 
 export const availabilitySchema = z.enum(['in', 'low', 'out'])

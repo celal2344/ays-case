@@ -30,10 +30,6 @@ export async function countAdmins(db: Database) {
   return row!.n
 }
 
-export async function setRole(db: Database, id: string, role: string) {
-  await db.update(user).set({ role }).where(eq(user.id, id))
-}
-
 export async function updateUser(db: Database, id: string, set: Record<string, string>) {
   await db
     .update(user)
