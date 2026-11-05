@@ -92,7 +92,7 @@ export function RegisterPage() {
             {(aria) => (
               <Input
                 {...aria}
-                type={props.password ? undefined : props.type}
+                {...(props.password ? {} : { type: props.type })}
                 autoComplete={props.autoComplete}
                 value={f.state.value}
                 onBlur={f.handleBlur}

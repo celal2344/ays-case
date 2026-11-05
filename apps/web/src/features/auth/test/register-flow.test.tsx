@@ -150,6 +150,22 @@ describe('sign-in with a username or an email', () => {
   })
 })
 
+describe('the register form hides both passwords', () => {
+  it('shows dots until the eye is pressed, for the password and its confirmation', async () => {
+    await renderApp('/register')
+    const password = screen.getByLabelText('Password', { selector: 'input' })
+    const confirm = screen.getByLabelText('Confirm password', { selector: 'input' })
+    expect(password).toHaveAttribute('type', 'password')
+    expect(confirm).toHaveAttribute('type', 'password')
+    await userEvent.type(password, 'secret-pass')
+    expect(password).toHaveAttribute('type', 'password')
+    const [eye] = screen.getAllByRole('button', { name: 'Show password' })
+    await userEvent.click(eye!)
+    expect(password).toHaveAttribute('type', 'text')
+    expect(confirm).toHaveAttribute('type', 'password')
+  })
+})
+
 describe('a pending action after registering', () => {
   it('signed out: Add to cart goes to login; registering applies the action', async () => {
     const { router } = await renderApp('/products/2')
