@@ -64,9 +64,6 @@ export const tr = {
     categories: 'Kategoriler',
     account: 'Hesabım',
     cart: 'Sepetim',
-    project: 'Proje',
-    github: 'GitHub',
-    api: 'API dokümanı',
     copyright: '© 2026 ays-case',
   },
   prefs: {

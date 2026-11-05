@@ -50,23 +50,6 @@ export function SiteFooter() {
             {t('footer.cart')}
           </Link>
         </nav>
-        <nav
-          aria-label={`${t('footer.label')}: ${t('footer.project')}`}
-          className="flex flex-[1_1_160px] flex-col gap-2"
-        >
-          <strong className={HEADING}>{t('footer.project')}</strong>
-          <a
-            href="https://github.com/celal2344/ays-case"
-            target="_blank"
-            rel="noreferrer"
-            className={LINK}
-          >
-            {t('footer.github')}
-          </a>
-          <a href="/api/docs" className={LINK}>
-            {t('footer.api')}
-          </a>
-        </nav>
       </div>
       <div className="border-t">
         <div className="page-container py-4 text-[13px] text-muted-foreground">

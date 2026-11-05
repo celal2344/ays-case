@@ -63,9 +63,6 @@ export const en = {
     categories: 'Categories',
     account: 'My account',
     cart: 'My cart',
-    project: 'Project',
-    github: 'GitHub',
-    api: 'API docs',
     copyright: '© 2026 ays-case',
   },
   prefs: {

@@ -15,28 +15,28 @@ import { catalogStats } from '../selectors'
 const SLOTS = [
   {
     link: 'lg:top-1/2 lg:left-1/2 lg:w-[260px] lg:-translate-x-1/2 lg:-translate-y-[54%] lg:-rotate-2',
-    card: 'gap-2 rounded-3xl p-[18px]',
-    image: 'h-[200px]',
+    card: 'lg:gap-2',
+    image: 'lg:h-[200px]',
   },
   {
     link: 'lg:top-[4%] lg:left-[2%] lg:w-[180px] lg:-rotate-[7deg]',
-    card: 'rounded-[20px] p-3.5',
-    image: 'h-[120px]',
+    card: 'lg:gap-1.5 lg:rounded-[20px] lg:p-3.5',
+    image: 'lg:h-[120px]',
   },
   {
     link: 'lg:top-0 lg:right-[2%] lg:w-[190px] lg:rotate-6',
-    card: 'rounded-[20px] p-3.5',
-    image: 'h-[130px]',
+    card: 'lg:gap-1.5 lg:rounded-[20px] lg:p-3.5',
+    image: 'lg:h-[130px]',
   },
   {
     link: 'lg:right-[6%] lg:bottom-0 lg:w-[180px] lg:-rotate-4',
-    card: 'rounded-[20px] p-3.5',
-    image: 'h-[120px]',
+    card: 'lg:gap-1.5 lg:rounded-[20px] lg:p-3.5',
+    image: 'lg:h-[120px]',
   },
   {
     link: 'lg:bottom-[4%] lg:left-[6%] lg:w-[170px] lg:rotate-5',
-    card: 'rounded-[20px] p-3.5',
-    image: 'h-[110px]',
+    card: 'lg:gap-1.5 lg:rounded-[20px] lg:p-3.5',
+    image: 'lg:h-[110px]',
   },
 ] as const
 
@@ -50,13 +50,13 @@ function HeroCard({ product, slot }: { product: Product; slot: number }) {
       to="/products/$productId"
       params={{ productId: String(product.id) }}
       className={cn(
-        'w-[72%] max-w-[260px] shrink-0 snap-center lg:absolute lg:max-w-none',
+        'flex w-[72%] max-w-[260px] shrink-0 snap-center lg:absolute lg:block lg:max-w-none',
         style.link,
       )}
     >
       <div
         className={cn(
-          'glass hero-bob flex flex-col gap-1.5 text-foreground shadow-[0_18px_36px_-18px_rgba(124,45,18,0.35)]',
+          'glass hero-bob flex h-full flex-col gap-2 rounded-3xl p-[18px] text-foreground shadow-[0_18px_36px_-18px_rgba(124,45,18,0.35)] lg:h-auto',
           style.card,
         )}
         style={{ animationDelay: `${slot * -1.2}s` }}
@@ -68,7 +68,7 @@ function HeroCard({ product, slot }: { product: Product; slot: number }) {
           height={200}
           loading="eager"
           fetchPriority="high"
-          className={cn('w-full object-contain', style.image)}
+          className={cn('h-40 w-full object-contain', style.image)}
         />
         {centre && product.brand ? (
           <span className="text-xs text-muted-foreground">{product.brand.name}</span>
