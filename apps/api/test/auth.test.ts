@@ -86,7 +86,7 @@ describe('GET /api/users (admin only)', () => {
     const res = await request('/api/users', { headers: { cookie } })
     expect(res.status).toBe(200)
     const { data } = (await res.json()) as { data: Record<string, unknown>[] }
-    expect(data).toHaveLength(208)
+    expect(data).toHaveLength(30)
     expect(Object.keys(data[0] ?? {}).sort()).toEqual([
       'email',
       'firstName',

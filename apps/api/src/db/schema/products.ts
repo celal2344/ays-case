@@ -25,7 +25,7 @@ import {
 export const products = pgTable(
   'products',
   {
-    // Seeded rows keep their DummyJSON ids (1 to 194); new rows continue above the max.
+    // The first 194 rows keep the ids of the original catalog import; new rows continue above the max.
     id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
     title: text('title').notNull(),
     description: text('description').notNull(),
@@ -69,7 +69,7 @@ export const products = pgTable(
       .on(t.id)
       .where(sql`${t.deletedAt} is null`),
   ],
-)
+).enableRLS()
 
 export const productTags = pgTable(
   'product_tags',
@@ -85,7 +85,7 @@ export const productTags = pgTable(
     primaryKey({ columns: [t.productId, t.tagId] }),
     index('product_tags_tag_idx').on(t.tagId),
   ],
-)
+).enableRLS()
 
 export const productImages = pgTable(
   'product_images',
@@ -105,4 +105,4 @@ export const productImages = pgTable(
       .where(sql`${t.isPrimary}`),
     index('product_images_product_idx').on(t.productId),
   ],
-)
+).enableRLS()

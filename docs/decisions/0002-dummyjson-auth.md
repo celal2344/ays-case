@@ -1,6 +1,6 @@
 # 0002 Auth via DummyJSON /auth/login, role from /auth/me
 
-- **Status:** Accepted (2026-11-03)
+- **Status:** Superseded by the real backend (see [backend.md](../backend.md)); kept as history. Was: Accepted (2026-11-03)
 
 ## Context
 Brief: simple form, no real password check, "dummy user check", admin and user capabilities, session survives refresh via localStorage.

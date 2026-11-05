@@ -1,6 +1,6 @@
 # 0004 Load the full catalog once; filter/sort/paginate client-side
 
-- **Status:** Accepted (2026-11-03)
+- **Status:** Superseded by the real backend (see [backend.md](../backend.md)); kept as history. Was: Accepted (2026-11-03)
 
 ## Context
 Overlay adds and deletes products locally. With DummyJSON server-side pagination/search, counts, pages and search results would ignore local changes.

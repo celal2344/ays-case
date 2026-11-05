@@ -1,0 +1,122 @@
+[
+  {
+    "slug": "beauty",
+    "name": "Beauty",
+    "url": "https://example.test/products/category/beauty"
+  },
+  {
+    "slug": "fragrances",
+    "name": "Fragrances",
+    "url": "https://example.test/products/category/fragrances"
+  },
+  {
+    "slug": "furniture",
+    "name": "Furniture",
+    "url": "https://example.test/products/category/furniture"
+  },
+  {
+    "slug": "groceries",
+    "name": "Groceries",
+    "url": "https://example.test/products/category/groceries"
+  },
+  {
+    "slug": "home-decoration",
+    "name": "Home Decoration",
+    "url": "https://example.test/products/category/home-decoration"
+  },
+  {
+    "slug": "kitchen-accessories",
+    "name": "Kitchen Accessories",
+    "url": "https://example.test/products/category/kitchen-accessories"
+  },
+  {
+    "slug": "laptops",
+    "name": "Laptops",
+    "url": "https://example.test/products/category/laptops"
+  },
+  {
+    "slug": "mens-shirts",
+    "name": "Mens Shirts",
+    "url": "https://example.test/products/category/mens-shirts"
+  },
+  {
+    "slug": "mens-shoes",
+    "name": "Mens Shoes",
+    "url": "https://example.test/products/category/mens-shoes"
+  },
+  {
+    "slug": "mens-watches",
+    "name": "Mens Watches",
+    "url": "https://example.test/products/category/mens-watches"
+  },
+  {
+    "slug": "mobile-accessories",
+    "name": "Mobile Accessories",
+    "url": "https://example.test/products/category/mobile-accessories"
+  },
+  {
+    "slug": "motorcycle",
+    "name": "Motorcycle",
+    "url": "https://example.test/products/category/motorcycle"
+  },
+  {
+    "slug": "skin-care",
+    "name": "Skin Care",
+    "url": "https://example.test/products/category/skin-care"
+  },
+  {
+    "slug": "smartphones",
+    "name": "Smartphones",
+    "url": "https://example.test/products/category/smartphones"
+  },
+  {
+    "slug": "sports-accessories",
+    "name": "Sports Accessories",
+    "url": "https://example.test/products/category/sports-accessories"
+  },
+  {
+    "slug": "sunglasses",
+    "name": "Sunglasses",
+    "url": "https://example.test/products/category/sunglasses"
+  },
+  {
+    "slug": "tablets",
+    "name": "Tablets",
+    "url": "https://example.test/products/category/tablets"
+  },
+  {
+    "slug": "tops",
+    "name": "Tops",
+    "url": "https://example.test/products/category/tops"
+  },
+  {
+    "slug": "vehicle",
+    "name": "Vehicle",
+    "url": "https://example.test/products/category/vehicle"
+  },
+  {
+    "slug": "womens-bags",
+    "name": "Womens Bags",
+    "url": "https://example.test/products/category/womens-bags"
+  },
+  {
+    "slug": "womens-dresses",
+    "name": "Womens Dresses",
+    "url": "https://example.test/products/category/womens-dresses"
+  },
+  {
+    "slug": "womens-jewellery",
+    "name": "Womens Jewellery",
+    "url": "https://example.test/products/category/womens-jewellery"
+  },
+  {
+    "slug": "womens-shoes",
+    "name": "Womens Shoes",
+    "url": "https://example.test/products/category/womens-shoes"
+  },
+  {
+    "slug": "womens-watches",
+    "name": "Womens Watches",
+    "url": "https://example.test/products/category/womens-watches"
+  }
+]

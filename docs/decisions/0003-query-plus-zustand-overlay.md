@@ -1,6 +1,6 @@
 # 0003 TanStack Query for remote reads + Zustand overlay for local writes
 
-- **Status:** Accepted (2026-11-03)
+- **Status:** Superseded by the real backend (see [backend.md](../backend.md)); kept as history. Was: Accepted (2026-11-03)
 
 ## Context
 DummyJSON simulates add/update/delete but persists nothing. Brief requires a store and local persistence. Remote reads benefit from caching, loading/error states and retries.

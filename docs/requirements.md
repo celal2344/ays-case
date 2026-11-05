@@ -1,5 +1,8 @@
 # Requirements
 
+> **Historical:** written for the DummyJSON-era plan. Where it disagrees with [backend.md](backend.md) and [api.md](api.md), those win.
+
+
 Source: `Frontend_Case.pdf` (case brief, Turkish). Each requirement has an ID used in the [tests](testing.md). **MUST** = in the brief. **EXTRA** = bonus ("ek geliştirmeler artı puan").
 
 ## 1. Mandated tech

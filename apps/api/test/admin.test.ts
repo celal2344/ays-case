@@ -123,7 +123,7 @@ describe('products', () => {
       warranty: { id: 1 },
       thumbnail: 'https://img.test/b.webp',
     })
-    expect(product.id).toBeGreaterThan(194)
+    expect(product.id).toBeGreaterThan(40)
     expect(product.tags).toHaveLength(2)
     expect(product.images.map((i) => [i.url, i.position, i.isPrimary])).toEqual([
       ['https://img.test/a.webp', 0, false],

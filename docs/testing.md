@@ -1,5 +1,8 @@
 # Testing
 
+> **Historical:** written for the DummyJSON-era plan. Where it disagrees with [backend.md](backend.md) and [api.md](api.md), those win.
+
+
 ## Layers
 
 | Layer       | Tool                                     | What                                                                                                                                | Where                                                |
