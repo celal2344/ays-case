@@ -1,17 +1,16 @@
-import { ShoppingCart, Trash2 } from 'lucide-react'
+import { ShoppingCart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { QuantityStepper } from '@/components/quantity-stepper'
-import { Button } from '@/components/ui/button'
 import { PendingButton } from '@/components/pending-button'
 import type { Product } from '@/features/products/schemas'
 
 import { useAddButton } from '../hooks/use-add-to-cart'
 import { useCart } from '../hooks/use-cart'
+import { CartLineStepper } from './cart-line-stepper'
 
 /**
- * The card's cart action: "Add to cart" until the product is in the cart, then a quantity stepper
- * (clamped to stock) with a remove button.
+ * The card's cart action: "Add to cart" until the product is in the cart, then the shared stepper
+ * (the trash at quantity 1 removes the line).
  */
 export function CartControls({ product }: { product: Product }) {
   const { t } = useTranslation()
@@ -34,21 +33,5 @@ export function CartControls({ product }: { product: Product }) {
     )
   }
 
-  return (
-    <div className="flex w-full items-center justify-between gap-2">
-      <QuantityStepper
-        value={Math.min(line.quantity, Math.max(1, product.stock))}
-        max={product.stock}
-        onChange={(quantity) => cart.setQuantity(product.id, quantity, product.stock)}
-      />
-      <Button
-        variant="outline"
-        size="icon"
-        aria-label={t('cart.remove', { title: product.title })}
-        onClick={() => cart.remove(product.id)}
-      >
-        <Trash2 className="size-4" />
-      </Button>
-    </div>
-  )
+  return <CartLineStepper product={product} />
 }

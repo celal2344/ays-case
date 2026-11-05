@@ -1,19 +1,59 @@
-import { ShoppingCart, Zap } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { ArrowRight, ShoppingCart, Zap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { PendingButton } from '@/components/pending-button'
+import { QuantityStepper } from '@/components/quantity-stepper'
+import { buttonVariants } from '@/components/ui/button'
+import { CartLineStepper } from '@/features/cart/components/cart-line-stepper'
 import { useAddButton, useBuyNow } from '@/features/cart/hooks/use-add-to-cart'
+import { useCart } from '@/features/cart/hooks/use-cart'
 
 import type { Product } from '../../schemas'
 
-/** "Add to cart" and "Buy now" for the chosen quantity; each ignores repeat clicks while it is sending. */
-export function BuyActions({ product, quantity }: { product: Product; quantity: number }) {
+/**
+ * The product page's purchase row. Until the product is in the cart: the quantity to add, "Add to
+ * cart" and "Buy now". Once it is: "In cart" with the cart's own stepper, "Go to cart" and "Buy now"
+ * (which just goes to checkout). Each button ignores repeat clicks while it is sending.
+ */
+export function BuyActions({
+  product,
+  quantity,
+  onQuantity,
+}: {
+  product: Product
+  quantity: number
+  onQuantity: (quantity: number) => void
+}) {
   const { t } = useTranslation()
   const { add, pending, atMax } = useAddButton(product)
   const { buyNow, pending: buying } = useBuyNow()
+  const { lines } = useCart()
+  const inCart = lines.some((l) => l.productId === product.id)
   const outOfStock = product.stock <= 0
+
+  if (inCart) {
+    return (
+      <>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">{t('cart.inCart')}</span>
+          <CartLineStepper product={product} />
+        </div>
+        <Link to="/cart" className={buttonVariants({ size: 'lg' })}>
+          {t('cart.goToCart')}
+          <ArrowRight className="size-4" aria-hidden="true" />
+        </Link>
+        <Link to="/checkout" className={buttonVariants({ size: 'lg', variant: 'outline' })}>
+          <Zap className="size-4" aria-hidden="true" />
+          {t('products.buyNow')}
+        </Link>
+      </>
+    )
+  }
+
   return (
     <>
+      <QuantityStepper value={quantity} max={Math.max(1, product.stock)} onChange={onQuantity} />
       <PendingButton
         size="lg"
         pending={pending}

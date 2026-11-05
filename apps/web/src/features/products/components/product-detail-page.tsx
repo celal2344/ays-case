@@ -19,7 +19,6 @@ import { DetailSection, SECTION_SCROLL_MARGIN } from './detail/detail-section'
 import { Gallery } from './detail/gallery'
 import { ProductBreadcrumb } from './detail/product-breadcrumb'
 import { SectionBar } from './detail/section-bar'
-import { QuantityStepper } from '@/components/quantity-stepper'
 import { RecentlyViewedStrip } from '@/features/recently-viewed/components/recently-viewed-strip'
 import { useRecordView } from '@/features/recently-viewed/hooks/use-recently-viewed'
 import { SimilarProducts } from './detail/similar-products'
@@ -138,12 +137,7 @@ export function ProductDetailPage() {
               <StockBadge product={product} />
             </div>
             <div className="flex flex-wrap items-center gap-3" ref={actionsRef}>
-              <QuantityStepper
-                value={quantity}
-                max={Math.max(1, product.stock)}
-                onChange={setQuantity}
-              />
-              <BuyActions product={product} quantity={quantity} />
+              <BuyActions product={product} quantity={quantity} onQuantity={setQuantity} />
             </div>
           </div>
           <DeliveryInfo product={product} />
