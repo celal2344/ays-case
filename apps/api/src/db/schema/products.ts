@@ -69,7 +69,7 @@ export const products = pgTable(
       .on(t.id)
       .where(sql`${t.deletedAt} is null`),
   ],
-)
+).enableRLS()
 
 export const productTags = pgTable(
   'product_tags',
@@ -85,7 +85,7 @@ export const productTags = pgTable(
     primaryKey({ columns: [t.productId, t.tagId] }),
     index('product_tags_tag_idx').on(t.tagId),
   ],
-)
+).enableRLS()
 
 export const productImages = pgTable(
   'product_images',
@@ -105,4 +105,4 @@ export const productImages = pgTable(
       .where(sql`${t.isPrimary}`),
     index('product_images_product_idx').on(t.productId),
   ],
-)
+).enableRLS()

@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm'
-import { pgTable, text, timestamp, boolean, index } from 'drizzle-orm/pg-core'
+import { pgTable, text, bigint, timestamp, boolean, integer, index } from 'drizzle-orm/pg-core'
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -20,7 +20,7 @@ export const user = pgTable('user', {
   banExpires: timestamp('ban_expires'),
   firstName: text('first_name').notNull(),
   lastName: text('last_name').notNull(),
-})
+}).enableRLS()
 
 export const session = pgTable(
   'session',
@@ -40,7 +40,7 @@ export const session = pgTable(
     impersonatedBy: text('impersonated_by'),
   },
   (table) => [index('session_userId_idx').on(table.userId)],
-)
+).enableRLS()
 
 export const account = pgTable(
   'account',
@@ -64,7 +64,7 @@ export const account = pgTable(
       .notNull(),
   },
   (table) => [index('account_userId_idx').on(table.userId)],
-)
+).enableRLS()
 
 export const verification = pgTable(
   'verification',
@@ -80,7 +80,14 @@ export const verification = pgTable(
       .notNull(),
   },
   (table) => [index('verification_identifier_idx').on(table.identifier)],
-)
+).enableRLS()
+
+export const rate_limit = pgTable('rate_limit', {
+  id: text('id').primaryKey(),
+  key: text('key').notNull().unique(),
+  count: integer('count').notNull(),
+  lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
+}).enableRLS()
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),

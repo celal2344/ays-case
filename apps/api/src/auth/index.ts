@@ -31,6 +31,13 @@ export function createAuth(db: Database) {
         lastName: { type: 'string', required: true },
       },
     },
+    // Counters live in the database (a `rate_limit` table), because serverless instances share no memory.
+    rateLimit: {
+      enabled: true,
+      storage: 'database',
+      modelName: 'rate_limit',
+      customRules: { '/sign-in/username': { window: 60, max: 5 } },
+    },
     // The session is answered from a signed cookie for 5 minutes, without a database call. Accepted
     // trade-off: a demoted or deleted user's old session data can stay valid for up to 5 minutes.
     session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
