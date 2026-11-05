@@ -279,6 +279,48 @@ html body [data-sonner-toaster][data-sonner-theme='light'] {
 /* Glass: floating, layered surfaces over content (header, menus, dialogs, image overlay buttons).
    Data-dense surfaces stay solid. The solid fallbacks below do not depend on any media query. */
 @layer components {
+  /* Clickable cards: the title is the one real link and its ::after covers the card (stretched link).
+     Controls inside the card (heart, add button, stepper) sit above it and keep working on their own. */
+  .card-link,
+  .card-link:hover,
+  .card-link:focus-visible {
+    text-decoration: none;
+  }
+  .card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .card-surface {
+    position: relative;
+    cursor: pointer;
+  }
+  .card-surface :where(button, input, [role='group']) {
+    position: relative;
+    z-index: 1;
+  }
+  .card-surface:has(.card-link:focus-visible) {
+    outline: 3px solid color-mix(in oklab, var(--ring) 50%, transparent);
+    outline-offset: 2px;
+  }
+  .card-link:focus-visible {
+    outline: none;
+  }
+  .card-lift {
+    transition:
+      transform var(--motion-base) var(--ease-out),
+      box-shadow var(--motion-base) var(--ease-out);
+  }
+  .card-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.25);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card-lift:hover {
+      transform: none;
+    }
+  }
+
   .glass,
   .glass-strong,
   .glass-flat {
@@ -344,31 +386,6 @@ html body [data-sonner-toaster][data-sonner-theme='light'] {
   /* strong soft background for the hero and checkout */
   .soft-bg {
     background: var(--page-glow-strong);
-  }
-}
-
-/* View transitions between pages: a short crossfade; the sticky header stays where it is. */
-.glass-header {
-  view-transition-name: site-header;
-}
-
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: var(--motion-base);
-  animation-timing-function: var(--ease-out);
-}
-
-::view-transition-group(site-header),
-::view-transition-old(site-header),
-::view-transition-new(site-header) {
-  animation: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
   }
 }
 

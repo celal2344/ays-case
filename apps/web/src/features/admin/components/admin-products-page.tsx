@@ -106,7 +106,7 @@ function ProductCell({ product }: { product: Product }) {
       <Link
         to="/products/$productId"
         params={{ productId: String(product.id) }}
-        className="line-clamp-2 font-medium hover:underline"
+        className="line-clamp-2 font-medium"
       >
         {product.title}
       </Link>

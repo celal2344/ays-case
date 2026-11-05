@@ -88,19 +88,19 @@ describe('product page (PDP-1..6)', () => {
     expect(addButtons()[0]).toBeDisabled()
   })
 
-  it('PDP-4: the quantity is clamped to stock and Add to cart uses it', async () => {
+  it('PDP-4: no quantity before adding; after it the stepper is clamped to stock', async () => {
     signInAs('averyp')
     await renderApp('/products/6') // stock 4
+    await screen.findByRole('heading', { name: 'smartphones item 06' })
+    expect(screen.queryByRole('textbox', { name: 'Quantity' })).not.toBeInTheDocument()
+
+    await userEvent.click(addButtons()[0]!)
+    expect(await screen.findByText(/was added to your cart/)).toBeInTheDocument()
     const quantity = await screen.findByRole('textbox', { name: 'Quantity' })
     await userEvent.clear(quantity)
     await userEvent.type(quantity, '99')
     expect(quantity).toHaveValue('4')
     expect(screen.getByRole('button', { name: 'Increase quantity' })).toBeDisabled()
-    await userEvent.click(screen.getByRole('button', { name: 'Decrease quantity' }))
-    expect(quantity).toHaveValue('3')
-
-    await userEvent.click(addButtons()[0]!)
-    expect(await screen.findByText(/was added to your cart/)).toBeInTheDocument()
   })
 
   it('PDP-5: similar products are from the same category and exclude the current product', async () => {

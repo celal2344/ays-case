@@ -210,3 +210,43 @@ test('the empty search box shows recently viewed and recent searches, and a chip
   )
   expect(overflow).toBeLessThanOrEqual(0)
 })
+
+test('a product card opens the product from anywhere on it, but its controls do not', async ({
+  page,
+}) => {
+  await signIn(page, 'user')
+  await page.goto('/products')
+  const card = page.locator('li', { has: page.getByRole('link', { name: 'groceries item 02' }) })
+  await card.getByRole('button', { name: /to favorites/ }).click()
+  await card.getByRole('button', { name: 'Add to cart' }).click()
+  await expect(card.getByRole('button', { name: 'Remove from cart' })).toBeVisible()
+  await expect(page).toHaveURL(/\/products(\?.*)?$/)
+
+  const box = await card.locator('[data-slot="card"]').boundingBox()
+  await page.mouse.click(box!.x + box!.width / 2, box!.y + 40) // on the image, far from any control
+  await expect(page).toHaveURL(/\/products\/2$/)
+})
+
+test('the product page shows "In cart" after adding and goes back when the trash removes it', async ({
+  page,
+}) => {
+  await signIn(page, 'user')
+  await page.goto('/products/2')
+  await page.getByRole('button', { name: 'Add to cart' }).first().click()
+  await expect(page.getByText('In cart:')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Go to cart' }).first()).toBeVisible()
+  await page.getByRole('button', { name: 'Remove from cart' }).first().click()
+  await expect(page.getByRole('button', { name: 'Add to cart' }).first()).toBeVisible()
+})
+
+test('the language is chosen from a dropdown', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'phones reach the language menu through the navigation drawer')
+  await page.goto('/')
+  await page
+    .getByRole('button', { name: /Language/ })
+    .first()
+    .click()
+  await page.getByRole('menuitemradio', { name: 'Türkçe' }).click()
+  await expect(page.getByRole('button', { name: /Dil/ }).first()).toBeVisible()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'tr')
+})

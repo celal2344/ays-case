@@ -7,7 +7,7 @@ import { FavoritesButton } from './favorites-button'
 import { HeaderSearch } from './header-search'
 import { MegaMenu } from './mega-menu'
 import { MobileNav } from './mobile-nav'
-import { LanguageToggle, ThemeToggle } from './preferences-controls'
+import { LanguageMenu, ThemeToggle } from './preferences-controls'
 import { useHeaderHeight } from './use-header-height'
 import { UserMenu } from './user-menu'
 
@@ -37,7 +37,7 @@ export function Header() {
         <HeaderSearch className="order-last basis-full sm:max-w-none md:order-none md:max-w-[720px] md:basis-auto" />
         <div className="ml-auto flex items-center gap-2">
           <div className="hidden items-center gap-2 md:flex">
-            <LanguageToggle />
+            <LanguageMenu />
             <ThemeToggle />
           </div>
           <FavoritesButton />
