@@ -27,7 +27,7 @@ describe('GET /api/products', () => {
     const res = await get('/api/products')
     expect(res.status).toBe(200)
     const body = productListResponseSchema.parse(await res.json())
-    expect(body.data).toHaveLength(194)
+    expect(body.data).toHaveLength(40)
     expect(body.data[0]).toMatchObject({
       id: 1,
       priceCents: 999,
@@ -40,7 +40,7 @@ describe('GET /api/products', () => {
     const { data } = productListResponseSchema.parse(await (await get('/api/products')).json())
     const first = data[0]
     expect(first?.reviewCount).toBe(3)
-    // DummyJSON ratings of product 1 are 3, 4 and 5
+    // the fixture ratings of product 1 are 3, 4 and 5
     expect(first?.rating).toBe(4)
     expect(data.every((p) => p.reviewCount === 3 && p.rating !== null)).toBe(true)
   })

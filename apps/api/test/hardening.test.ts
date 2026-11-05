@@ -16,20 +16,20 @@ afterAll(async () => {
 
 describe('row level security', () => {
   it('is on for every table and the rating view runs with its caller rights', async () => {
-    const tables = await getDb().execute<{ relname: string; relrowsecurity: boolean }>(sql`
+    const tables = (await getDb().execute(sql`
       select c.relname, c.relrowsecurity
       from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relkind = 'r'
-    `)
-    const rows = Array.isArray(tables) ? tables : tables.rows
+    `)) as unknown as { rows: { relname: string; relrowsecurity: boolean }[] }
+    const rows = tables.rows
     expect(rows.length).toBeGreaterThan(15)
     expect(rows.filter((t) => !t.relrowsecurity).map((t) => t.relname)).toEqual([])
 
-    const views = await getDb().execute<{ reloptions: string[] | null }>(sql`
+    const views = (await getDb().execute(sql`
       select c.reloptions from pg_class c
       where c.relname = 'product_rating_stats' and c.relkind = 'v'
-    `)
-    const view = (Array.isArray(views) ? views : views.rows)[0]
+    `)) as unknown as { rows: { reloptions: string[] | null }[] }
+    const view = views.rows[0]
     expect(view?.reloptions).toContain('security_invoker=true')
   })
 })

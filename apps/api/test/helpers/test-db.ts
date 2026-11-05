@@ -7,7 +7,7 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { resetAuth } from '../../src/auth'
 import { setDb, type Database } from '../../src/db/client'
 import * as schema from '../../src/db/schema'
-import { runSeed } from '../../src/db/seed'
+import { runFixture } from './fixture'
 
 /**
  * An in-memory Postgres (PGlite) with the real migrations and the real seed applied, wired into
@@ -26,12 +26,15 @@ export async function useSeededDatabase() {
     }
   }
   const db = drizzle(pg, { schema }) as unknown as Database
-  await runSeed(db)
+  await runFixture(db)
   setDb(db)
   resetAuth()
   return { db, close: () => pg.close() }
 }
 
+let nextClient = 0
+
+/** Each call comes from its own address, so the sign-in rate limit (5 per minute per IP) never gets in the way. */
 export async function signIn(
   request: (path: string, init?: RequestInit) => Response | Promise<Response>,
   username: string,
@@ -39,7 +42,11 @@ export async function signIn(
 ) {
   const res = await request('/api/auth/sign-in/username', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', origin: 'http://localhost:5173' },
+    headers: {
+      'content-type': 'application/json',
+      origin: 'http://localhost:5173',
+      'x-forwarded-for': `198.51.100.${(nextClient++ % 250) + 1}`,
+    },
     body: JSON.stringify({ username, password }),
   })
   const cookie = res.headers

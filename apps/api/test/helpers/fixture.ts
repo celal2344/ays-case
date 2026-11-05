@@ -4,7 +4,7 @@ import { sql } from 'drizzle-orm'
 import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 
-import type { Database } from './client'
+import type { Database } from '../../src/db/client'
 import {
   account,
   brands,
@@ -18,10 +18,10 @@ import {
   tags,
   user,
   warrantyPolicies,
-} from './schema'
-import categoriesData from './seed-data/categories.json'
-import productsData from './seed-data/products.json'
-import usersData from './seed-data/users.json'
+} from '../../src/db/schema'
+import categoriesData from '../fixtures/categories.json'
+import productsData from '../fixtures/products.json'
+import usersData from '../fixtures/users.json'
 
 const seedCategorySchema = z.array(z.object({ slug: z.string(), name: z.string() }))
 
@@ -39,7 +39,7 @@ const seedUserSchema = z.object({
   ),
 })
 
-/** The only accounts that can sign in: the documented demo accounts (see the README). */
+/** The only accounts that can sign in: the documented demo accounts. */
 const DEMO_PASSWORDS: Record<string, string> = { emilys: 'emilyspass', averyp: 'averyppass' }
 
 const seedProductSchema = z.object({
@@ -79,7 +79,7 @@ export function slugify(value: string) {
     .replace(/^-+|-+$/g, '')
 }
 
-/** The minimum order quantity can never exceed stock (21 DummyJSON products break this). */
+/** The minimum order quantity can never exceed stock (some fixture products break this). */
 export const clampMinimumOrder = (moq: number, stock: number) => Math.max(1, Math.min(moq, stock))
 
 const userId = (id: number) => `user-${id}`
@@ -91,7 +91,7 @@ const distinct = (values: Array<string | undefined>) => [
   ...new Set(values.filter((value): value is string => Boolean(value))),
 ]
 
-export function loadSeedData() {
+export function loadFixture() {
   const seedCategories = seedCategorySchema.parse(categoriesData)
   const seedProducts = seedProductSchema.parse(productsData).products
   const seedUsers = seedUserSchema.parse(usersData).users
@@ -152,7 +152,7 @@ export function loadSeedData() {
       discountPercentage: p.discountPercentage.toFixed(2),
       stock: p.stock,
       minimumOrderQuantity: clampMinimumOrder(p.minimumOrderQuantity, p.stock),
-      // DummyJSON weights are read as kilograms and dimensions as centimetres.
+      // fixture weights are read as kilograms and dimensions as centimetres.
       weightG: Math.round(p.weight * 1000),
       widthMm: Math.round(p.dimensions.width * 10),
       heightMm: Math.round(p.dimensions.height * 10),
@@ -173,8 +173,8 @@ export function loadSeedData() {
 const excluded = (column: AnyPgColumn) => sql.raw(`excluded."${column.name}"`)
 
 /** Upserts the catalog. Safe to run repeatedly. */
-export async function runSeed(db: Database) {
-  const data = loadSeedData()
+export async function runFixture(db: Database) {
+  const data = loadFixture()
   return db.transaction(async (tx) => {
     const categoryRows = await tx
       .insert(categories)

@@ -16,7 +16,7 @@ import {
   reviews,
   tags,
 } from '../src/db/schema'
-import { runSeed } from '../src/db/seed'
+import { runFixture } from './helpers/fixture'
 
 const url = process.env.DATABASE_URL_SESSION
 
@@ -29,7 +29,7 @@ const newProduct = (sku: string, categoryId: number) => ({
 })
 
 // Runs against the session pooler inside a throwaway schema; `public` is never touched.
-describe.skipIf(!url)('database (migrations, seed, constraints, rating view)', () => {
+describe.skipIf(!url)('database (migrations, fixture, constraints, rating view)', () => {
   const schemaName = `test_${randomUUID().replaceAll('-', '').slice(0, 12)}`
   const admin = createDb(url ?? '', { max: 1 })
   const scoped = createDb(url ?? '', { max: 1, searchPath: schemaName })
@@ -61,8 +61,8 @@ describe.skipIf(!url)('database (migrations, seed, constraints, rating view)', (
   const total = async (table: typeof products | typeof categories | typeof brands | typeof tags) =>
     (await db.select({ n: count() }).from(table))[0]?.n
 
-  it('seeds the catalog and a re-run is a no-op', async () => {
-    const expected = await runSeed(db)
+  it('loads the fixture catalog and a re-run is a no-op', async () => {
+    const expected = await runFixture(db)
     const snapshot = async () => ({
       categories: await total(categories),
       brands: await total(brands),
@@ -80,12 +80,12 @@ describe.skipIf(!url)('database (migrations, seed, constraints, rating view)', (
       productTags: expected.productTags,
       productImages: expected.productImages,
     })
-    await runSeed(db)
+    await runFixture(db)
     expect(await snapshot()).toEqual(first)
     categoryId = (await db.select({ id: categories.id }).from(categories).limit(1))[0]?.id ?? 0
   })
 
-  it('continues the id sequences above the seeded max', async () => {
+  it('continues the id sequences above the fixture max', async () => {
     const top = (await db.select({ top: max(products.id) }).from(products))[0]?.top ?? 0
     const [created] = await db
       .insert(products)
