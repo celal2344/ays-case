@@ -11,11 +11,8 @@ import {
   tags,
   warrantyPolicies,
 } from '../../../db/schema'
-import { duplicateField, toConflict } from '../../../utils/db-errors'
-import { errorsFor } from '../../../utils/error-helpers'
-import { AppError } from '../../../utils/errors'
-
-const fail = errorsFor('admin.lookups', 'service')
+import { dbError, duplicateField, toConflict } from '../../../utils/db-errors'
+import { AppError, appError } from '../../../utils/errors'
 
 /** `Çanta & Çocuk` → `canta-cocuk`; used when a slug is not given. */
 export function slugify(value: string) {
@@ -32,19 +29,16 @@ export function slugify(value: string) {
 function writeError(error: unknown, op: string, what: string, meta: Record<string, unknown>) {
   if (error instanceof AppError) return error
   const conflict = toConflict(error)
+  const where = `admin.lookups.${op}`
   if (conflict?.kind === 'duplicate') {
     const field = duplicateField(conflict.constraint)
-    return fail.conflict(
-      op,
-      `${what} with this ${field} already exists`,
-      { ...meta, field },
-      'duplicate',
-    )
+    const message = `${what} with this ${field} already exists`
+    return appError('duplicate', message, where, 'service', { ...meta, field })
   }
   if (conflict?.kind === 'in_use') {
-    return fail.conflict(op, `${what} is still used by products`, meta, 'in_use')
+    return appError('in_use', `${what} is still used by products`, where, 'service', meta)
   }
-  return fail.dbError(op, error, meta)
+  return dbError(error, where, 'service', meta)
 }
 
 /** The five operations every lookup table has; each kind below fills them with its own table. */
@@ -58,43 +52,40 @@ export interface LookupOps<Row, Create, Patch> {
 }
 
 export function lookupService<Row, Create, Patch>(ops: LookupOps<Row, Create, Patch>) {
-  const meta = { what: ops.what }
+  const missing = (op: string, id: number) =>
+    appError('not_found', `${ops.what} not found`, `admin.lookups.${op}`, 'service', {
+      what: ops.what,
+      id,
+    })
   return {
-    list: () => fail.guard('list', () => ops.list(getDb()), meta),
+    list: () => ops.list(getDb()),
     async create(input: Create): Promise<Row> {
       try {
         return await ops.create(getDb(), input)
       } catch (error) {
-        throw writeError(error, 'create', ops.what, meta)
+        throw writeError(error, 'create', ops.what, { what: ops.what })
       }
     },
     async update(id: number, patch: Patch): Promise<Row> {
       try {
         const row = await ops.update(getDb(), id, patch)
-        if (!row) throw fail.notFound('update', `${ops.what} not found`, { ...meta, id })
+        if (!row) throw missing('update', id)
         return row
       } catch (error) {
-        throw writeError(error, 'update', ops.what, { ...meta, id })
+        throw writeError(error, 'update', ops.what, { what: ops.what, id })
       }
     },
     async remove(id: number): Promise<void> {
       const db = getDb()
-      const inUse = await fail.guard('remove', () => ops.inUse(db, id), { ...meta, id })
-      if (inUse) {
-        throw fail.conflict(
-          'remove',
-          `${ops.what} is still used by products`,
-          { ...meta, id },
-          'in_use',
-        )
+      if (await ops.inUse(db, id)) {
+        const message = `${ops.what} is still used by products`
+        throw appError('in_use', message, 'admin.lookups.remove', 'service', { what: ops.what, id })
       }
-      let removed: boolean
       try {
-        removed = await ops.remove(db, id)
+        if (!(await ops.remove(db, id))) throw missing('remove', id)
       } catch (error) {
-        throw writeError(error, 'remove', ops.what, { ...meta, id })
+        throw writeError(error, 'remove', ops.what, { what: ops.what, id })
       }
-      if (!removed) throw fail.notFound('remove', `${ops.what} not found`, { ...meta, id })
     },
   }
 }

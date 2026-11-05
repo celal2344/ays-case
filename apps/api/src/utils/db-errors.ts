@@ -1,3 +1,6 @@
+import type { ErrorCode } from '@ays/validators'
+import type { ContentfulStatusCode } from 'hono/utils/http-status'
+
 import { AppError, type ErrorLayer, type ErrorMeta } from './errors'
 
 type PgError = {
@@ -80,40 +83,34 @@ function isUnavailable(pg: PgError): boolean {
   )
 }
 
-export const UNAVAILABLE_MESSAGE = 'The service is temporarily unavailable. Please try again.'
-
 /**
  * The one place that turns a database failure into an `AppError`: constraint violations to 409 or
- * 422, bad input to 400, availability problems to 503 `database_unavailable`, anything else to a
- * generic 500. The original error stays as `cause` for the logs.
+ * 422, bad input to 400, availability problems to 503 `database_unavailable` (a "try again", not a
+ * bug), anything else to a generic 500. The original error stays as `cause` for the logs.
  */
-export function dbError(
-  cause: unknown,
-  op: string,
-  meta?: ErrorMeta,
-  layer: ErrorLayer = 'repository',
-): AppError {
+export function dbError(cause: unknown, op: string, layer: ErrorLayer, meta?: ErrorMeta): AppError {
   if (cause instanceof AppError) return cause
-  const context = { layer, op, meta, cause }
+  const make = (status: ContentfulStatusCode, code: ErrorCode, message: string) =>
+    new AppError(status, code, message, op, layer, meta, cause)
   const pg = pgError(cause)
   if (pg && isUnavailable(pg)) {
-    return new AppError(503, 'database_unavailable', UNAVAILABLE_MESSAGE, context)
+    return make(
+      503,
+      'database_unavailable',
+      'The service is temporarily unavailable. Please try again.',
+    )
   }
   const conflict = toConflict(cause)
   if (conflict?.kind === 'duplicate') {
-    return new AppError(409, 'conflict', 'A record with this value already exists', context)
+    return make(409, 'conflict', 'A record with this value already exists')
   }
-  if (conflict?.kind === 'in_use') {
-    return new AppError(409, 'in_use', 'This record is still in use', context)
-  }
+  if (conflict?.kind === 'in_use') return make(409, 'in_use', 'This record is still in use')
   if (conflict?.kind === 'missing_reference') {
-    return new AppError(422, 'unknown_reference', 'A referenced record does not exist', context)
+    return make(422, 'unknown_reference', 'A referenced record does not exist')
   }
   if (pg?.code === '23514') {
-    return new AppError(422, 'validation_error', 'A value is outside the allowed range', context)
+    return make(422, 'validation_error', 'A value is outside the allowed range')
   }
-  if (pg?.code === '22P02') {
-    return new AppError(400, 'bad_request', 'A value has an invalid format', context)
-  }
-  return new AppError(500, 'internal_error', 'Internal server error', context)
+  if (pg?.code === '22P02') return make(400, 'bad_request', 'A value has an invalid format')
+  return make(500, 'internal_error', 'Internal server error')
 }

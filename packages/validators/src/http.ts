@@ -2,29 +2,33 @@ import { z } from 'zod'
 
 export const fieldErrorSchema = z.object({ field: z.string(), message: z.string() })
 
-/** Every `code` the API can answer with. The web narrows on it and maps it to translated text. */
-export const errorCodes = [
-  'bad_request',
-  'unauthorized',
-  'forbidden',
-  'not_found',
-  'conflict',
-  'duplicate',
-  'in_use',
-  'unknown_reference',
-  'cannot_delete_self',
-  'cannot_demote_self',
-  'last_admin',
-  'cart_empty',
-  'out_of_stock',
-  'insufficient_stock',
-  'product_unavailable',
-  'review_exists',
-  'validation_error',
-  'http_error',
-  'internal_error',
-  'database_unavailable',
-] as const
+/** Every `code` the API can answer with, and the HTTP status it goes with. */
+export const errorStatus = {
+  bad_request: 400,
+  unauthorized: 401,
+  forbidden: 403,
+  not_found: 404,
+  conflict: 409,
+  duplicate: 409,
+  in_use: 409,
+  unknown_reference: 422,
+  cannot_delete_self: 409,
+  cannot_demote_self: 409,
+  last_admin: 409,
+  cart_empty: 422,
+  out_of_stock: 409,
+  insufficient_stock: 409,
+  product_unavailable: 409,
+  review_exists: 409,
+  validation_error: 422,
+  // answered from an HTTPException, whose status varies; never thrown with the helper
+  http_error: 500,
+  internal_error: 500,
+  database_unavailable: 503,
+} as const
+
+export type ErrorCode = keyof typeof errorStatus
+export const errorCodes = Object.keys(errorStatus) as [ErrorCode, ...ErrorCode[]]
 
 export const errorCodeSchema = z.enum(errorCodes)
 
@@ -34,7 +38,6 @@ export const errorSchema = z.object({
   message: z.string(),
   requestId: z.string().optional(),
   errors: z.array(fieldErrorSchema).optional(),
-  details: z.record(z.string(), z.unknown()).optional(),
 })
 
 export const paginationQuerySchema = z.object({
@@ -57,7 +60,6 @@ export function paginated<T extends z.ZodType>(item: T) {
 }
 
 export type FieldError = z.infer<typeof fieldErrorSchema>
-export type ErrorCode = (typeof errorCodes)[number]
 export type ApiError = z.infer<typeof errorSchema>
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>
 export type PaginationMeta = z.infer<typeof paginationMetaSchema>

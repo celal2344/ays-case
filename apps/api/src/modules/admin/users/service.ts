@@ -5,10 +5,8 @@ import { eq, sql } from 'drizzle-orm'
 import { getAuth } from '../../../auth'
 import { getDb } from '../../../db/client'
 import { session, user } from '../../../db/schema'
-import { duplicateField, toConflict } from '../../../utils/db-errors'
-import { errorsFor } from '../../../utils/error-helpers'
-
-const fail = errorsFor('admin.users', 'service')
+import { dbError, duplicateField, toConflict } from '../../../utils/db-errors'
+import { appError } from '../../../utils/errors'
 
 type PublicUser = {
   id: string
@@ -41,7 +39,15 @@ const toPublic = (row: {
 }): PublicUser => ({ ...row, role: roleSchema.catch('user').parse(row.role) })
 
 const duplicate = (op: string, field: string) =>
-  fail.conflict(op, `A user with this ${field} already exists`, { field }, 'duplicate')
+  appError(
+    'duplicate',
+    `A user with this ${field} already exists`,
+    `admin.users.${op}`,
+    'service',
+    {
+      field,
+    },
+  )
 
 async function adminCount() {
   const [row] = await getDb()
@@ -84,12 +90,12 @@ export async function createUser(body: UserCreateBody, headers: Headers): Promis
   } catch (error) {
     const conflict = toConflict(error)
     if (conflict?.kind === 'duplicate')
-      throw duplicate('createUser', duplicateField(conflict.constraint))
+      throw duplicate('create', duplicateField(conflict.constraint))
     const message = error instanceof Error ? error.message.toLowerCase() : ''
     if (message.includes('already exists') || message.includes('already taken')) {
-      throw duplicate('createUser', message.includes('username') ? 'username' : 'email')
+      throw duplicate('create', message.includes('username') ? 'username' : 'email')
     }
-    throw fail.dbError('createUser', error)
+    throw dbError(error, 'admin.users.create', 'service')
   }
 }
 
@@ -99,19 +105,27 @@ export async function updateUser(
   actorId: string,
 ): Promise<PublicUser> {
   const current = await find(id)
-  if (!current) throw fail.notFound('updateUser', 'User not found', { id })
+  if (!current)
+    throw appError('not_found', 'User not found', 'admin.users.update', 'service', { id })
 
   const demoting = patch.role !== undefined && current.role === 'admin' && patch.role !== 'admin'
   if (demoting && id === actorId) {
-    throw fail.conflict(
-      'updateUser',
-      'You cannot take admin rights away from yourself',
-      { id },
+    throw appError(
       'cannot_demote_self',
+      'You cannot take admin rights away from yourself',
+      'admin.users.update',
+      'service',
+      { id },
     )
   }
   if (demoting && (await adminCount()) <= 1) {
-    throw fail.conflict('updateUser', 'The last admin cannot be demoted', { id }, 'last_admin')
+    throw appError(
+      'last_admin',
+      'The last admin cannot be demoted',
+      'admin.users.update',
+      'service',
+      { id },
+    )
   }
 
   const set = {
@@ -141,8 +155,8 @@ export async function updateUser(
   } catch (error) {
     const conflict = toConflict(error)
     if (conflict?.kind === 'duplicate')
-      throw duplicate('updateUser', duplicateField(conflict.constraint))
-    throw fail.dbError('updateUser', error, { id })
+      throw duplicate('update', duplicateField(conflict.constraint))
+    throw dbError(error, 'admin.users.update', 'service', { id })
   }
   return (await find(id))!
 }
@@ -150,17 +164,25 @@ export async function updateUser(
 /** Sessions, accounts, carts, favorites, orders and reviews of the user go with it (cascading keys). */
 export async function deleteUser(id: string, actorId: string): Promise<void> {
   const current = await find(id)
-  if (!current) throw fail.notFound('deleteUser', 'User not found', { id })
+  if (!current)
+    throw appError('not_found', 'User not found', 'admin.users.delete', 'service', { id })
   if (id === actorId) {
-    throw fail.conflict(
-      'deleteUser',
-      'You cannot delete your own account',
-      { id },
+    throw appError(
       'cannot_delete_self',
+      'You cannot delete your own account',
+      'admin.users.delete',
+      'service',
+      { id },
     )
   }
   if (current.role === 'admin' && (await adminCount()) <= 1) {
-    throw fail.conflict('deleteUser', 'The last admin cannot be deleted', { id }, 'last_admin')
+    throw appError(
+      'last_admin',
+      'The last admin cannot be deleted',
+      'admin.users.delete',
+      'service',
+      { id },
+    )
   }
-  await fail.guard('deleteUser', () => getDb().delete(user).where(eq(user.id, id)), { id })
+  await getDb().delete(user).where(eq(user.id, id))
 }

@@ -10,14 +10,14 @@ import {
   products,
   recentlyViewed,
 } from '../../../db/schema'
-import { duplicateField, toConflict } from '../../../utils/db-errors'
-import { errorsFor } from '../../../utils/error-helpers'
-import { AppError, type ErrorMeta } from '../../../utils/errors'
+import { dbError, duplicateField, toConflict } from '../../../utils/db-errors'
+import { AppError, appError, type ErrorMeta } from '../../../utils/errors'
 import { getProduct } from '../../catalog/service'
 
 type Tx = Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0]
 
-const fail = errorsFor('admin.products', 'service')
+const missing = (op: string, id: number) =>
+  appError('not_found', 'Product not found', op, 'service', { id })
 
 /** A constraint failure of an admin write as the error the client should get; the rest via `dbError`. */
 function writeError(error: unknown, op: string, meta: ErrorMeta) {
@@ -25,22 +25,14 @@ function writeError(error: unknown, op: string, meta: ErrorMeta) {
   const conflict = toConflict(error)
   if (conflict?.kind === 'duplicate') {
     const field = duplicateField(conflict.constraint)
-    return fail.conflict(
-      op,
-      `A product with this ${field} already exists`,
-      { ...meta, field },
-      'duplicate',
-    )
+    const message = `A product with this ${field} already exists`
+    return appError('duplicate', message, op, 'service', { ...meta, field })
   }
   if (conflict?.kind === 'missing_reference') {
-    return fail.unprocessable(
-      op,
-      'A category, brand, policy or tag you chose does not exist',
-      meta,
-      'unknown_reference',
-    )
+    const message = 'A category, brand, policy or tag you chose does not exist'
+    return appError('unknown_reference', message, op, 'service', meta)
   }
-  return fail.dbError(op, error, meta)
+  return dbError(error, op, 'service', meta)
 }
 
 async function replaceTags(tx: Tx, productId: number, tagIds: number[]) {
@@ -106,7 +98,7 @@ export async function createProduct(body: ProductBody): Promise<ProductDetail> {
     })
     return await getProduct(id, true)
   } catch (error) {
-    throw writeError(error, 'createProduct', { sku: body.sku })
+    throw writeError(error, 'admin.products.create', { sku: body.sku })
   }
 }
 
@@ -124,47 +116,37 @@ export async function updateProduct(id: number, body: ProductPatchBody): Promise
       if (body.images !== undefined) await replaceImages(tx, id, body.images)
       return true
     })
-    if (!found) throw fail.notFound('updateProduct', 'Product not found', { id })
+    if (!found) throw missing('admin.products.update', id)
     return await getProduct(id, true)
   } catch (error) {
-    throw writeError(error, 'updateProduct', { id })
+    throw writeError(error, 'admin.products.update', { id })
   }
 }
 
 /** Soft delete; the product also leaves every cart, favorites and recently viewed list. Past orders keep their snapshot. */
 export async function softDeleteProduct(id: number): Promise<void> {
   const db = getDb()
-  const found = await fail.guard(
-    'softDeleteProduct',
-    () =>
-      db.transaction(async (tx) => {
-        const [row] = await tx
-          .update(products)
-          .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
-          .where(eq(products.id, id))
-          .returning({ id: products.id })
-        if (!row) return false
-        await tx.delete(cartItems).where(eq(cartItems.productId, id))
-        await tx.delete(favorites).where(eq(favorites.productId, id))
-        await tx.delete(recentlyViewed).where(eq(recentlyViewed.productId, id))
-        return true
-      }),
-    { id },
-  )
-  if (!found) throw fail.notFound('softDeleteProduct', 'Product not found', { id })
+  const found = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(products)
+      .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
+      .where(eq(products.id, id))
+      .returning({ id: products.id })
+    if (!row) return false
+    await tx.delete(cartItems).where(eq(cartItems.productId, id))
+    await tx.delete(favorites).where(eq(favorites.productId, id))
+    await tx.delete(recentlyViewed).where(eq(recentlyViewed.productId, id))
+    return true
+  })
+  if (!found) throw missing('admin.products.softDelete', id)
 }
 
 export async function restoreProduct(id: number): Promise<ProductDetail> {
-  const [row] = await fail.guard(
-    'restoreProduct',
-    () =>
-      getDb()
-        .update(products)
-        .set({ deletedAt: null, updatedAt: sql`now()` })
-        .where(eq(products.id, id))
-        .returning({ id: products.id }),
-    { id },
-  )
-  if (!row) throw fail.notFound('restoreProduct', 'Product not found', { id })
+  const [row] = await getDb()
+    .update(products)
+    .set({ deletedAt: null, updatedAt: sql`now()` })
+    .where(eq(products.id, id))
+    .returning({ id: products.id })
+  if (!row) throw missing('admin.products.restore', id)
   return await getProduct(id, true)
 }

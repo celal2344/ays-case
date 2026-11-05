@@ -1,74 +1,80 @@
 import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import type { Logger } from 'pino'
 
 import { dbError, pgError } from '../utils/db-errors'
-import { env } from '../utils/env'
 import { AppError } from '../utils/errors'
-import { debugBody, errorLogEntry } from '../utils/error-log'
-import { logger } from '../utils/logger'
+import { logger, serializeErr } from '../utils/logger'
 
-type Options = {
-  /** Adds `debug` (layer, op, meta, cause, stack) to the body. Development only. */
-  debug: boolean
-  log?: Pick<Logger, 'warn' | 'error' | 'debug'>
-}
+const SECRET_KEY = /password|token|secret|authorization|cookie|email/i
 
-/** A thrown value nobody wrapped: database failures still get their proper status, the rest is a 500. */
-function toAppError(error: unknown): AppError {
-  if (error instanceof AppError) return error
-  if (pgError(error)) return dbError(error, 'unhandled', undefined, 'route')
-  return new AppError(500, 'internal_error', 'Internal server error', {
-    layer: 'route',
-    op: 'unhandled',
-    cause: error,
-  })
-}
-
-/** The failed query and its parameters, from Drizzle's wrapper; for `debug` level only. */
-function failedQuery(error: unknown) {
-  let current: unknown = error
-  for (let depth = 0; depth < 4 && typeof current === 'object' && current !== null; depth++) {
-    const candidate = current as { query?: unknown; params?: unknown; cause?: unknown }
-    if (typeof candidate.query === 'string') {
-      return { query: candidate.query, params: candidate.params }
-    }
-    current = candidate.cause
-  }
-  return undefined
+/** Masks values whose key looks like a secret or personal data. */
+function redact(value: unknown, depth = 0): unknown {
+  if (typeof value !== 'object' || value === null) return value
+  if (depth > 3) return '[truncated]'
+  if (Array.isArray(value)) return value.map((item) => redact(item, depth + 1))
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [
+      key,
+      SECRET_KEY.test(key) ? '[redacted]' : redact(item, depth + 1),
+    ]),
+  )
 }
 
 /**
- * The one place a failure is logged and answered: a single log entry (warn for known 4xx, error
- * otherwise) and the safe body `{ code, message, requestId }`. Layer, op and meta stay in the log.
+ * The one place a failure is logged and answered: one log entry (warn for 4xx, error otherwise)
+ * and the safe body `{ code, message, requestId }`. Layer, op and meta stay in the log; in
+ * development the body also carries them as `debug`. An error nobody wrapped still gets its proper
+ * status when it comes from Postgres (a timeout is a 503); anything else is a generic 500.
  */
-export function createErrorHandler({ debug, log = logger }: Options) {
-  return (error: Error, c: Context) => {
-    const requestId = c.get('requestId') as string | undefined
-    if (error instanceof HTTPException) {
-      return c.json({ code: 'http_error', message: error.message, requestId }, error.status)
-    }
-    const failure = toAppError(error)
-    const entry = errorLogEntry(failure, { requestId, method: c.req.method, path: c.req.path })
-    if (failure.status < 500) log.warn(entry, failure.code)
-    else log.error(entry, failure.code)
-    const query = failedQuery(error)
-    if (query) log.debug({ requestId, ...query }, 'failed query')
-
-    return c.json(
-      {
-        code: failure.code,
-        message: failure.message,
-        requestId,
-        ...(failure.errors ? { errors: failure.errors } : {}),
-        ...(debug ? { debug: debugBody(failure) } : {}),
-      },
-      failure.status,
-    )
+export function onError(error: Error, c: Context) {
+  const requestId = c.get('requestId') as string | undefined
+  if (error instanceof HTTPException) {
+    return c.json({ code: 'http_error', message: error.message, requestId }, error.status)
   }
+  const failure = error instanceof AppError ? error : unwrapped(error)
+  const meta = redact(failure.meta)
+  const entry = {
+    code: failure.code,
+    status: failure.status,
+    layer: failure.layer,
+    op: failure.op,
+    meta,
+    requestId,
+    method: c.req.method,
+    path: c.req.path,
+    err: failure,
+  }
+  if (failure.status < 500) logger.warn(entry, failure.code)
+  else logger.error(entry, failure.code)
+
+  // read at call time so it follows the environment the process was started with
+  const debug =
+    process.env.NODE_ENV === 'development'
+      ? { debug: { layer: failure.layer, op: failure.op, meta, ...splitStack(failure) } }
+      : {}
+  return c.json(
+    { code: failure.code, message: failure.message, requestId, ...debug },
+    failure.status,
+  )
 }
 
-export const onError = createErrorHandler({ debug: env.NODE_ENV === 'development' })
+function unwrapped(error: unknown) {
+  if (pgError(error)) return dbError(error, 'unhandled', 'route')
+  return new AppError(
+    500,
+    'internal_error',
+    'Internal server error',
+    'unhandled',
+    'route',
+    {},
+    error,
+  )
+}
+
+function splitStack(failure: AppError) {
+  const { stack, ...cause } = serializeErr(failure)
+  return { cause, stack }
+}
 
 export function notFound(c: Context) {
   return c.json(
