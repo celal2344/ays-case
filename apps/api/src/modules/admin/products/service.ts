@@ -16,8 +16,7 @@ import { getProduct } from '../../catalog/service'
 
 type Tx = Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0]
 
-const missing = (op: string, id: number) =>
-  appError('not_found', 'Product not found', op, 'service', { id })
+const missing = (op: string, id: number) => appError('not_found', 'Product not found', op, { id })
 
 /** A constraint failure of an admin write as the error the client should get; the rest via `dbError`. */
 function writeError(error: unknown, op: string, meta: ErrorMeta) {
@@ -26,13 +25,13 @@ function writeError(error: unknown, op: string, meta: ErrorMeta) {
   if (conflict?.kind === 'duplicate') {
     const field = duplicateField(conflict.constraint)
     const message = `A product with this ${field} already exists`
-    return appError('duplicate', message, op, 'service', { ...meta, field })
+    return appError('duplicate', message, op, { ...meta, field })
   }
   if (conflict?.kind === 'missing_reference') {
     const message = 'A category, brand, policy or tag you chose does not exist'
-    return appError('unknown_reference', message, op, 'service', meta)
+    return appError('unknown_reference', message, op, meta)
   }
-  return dbError(error, op, 'service', meta)
+  return dbError(error, op, meta)
 }
 
 async function replaceTags(tx: Tx, productId: number, tagIds: number[]) {

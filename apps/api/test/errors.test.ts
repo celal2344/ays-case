@@ -46,7 +46,7 @@ afterEach(() => {
 describe('error answers', () => {
   it('uses the status of the code and sends only code, message and request id', async () => {
     const { res, body } = await fetchBody(
-      appThrowing(appError('conflict', 'Taken', 'x.op', 'service', { id: 1 })),
+      appThrowing(appError('conflict', 'Taken', 'x.op', { id: 1 })),
     )
     expect(res.status).toBe(409)
     expect(body).toEqual({
@@ -67,7 +67,7 @@ describe('error answers', () => {
   })
 
   it('echoes a safe request id and replaces an unsafe one', async () => {
-    const app = appThrowing(appError('not_found', 'Nope', 'x.op', 'route'))
+    const app = appThrowing(appError('not_found', 'Nope', 'x.op'))
     const safe = await fetchBody(app, { 'x-request-id': 'abc-123' })
     expect(safe.res.headers.get('x-request-id')).toBe('abc-123')
     expect(safe.body.requestId).toBe('abc-123')
@@ -77,7 +77,7 @@ describe('error answers', () => {
   })
 
   it('adds a debug object only in development', async () => {
-    const error = dbError(new Error('relation "products" does not exist'), 'x.op', 'repo', {
+    const error = dbError(new Error('relation "products" does not exist'), 'x.op', {
       id: 3,
     })
     const production = await fetchBody(appThrowing(error))
@@ -86,7 +86,6 @@ describe('error answers', () => {
     vi.stubEnv('NODE_ENV', 'development')
     const { body } = await fetchBody(appThrowing(error))
     expect(body.debug).toMatchObject({
-      layer: 'repo',
       op: 'x.op',
       meta: { id: 3 },
       cause: { message: 'relation "products" does not exist' },
@@ -105,10 +104,10 @@ describe('error log', () => {
     timeout,
   )
 
-  it('has layer, op, meta and a compact cause, without SQL, params or secrets', async () => {
+  it('has op, meta and a compact cause, without SQL, params or secrets', async () => {
     const error = spyOn('error')
     const { res } = await fetchBody(
-      appThrowing(dbError(wrapped, 'x.op', 'repo', { id: 9, password: 'hunter2' })),
+      appThrowing(dbError(wrapped, 'x.op', { id: 9, password: 'hunter2' })),
       { 'x-request-id': 'req-1' },
     )
     expect(res.status).toBe(503)
@@ -117,7 +116,6 @@ describe('error log', () => {
     expect(entry).toMatchObject({
       code: 'database_unavailable',
       status: 503,
-      layer: 'repo',
       op: 'x.op',
       meta: { id: 9, password: '[redacted]' },
       requestId: 'req-1',
@@ -135,7 +133,7 @@ describe('error log', () => {
 
   it('warns for 4xx failures', async () => {
     const warn = spyOn('warn')
-    await fetchBody(appThrowing(appError('not_found', 'Nope', 'x.op', 'route')))
+    await fetchBody(appThrowing(appError('not_found', 'Nope', 'x.op')))
     expect(warn).toHaveBeenCalledTimes(1)
   })
 })
@@ -161,7 +159,7 @@ describe('with a database', () => {
     try {
       await db.insert(products).values({ ...copy, ...change })
     } catch (cause) {
-      return dbError(cause, 'x.insert', 'repo')
+      return dbError(cause, 'x.insert')
     }
     throw new Error('the insert should have failed')
   }
@@ -180,11 +178,11 @@ describe('with a database', () => {
     )
     const invalid = await getDb()
       .execute(sql`select 'abc'::int`)
-      .catch((cause: unknown) => dbError(cause, 'x.cast', 'repo'))
+      .catch((cause: unknown) => dbError(cause, 'x.cast'))
     expect(invalid).toMatchObject({ status: 400, code: 'bad_request' })
   })
 
-  it('answers a missing product with 404, logging layer repo, op and meta.id', async () => {
+  it('answers a missing product with 404, logging op and meta.id', async () => {
     const warn = spyOn('warn')
     const res = await root.request('/api/products/987654', {
       headers: { 'x-request-id': 'miss-1' },
@@ -196,7 +194,6 @@ describe('with a database', () => {
       requestId: 'miss-1',
     })
     expect(warn.mock.calls[0]![0]).toMatchObject({
-      layer: 'repo',
       op: 'catalog.findProductDetail',
       meta: { id: 987654 },
       requestId: 'miss-1',

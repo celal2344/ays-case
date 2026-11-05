@@ -97,8 +97,7 @@ export async function findProductDetail(db: Database, id: number, includeDeleted
       and(eq(productImages.productId, products.id), eq(productImages.isPrimary, true)),
     )
     .where(and(includeDeleted ? undefined : notDeleted, eq(products.id, id)))
-  if (!row)
-    throw appError('not_found', 'Product not found', 'catalog.findProductDetail', 'repo', { id })
+  if (!row) throw appError('not_found', 'Product not found', 'catalog.findProductDetail', { id })
   return row
 }
 

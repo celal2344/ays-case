@@ -33,12 +33,12 @@ function writeError(error: unknown, op: string, what: string, meta: Record<strin
   if (conflict?.kind === 'duplicate') {
     const field = duplicateField(conflict.constraint)
     const message = `${what} with this ${field} already exists`
-    return appError('duplicate', message, where, 'service', { ...meta, field })
+    return appError('duplicate', message, where, { ...meta, field })
   }
   if (conflict?.kind === 'in_use') {
-    return appError('in_use', `${what} is still used by products`, where, 'service', meta)
+    return appError('in_use', `${what} is still used by products`, where, meta)
   }
-  return dbError(error, where, 'service', meta)
+  return dbError(error, where, meta)
 }
 
 /** The five operations every lookup table has; each kind below fills them with its own table. */
@@ -53,7 +53,7 @@ export interface LookupOps<Row, Create, Patch> {
 
 export function lookupService<Row, Create, Patch>(ops: LookupOps<Row, Create, Patch>) {
   const missing = (op: string, id: number) =>
-    appError('not_found', `${ops.what} not found`, `admin.lookups.${op}`, 'service', {
+    appError('not_found', `${ops.what} not found`, `admin.lookups.${op}`, {
       what: ops.what,
       id,
     })
@@ -79,7 +79,7 @@ export function lookupService<Row, Create, Patch>(ops: LookupOps<Row, Create, Pa
       const db = getDb()
       if (await ops.inUse(db, id)) {
         const message = `${ops.what} is still used by products`
-        throw appError('in_use', message, 'admin.lookups.remove', 'service', { what: ops.what, id })
+        throw appError('in_use', message, 'admin.lookups.remove', { what: ops.what, id })
       }
       try {
         if (!(await ops.remove(db, id))) throw missing('remove', id)

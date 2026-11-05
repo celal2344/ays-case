@@ -10,8 +10,7 @@ export type AuthEnv = { Variables: { user: SessionUser } }
 
 async function authenticate(c: Context) {
   const session = await getAuth().api.getSession({ headers: c.req.raw.headers })
-  if (!session)
-    throw appError('unauthorized', 'Sign in required', 'auth.authenticate', 'middleware')
+  if (!session) throw appError('unauthorized', 'Sign in required', 'auth.authenticate')
   return session.user
 }
 
@@ -26,17 +25,11 @@ export const requireRole = (...roles: Role[]) =>
   createMiddleware<AuthEnv>(async (c, next) => {
     const user = await authenticate(c)
     if (!roles.includes((user.role ?? 'user') as Role)) {
-      throw appError(
-        'forbidden',
-        'You do not have access to this resource',
-        'auth.requireRole',
-        'middleware',
-        {
-          userId: user.id,
-          role: user.role,
-          required: roles,
-        },
-      )
+      throw appError('forbidden', 'You do not have access to this resource', 'auth.requireRole', {
+        userId: user.id,
+        role: user.role,
+        required: roles,
+      })
     }
     c.set('user', user)
     await next()

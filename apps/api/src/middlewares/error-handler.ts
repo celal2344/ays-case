@@ -36,7 +36,6 @@ export function onError(error: Error, c: Context) {
   const entry = {
     code: failure.code,
     status: failure.status,
-    layer: failure.layer,
     op: failure.op,
     meta,
     requestId,
@@ -50,7 +49,7 @@ export function onError(error: Error, c: Context) {
   // read at call time so it follows the environment the process was started with
   const debug =
     process.env.NODE_ENV === 'development'
-      ? { debug: { layer: failure.layer, op: failure.op, meta, ...splitStack(failure) } }
+      ? { debug: { op: failure.op, meta, ...splitStack(failure) } }
       : {}
   return c.json(
     { code: failure.code, message: failure.message, requestId, ...debug },
@@ -59,16 +58,8 @@ export function onError(error: Error, c: Context) {
 }
 
 function unwrapped(error: unknown) {
-  if (pgError(error)) return dbError(error, 'unhandled', 'route')
-  return new AppError(
-    500,
-    'internal_error',
-    'Internal server error',
-    'unhandled',
-    'route',
-    {},
-    error,
-  )
+  if (pgError(error)) return dbError(error, 'unhandled')
+  return new AppError(500, 'internal_error', 'Internal server error', 'unhandled', {}, error)
 }
 
 function splitStack(failure: AppError) {

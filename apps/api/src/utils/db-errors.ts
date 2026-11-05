@@ -1,7 +1,7 @@
 import type { ErrorCode } from '@ays/validators'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 
-import { AppError, type ErrorLayer, type ErrorMeta } from './errors'
+import { AppError, type ErrorMeta } from './errors'
 
 type PgError = {
   code?: string
@@ -88,10 +88,10 @@ function isUnavailable(pg: PgError): boolean {
  * 422, bad input to 400, availability problems to 503 `database_unavailable` (a "try again", not a
  * bug), anything else to a generic 500. The original error stays as `cause` for the logs.
  */
-export function dbError(cause: unknown, op: string, layer: ErrorLayer, meta?: ErrorMeta): AppError {
+export function dbError(cause: unknown, op: string, meta?: ErrorMeta): AppError {
   if (cause instanceof AppError) return cause
   const make = (status: ContentfulStatusCode, code: ErrorCode, message: string) =>
-    new AppError(status, code, message, op, layer, meta, cause)
+    new AppError(status, code, message, op, meta, cause)
   const pg = pgError(cause)
   if (pg && isUnavailable(pg)) {
     return make(
