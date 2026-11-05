@@ -3,11 +3,10 @@ import { Hono } from 'hono'
 import { describeRoute, resolver, validator } from 'hono-openapi'
 import { z } from 'zod'
 
-import { getDb } from '../../db/client'
 import { requireAuth, type AuthEnv } from '../../middlewares/auth'
 import { errorResponse } from '../../utils/openapi'
 import { validationHook } from '../../utils/validation'
-import * as repository from './repository'
+import { createReview, deleteReview, updateReview } from './service'
 
 const json = (description: string, schema: Parameters<typeof resolver>[0]) => ({
   description,
@@ -38,19 +37,13 @@ export const productReviewRoutes = new Hono<AuthEnv>().post(
   validator('param', productParams, validationHook),
   validator('json', reviewBodySchema, validationHook),
   async (c) => {
-    const db = getDb()
     const { id: productId } = c.req.valid('param')
-    const userId = c.var.user.id
-    if (!(await repository.productExists(db, productId))) {
+    const result = await createReview(c.var.user.id, productId, c.req.valid('json'))
+    if (result.ok) return c.json({ data: result.review }, 201)
+    if (result.reason === 'product_not_found') {
       return c.json({ code: 'not_found', message: 'Product not found' }, 404)
     }
-    if (await repository.hasReview(db, productId, userId)) {
-      return c.json({ code: 'review_exists', message: 'You already reviewed this product' }, 409)
-    }
-    const { rating, comment } = c.req.valid('json')
-    const id = await repository.insertReview(db, { productId, userId, rating, comment })
-    const review = await repository.findReview(db, id)
-    return c.json({ data: review! }, 201)
+    return c.json({ code: 'review_exists', message: 'You already reviewed this product' }, 409)
   },
 )
 
@@ -73,14 +66,10 @@ export const reviewRoutes = new Hono<AuthEnv>()
     validator('param', reviewParams, validationHook),
     validator('json', reviewUpdateBodySchema, validationHook),
     async (c) => {
-      const db = getDb()
       const { id } = c.req.valid('param')
-      const owner = await repository.findOwner(db, id)
-      if (owner === undefined) return c.json(NOT_FOUND, 404)
-      if (owner !== c.var.user.id) return c.json(FORBIDDEN, 403)
-      await repository.updateReview(db, id, c.req.valid('json'))
-      const review = await repository.findReview(db, id)
-      return c.json({ data: review! }, 200)
+      const result = await updateReview(c.var.user.id, id, c.req.valid('json'))
+      if (result.ok) return c.json({ data: result.value }, 200)
+      return result.reason === 'not_found' ? c.json(NOT_FOUND, 404) : c.json(FORBIDDEN, 403)
     },
   )
   .delete(
@@ -98,13 +87,9 @@ export const reviewRoutes = new Hono<AuthEnv>()
     }),
     validator('param', reviewParams, validationHook),
     async (c) => {
-      const db = getDb()
       const { id } = c.req.valid('param')
-      const owner = await repository.findOwner(db, id)
-      if (owner === undefined) return c.json(NOT_FOUND, 404)
-      const isAdmin = c.var.user.role === 'admin'
-      if (owner !== c.var.user.id && !isAdmin) return c.json(FORBIDDEN, 403)
-      await repository.deleteReview(db, id)
-      return c.body(null, 204)
+      const result = await deleteReview(c.var.user.id, c.var.user.role, id)
+      if (result.ok) return c.body(null, 204)
+      return result.reason === 'not_found' ? c.json(NOT_FOUND, 404) : c.json(FORBIDDEN, 403)
     },
   )
