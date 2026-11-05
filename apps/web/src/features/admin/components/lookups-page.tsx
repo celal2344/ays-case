@@ -200,7 +200,7 @@ function LookupsTable({ kind }: { kind: LookupKind }) {
       </div>
 
       {rows && rows.length > 0 ? (
-        <div className="overflow-x-auto rounded-lg border bg-card">
+        <div className="overflow-x-auto rounded-lg border bg-card [&_tbody_tr:nth-child(even)]:bg-muted/30">
           <Table>
             <TableHeader>
               <TableRow>

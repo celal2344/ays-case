@@ -278,7 +278,7 @@ export function UsersPage() {
           </EmptyState>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-lg border bg-card">
+            <div className="overflow-x-auto rounded-lg border bg-card [&_tbody_tr:nth-child(even)]:bg-muted/30">
               <Table>
                 <TableHeader>
                   {table.getHeaderGroups().map((group) => (
