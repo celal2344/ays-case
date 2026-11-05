@@ -27,6 +27,7 @@ describe('app mounted under /api', () => {
     expect(await res.json()).toEqual({
       code: 'not_found',
       message: 'Route GET /api/nope not found',
+      requestId: expect.any(String),
     })
   })
 

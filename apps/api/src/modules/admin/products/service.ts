@@ -10,49 +10,28 @@ import {
   products,
   recentlyViewed,
 } from '../../../db/schema'
-import { duplicateField, toConflict } from '../../../utils/db-errors'
+import { dbError, duplicateField, toConflict } from '../../../utils/db-errors'
+import { AppError, appError, type ErrorMeta } from '../../../utils/errors'
 import { getProduct } from '../../catalog/service'
 
 type Tx = Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0]
 
-export type WriteFailure = {
-  ok: false
-  status: 404 | 409 | 422
-  code: 'not_found' | 'duplicate' | 'unknown_reference'
-  message: string
-  field?: string
-}
-export type ProductResult = { ok: true; product: ProductDetail } | WriteFailure
+const missing = (op: string, id: number) => appError('not_found', 'Product not found', op, { id })
 
-const notFound: WriteFailure = {
-  ok: false,
-  status: 404,
-  code: 'not_found',
-  message: 'Product not found',
-}
-
-/** Maps a constraint failure of an admin write to the answer the route sends. */
-export function failureOf(error: unknown): WriteFailure | undefined {
+/** A constraint failure of an admin write as the error the client should get; the rest via `dbError`. */
+function writeError(error: unknown, op: string, meta: ErrorMeta) {
+  if (error instanceof AppError) return error
   const conflict = toConflict(error)
   if (conflict?.kind === 'duplicate') {
     const field = duplicateField(conflict.constraint)
-    return {
-      ok: false,
-      status: 409,
-      code: 'duplicate',
-      message: `A product with this ${field} already exists`,
-      field,
-    }
+    const message = `A product with this ${field} already exists`
+    return appError('duplicate', message, op, { ...meta, field })
   }
   if (conflict?.kind === 'missing_reference') {
-    return {
-      ok: false,
-      status: 422,
-      code: 'unknown_reference',
-      message: 'A category, brand, policy or tag you chose does not exist',
-    }
+    const message = 'A category, brand, policy or tag you chose does not exist'
+    return appError('unknown_reference', message, op, meta)
   }
-  return undefined
+  return dbError(error, op, meta)
 }
 
 async function replaceTags(tx: Tx, productId: number, tagIds: number[]) {
@@ -104,7 +83,7 @@ const columns = (body: ProductPatchBody) => ({
   ...(body.returnPolicyId === undefined ? {} : { returnPolicyId: body.returnPolicyId }),
 })
 
-export async function createProduct(body: ProductBody): Promise<ProductResult> {
+export async function createProduct(body: ProductBody): Promise<ProductDetail> {
   const db = getDb()
   try {
     const id = await db.transaction(async (tx) => {
@@ -116,15 +95,13 @@ export async function createProduct(body: ProductBody): Promise<ProductResult> {
       await replaceImages(tx, created!.id, body.images)
       return created!.id
     })
-    return { ok: true, product: (await getProduct(id, true))! }
+    return await getProduct(id, true)
   } catch (error) {
-    const failure = failureOf(error)
-    if (failure) return failure
-    throw error
+    throw writeError(error, 'admin.products.create', { sku: body.sku })
   }
 }
 
-export async function updateProduct(id: number, body: ProductPatchBody): Promise<ProductResult> {
+export async function updateProduct(id: number, body: ProductPatchBody): Promise<ProductDetail> {
   const db = getDb()
   try {
     const found = await db.transaction(async (tx) => {
@@ -138,17 +115,15 @@ export async function updateProduct(id: number, body: ProductPatchBody): Promise
       if (body.images !== undefined) await replaceImages(tx, id, body.images)
       return true
     })
-    if (!found) return notFound
-    return { ok: true, product: (await getProduct(id, true))! }
+    if (!found) throw missing('admin.products.update', id)
+    return await getProduct(id, true)
   } catch (error) {
-    const failure = failureOf(error)
-    if (failure) return failure
-    throw error
+    throw writeError(error, 'admin.products.update', { id })
   }
 }
 
 /** Soft delete; the product also leaves every cart, favorites and recently viewed list. Past orders keep their snapshot. */
-export async function softDeleteProduct(id: number): Promise<{ ok: true } | WriteFailure> {
+export async function softDeleteProduct(id: number): Promise<void> {
   const db = getDb()
   const found = await db.transaction(async (tx) => {
     const [row] = await tx
@@ -162,15 +137,15 @@ export async function softDeleteProduct(id: number): Promise<{ ok: true } | Writ
     await tx.delete(recentlyViewed).where(eq(recentlyViewed.productId, id))
     return true
   })
-  return found ? { ok: true } : notFound
+  if (!found) throw missing('admin.products.softDelete', id)
 }
 
-export async function restoreProduct(id: number): Promise<ProductResult> {
+export async function restoreProduct(id: number): Promise<ProductDetail> {
   const [row] = await getDb()
     .update(products)
     .set({ deletedAt: null, updatedAt: sql`now()` })
     .where(eq(products.id, id))
     .returning({ id: products.id })
-  if (!row) return notFound
-  return { ok: true, product: (await getProduct(id, true))! }
+  if (!row) throw missing('admin.products.restore', id)
+  return await getProduct(id, true)
 }

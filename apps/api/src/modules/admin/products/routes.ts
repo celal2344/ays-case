@@ -9,17 +9,10 @@ import { describeRoute, resolver, validator } from 'hono-openapi'
 import { z } from 'zod'
 
 import { requireRole, type AuthEnv } from '../../../middlewares/auth'
-import { errorResponse } from '../../../utils/openapi'
+import { errorResponse, errorResponses } from '../../../utils/openapi'
 import { validationHook } from '../../../utils/validation'
 import { listAdminProducts } from '../../catalog/service'
-import {
-  createProduct,
-  restoreProduct,
-  softDeleteProduct,
-  updateProduct,
-  type ProductResult,
-  type WriteFailure,
-} from './service'
+import { createProduct, restoreProduct, softDeleteProduct, updateProduct } from './service'
 
 const json = (description: string, schema: Parameters<typeof resolver>[0]) => ({
   description,
@@ -36,8 +29,6 @@ const errors = {
   422: errorResponse('Invalid body, or `unknown_reference` for a category, brand, policy or tag'),
 }
 
-const body = (result: WriteFailure) => ({ code: result.code, message: result.message })
-
 // Mounted next to the public catalog routes at /products; each route carries its own admin guard.
 export const productAdminRoutes = new Hono<AuthEnv>()
   .post(
@@ -47,6 +38,7 @@ export const productAdminRoutes = new Hono<AuthEnv>()
       summary: 'Create a product',
       responses: {
         201: json('The new product', productDetailResponseSchema),
+        ...errorResponses(),
         401: errors[401],
         403: errors[403],
         409: errors[409],
@@ -56,9 +48,7 @@ export const productAdminRoutes = new Hono<AuthEnv>()
     requireRole('admin'),
     validator('json', productBodySchema, validationHook),
     async (c) => {
-      const result: ProductResult = await createProduct(c.req.valid('json'))
-      if (result.ok) return c.json({ data: result.product }, 201)
-      return result.status === 409 ? c.json(body(result), 409) : c.json(body(result), 422)
+      return c.json({ data: await createProduct(c.req.valid('json')) }, 201)
     },
   )
   .patch(
@@ -68,6 +58,7 @@ export const productAdminRoutes = new Hono<AuthEnv>()
       summary: 'Update a product; tags and images, when sent, replace the old ones',
       responses: {
         200: json('The updated product', productDetailResponseSchema),
+        ...errorResponses(),
         401: errors[401],
         403: errors[403],
         404: errors[404],
@@ -79,13 +70,10 @@ export const productAdminRoutes = new Hono<AuthEnv>()
     validator('param', idParam, validationHook),
     validator('json', productPatchBodySchema, validationHook),
     async (c) => {
-      const result: ProductResult = await updateProduct(
-        c.req.valid('param').id,
-        c.req.valid('json'),
+      return c.json(
+        { data: await updateProduct(c.req.valid('param').id, c.req.valid('json')) },
+        200,
       )
-      if (result.ok) return c.json({ data: result.product }, 200)
-      if (result.status === 404) return c.json(body(result), 404)
-      return result.status === 409 ? c.json(body(result), 409) : c.json(body(result), 422)
     },
   )
   .delete(
@@ -96,6 +84,7 @@ export const productAdminRoutes = new Hono<AuthEnv>()
         'Soft delete: hidden from the shop and removed from carts, favorites and recently viewed',
       responses: {
         204: { description: 'Deleted' },
+        ...errorResponses(),
         401: errors[401],
         403: errors[403],
         404: errors[404],
@@ -105,9 +94,8 @@ export const productAdminRoutes = new Hono<AuthEnv>()
     requireRole('admin'),
     validator('param', idParam, validationHook),
     async (c) => {
-      const result = await softDeleteProduct(c.req.valid('param').id)
-      if (result.ok) return c.body(null, 204)
-      return c.json(body(result), 404)
+      await softDeleteProduct(c.req.valid('param').id)
+      return c.body(null, 204)
     },
   )
   .post(
@@ -117,6 +105,7 @@ export const productAdminRoutes = new Hono<AuthEnv>()
       summary: 'Bring a soft-deleted product back',
       responses: {
         200: json('The restored product', productDetailResponseSchema),
+        ...errorResponses(),
         401: errors[401],
         403: errors[403],
         404: errors[404],
@@ -126,9 +115,7 @@ export const productAdminRoutes = new Hono<AuthEnv>()
     requireRole('admin'),
     validator('param', idParam, validationHook),
     async (c) => {
-      const result = await restoreProduct(c.req.valid('param').id)
-      if (result.ok) return c.json({ data: result.product }, 200)
-      return c.json(body(result), 404)
+      return c.json({ data: await restoreProduct(c.req.valid('param').id) }, 200)
     },
   )
 
@@ -140,6 +127,7 @@ export const adminProductListRoutes = new Hono<AuthEnv>().get(
     summary: 'All products including soft-deleted ones',
     responses: {
       200: json('Products with `deletedAt`', adminProductListResponseSchema),
+      ...errorResponses(),
       401: errors[401],
       403: errors[403],
     },

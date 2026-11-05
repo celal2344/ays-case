@@ -65,14 +65,13 @@ export async function listProducts(): Promise<Product[]> {
   )
 }
 
-/** `includeDeleted` is for the admin, who can still open (and restore) a soft-deleted product. */
-export async function getProduct(
-  id: number,
-  includeDeleted = false,
-): Promise<ProductDetail | undefined> {
+/**
+ * Throws 404 `not_found` (from the repository) when there is no such product. `includeDeleted` is
+ * for the admin, who can still open (and restore) a soft-deleted product.
+ */
+export async function getProduct(id: number, includeDeleted = false): Promise<ProductDetail> {
   const db = getDb()
   const row = await findProductDetail(db, id, includeDeleted)
-  if (!row) return undefined
   const [tagRows, images, reviewRows] = await Promise.all([
     findTags(db, [id]),
     findImages(db, id),

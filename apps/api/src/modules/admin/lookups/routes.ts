@@ -17,7 +17,7 @@ import { describeRoute, resolver, validator } from 'hono-openapi'
 import { z } from 'zod'
 
 import { requireRole, type AuthEnv } from '../../../middlewares/auth'
-import { errorResponse } from '../../../utils/openapi'
+import { errorResponse, errorResponses } from '../../../utils/openapi'
 import { validationHook } from '../../../utils/validation'
 import {
   brandService,
@@ -26,8 +26,6 @@ import {
   shippingService,
   tagService,
   warrantyService,
-  type LookupFailure,
-  type LookupResult,
 } from './service'
 
 const json = (description: string, schema: Parameters<typeof resolver>[0]) => ({
@@ -36,8 +34,6 @@ const json = (description: string, schema: Parameters<typeof resolver>[0]) => ({
 })
 
 const idParam = z.object({ id: z.coerce.number().int().positive() })
-
-const failure = (result: LookupFailure) => ({ code: result.code, message: result.message })
 
 const errors = {
   401: errorResponse('Not signed in'),
@@ -52,9 +48,9 @@ type Policy = { id: number; label: string }
 
 interface Service<Row, Create, Patch> {
   list: () => Promise<Row[]>
-  create: (input: Create) => Promise<LookupResult<Row>>
-  update: (id: number, patch: Patch) => Promise<LookupResult<Row>>
-  remove: (id: number) => Promise<{ ok: true } | LookupFailure>
+  create: (input: Create) => Promise<Row>
+  update: (id: number, patch: Patch) => Promise<Row>
+  remove: (id: number) => Promise<void>
 }
 
 type SluggedBody = { name: string; slug?: string | undefined }
@@ -70,6 +66,7 @@ function sluggedRoutes(service: Service<Slugged, SluggedBody, Partial<SluggedBod
         summary: `List ${tag}`,
         responses: {
           200: json(tag, adminSluggedListResponseSchema),
+          ...errorResponses(),
           401: errors[401],
           403: errors[403],
         },
@@ -83,6 +80,7 @@ function sluggedRoutes(service: Service<Slugged, SluggedBody, Partial<SluggedBod
         summary: `Create (${tag})`,
         responses: {
           201: json('Created', adminSluggedResponseSchema),
+          ...errorResponses(),
           401: errors[401],
           403: errors[403],
           409: errors[409],
@@ -91,9 +89,7 @@ function sluggedRoutes(service: Service<Slugged, SluggedBody, Partial<SluggedBod
       }),
       validator('json', brandBodySchema, validationHook),
       async (c) => {
-        const result = await service.create(c.req.valid('json'))
-        if (result.ok) return c.json({ data: result.row }, 201)
-        return c.json(failure(result), 409)
+        return c.json({ data: await service.create(c.req.valid('json')) }, 201)
       },
     )
     .patch(
@@ -103,6 +99,7 @@ function sluggedRoutes(service: Service<Slugged, SluggedBody, Partial<SluggedBod
         summary: `Update (${tag})`,
         responses: {
           200: json('Updated', adminSluggedResponseSchema),
+          ...errorResponses(),
           401: errors[401],
           403: errors[403],
           404: errors[404],
@@ -113,9 +110,10 @@ function sluggedRoutes(service: Service<Slugged, SluggedBody, Partial<SluggedBod
       validator('param', idParam, validationHook),
       validator('json', brandPatchBodySchema, validationHook),
       async (c) => {
-        const result = await service.update(c.req.valid('param').id, c.req.valid('json'))
-        if (result.ok) return c.json({ data: result.row }, 200)
-        return result.status === 404 ? c.json(failure(result), 404) : c.json(failure(result), 409)
+        return c.json(
+          { data: await service.update(c.req.valid('param').id, c.req.valid('json')) },
+          200,
+        )
       },
     )
     .delete(
@@ -125,6 +123,7 @@ function sluggedRoutes(service: Service<Slugged, SluggedBody, Partial<SluggedBod
         summary: `Delete (${tag}); refused while products use it`,
         responses: {
           204: { description: 'Deleted' },
+          ...errorResponses(),
           401: errors[401],
           403: errors[403],
           404: errors[404],
@@ -134,9 +133,8 @@ function sluggedRoutes(service: Service<Slugged, SluggedBody, Partial<SluggedBod
       }),
       validator('param', idParam, validationHook),
       async (c) => {
-        const result = await service.remove(c.req.valid('param').id)
-        if (result.ok) return c.body(null, 204)
-        return result.status === 404 ? c.json(failure(result), 404) : c.json(failure(result), 409)
+        await service.remove(c.req.valid('param').id)
+        return c.body(null, 204)
       },
     )
 }
@@ -155,6 +153,7 @@ function policyRoutes(
         summary: `List ${tag}`,
         responses: {
           200: json(tag, adminPolicyListResponseSchema),
+          ...errorResponses(),
           401: errors[401],
           403: errors[403],
         },
@@ -168,6 +167,7 @@ function policyRoutes(
         summary: `Create (${tag})`,
         responses: {
           201: json('Created', adminPolicyResponseSchema),
+          ...errorResponses(),
           401: errors[401],
           403: errors[403],
           409: errors[409],
@@ -176,9 +176,7 @@ function policyRoutes(
       }),
       validator('json', policyBodySchema, validationHook),
       async (c) => {
-        const result = await service.create(c.req.valid('json'))
-        if (result.ok) return c.json({ data: result.row }, 201)
-        return c.json(failure(result), 409)
+        return c.json({ data: await service.create(c.req.valid('json')) }, 201)
       },
     )
     .patch(
@@ -188,6 +186,7 @@ function policyRoutes(
         summary: `Update (${tag})`,
         responses: {
           200: json('Updated', adminPolicyResponseSchema),
+          ...errorResponses(),
           401: errors[401],
           403: errors[403],
           404: errors[404],
@@ -198,9 +197,10 @@ function policyRoutes(
       validator('param', idParam, validationHook),
       validator('json', policyPatchBodySchema, validationHook),
       async (c) => {
-        const result = await service.update(c.req.valid('param').id, c.req.valid('json'))
-        if (result.ok) return c.json({ data: result.row }, 200)
-        return result.status === 404 ? c.json(failure(result), 404) : c.json(failure(result), 409)
+        return c.json(
+          { data: await service.update(c.req.valid('param').id, c.req.valid('json')) },
+          200,
+        )
       },
     )
     .delete(
@@ -210,6 +210,7 @@ function policyRoutes(
         summary: `Delete (${tag}); refused while products use it`,
         responses: {
           204: { description: 'Deleted' },
+          ...errorResponses(),
           401: errors[401],
           403: errors[403],
           404: errors[404],
@@ -219,9 +220,8 @@ function policyRoutes(
       }),
       validator('param', idParam, validationHook),
       async (c) => {
-        const result = await service.remove(c.req.valid('param').id)
-        if (result.ok) return c.body(null, 204)
-        return result.status === 404 ? c.json(failure(result), 404) : c.json(failure(result), 409)
+        await service.remove(c.req.valid('param').id)
+        return c.body(null, 204)
       },
     )
 }
@@ -235,6 +235,7 @@ export const adminCategoryRoutes = new Hono<AuthEnv>()
       summary: 'List categories with their sort order',
       responses: {
         200: json('Categories', adminCategoryListResponseSchema),
+        ...errorResponses(),
         401: errors[401],
         403: errors[403],
       },
@@ -248,6 +249,7 @@ export const adminCategoryRoutes = new Hono<AuthEnv>()
       summary: 'Create a category',
       responses: {
         201: json('Created', adminCategoryResponseSchema),
+        ...errorResponses(),
         401: errors[401],
         403: errors[403],
         409: errors[409],
@@ -256,9 +258,7 @@ export const adminCategoryRoutes = new Hono<AuthEnv>()
     }),
     validator('json', categoryBodySchema, validationHook),
     async (c) => {
-      const result = await categoryService.create(c.req.valid('json'))
-      if (result.ok) return c.json({ data: result.row }, 201)
-      return c.json(failure(result), 409)
+      return c.json({ data: await categoryService.create(c.req.valid('json')) }, 201)
     },
   )
   .patch(
@@ -268,6 +268,7 @@ export const adminCategoryRoutes = new Hono<AuthEnv>()
       summary: 'Update a category',
       responses: {
         200: json('Updated', adminCategoryResponseSchema),
+        ...errorResponses(),
         401: errors[401],
         403: errors[403],
         404: errors[404],
@@ -278,9 +279,10 @@ export const adminCategoryRoutes = new Hono<AuthEnv>()
     validator('param', idParam, validationHook),
     validator('json', categoryPatchBodySchema, validationHook),
     async (c) => {
-      const result = await categoryService.update(c.req.valid('param').id, c.req.valid('json'))
-      if (result.ok) return c.json({ data: result.row }, 200)
-      return result.status === 404 ? c.json(failure(result), 404) : c.json(failure(result), 409)
+      return c.json(
+        { data: await categoryService.update(c.req.valid('param').id, c.req.valid('json')) },
+        200,
+      )
     },
   )
   .delete(
@@ -290,6 +292,7 @@ export const adminCategoryRoutes = new Hono<AuthEnv>()
       summary: 'Delete a category; refused while products use it',
       responses: {
         204: { description: 'Deleted' },
+        ...errorResponses(),
         401: errors[401],
         403: errors[403],
         404: errors[404],
@@ -299,9 +302,8 @@ export const adminCategoryRoutes = new Hono<AuthEnv>()
     }),
     validator('param', idParam, validationHook),
     async (c) => {
-      const result = await categoryService.remove(c.req.valid('param').id)
-      if (result.ok) return c.body(null, 204)
-      return result.status === 404 ? c.json(failure(result), 404) : c.json(failure(result), 409)
+      await categoryService.remove(c.req.valid('param').id)
+      return c.body(null, 204)
     },
   )
 

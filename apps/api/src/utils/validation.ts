@@ -26,6 +26,7 @@ export function validationHook(
     {
       code: 'validation_error',
       message: 'Request validation failed',
+      requestId: c.get('requestId') as string | undefined,
       errors: toFieldErrors(result.error ?? []),
     },
     422,

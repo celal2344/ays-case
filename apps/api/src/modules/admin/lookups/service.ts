@@ -11,12 +11,8 @@ import {
   tags,
   warrantyPolicies,
 } from '../../../db/schema'
-import { duplicateField, toConflict } from '../../../utils/db-errors'
-
-export type LookupFailure =
-  | { ok: false; status: 404; code: 'not_found'; message: string }
-  | { ok: false; status: 409; code: 'duplicate' | 'in_use'; message: string; field?: string }
-export type LookupResult<Row> = { ok: true; row: Row } | LookupFailure
+import { dbError, duplicateField, toConflict } from '../../../utils/db-errors'
+import { AppError, appError } from '../../../utils/errors'
 
 /** `Çanta & Çocuk` → `canta-cocuk`; used when a slug is not given. */
 export function slugify(value: string) {
@@ -29,30 +25,20 @@ export function slugify(value: string) {
     .replace(/^-+|-+$/g, '')
 }
 
-const notFound = (what: string): LookupFailure => ({
-  ok: false,
-  status: 404,
-  code: 'not_found',
-  message: `${what} not found`,
-})
-const inUse = (what: string): LookupFailure => ({
-  ok: false,
-  status: 409,
-  code: 'in_use',
-  message: `${what} is still used by products`,
-})
-
-function duplicate(error: unknown, what: string): LookupFailure | undefined {
+/** A duplicate name, slug or label as the 409 the client gets; anything else via `dbError`. */
+function writeError(error: unknown, op: string, what: string, meta: Record<string, unknown>) {
+  if (error instanceof AppError) return error
   const conflict = toConflict(error)
-  if (conflict?.kind !== 'duplicate') return undefined
-  const field = duplicateField(conflict.constraint)
-  return {
-    ok: false,
-    status: 409,
-    code: 'duplicate',
-    message: `${what} with this ${field} already exists`,
-    field,
+  const where = `admin.lookups.${op}`
+  if (conflict?.kind === 'duplicate') {
+    const field = duplicateField(conflict.constraint)
+    const message = `${what} with this ${field} already exists`
+    return appError('duplicate', message, where, { ...meta, field })
   }
+  if (conflict?.kind === 'in_use') {
+    return appError('in_use', `${what} is still used by products`, where, meta)
+  }
+  return dbError(error, where, meta)
 }
 
 /** The five operations every lookup table has; each kind below fills them with its own table. */
@@ -66,35 +52,39 @@ export interface LookupOps<Row, Create, Patch> {
 }
 
 export function lookupService<Row, Create, Patch>(ops: LookupOps<Row, Create, Patch>) {
+  const missing = (op: string, id: number) =>
+    appError('not_found', `${ops.what} not found`, `admin.lookups.${op}`, {
+      what: ops.what,
+      id,
+    })
   return {
     list: () => ops.list(getDb()),
-    async create(input: Create): Promise<LookupResult<Row>> {
+    async create(input: Create): Promise<Row> {
       try {
-        return { ok: true, row: await ops.create(getDb(), input) }
+        return await ops.create(getDb(), input)
       } catch (error) {
-        const failure = duplicate(error, ops.what)
-        if (failure) return failure
-        throw error
+        throw writeError(error, 'create', ops.what, { what: ops.what })
       }
     },
-    async update(id: number, patch: Patch): Promise<LookupResult<Row>> {
+    async update(id: number, patch: Patch): Promise<Row> {
       try {
         const row = await ops.update(getDb(), id, patch)
-        return row ? { ok: true, row } : notFound(ops.what)
+        if (!row) throw missing('update', id)
+        return row
       } catch (error) {
-        const failure = duplicate(error, ops.what)
-        if (failure) return failure
-        throw error
+        throw writeError(error, 'update', ops.what, { what: ops.what, id })
       }
     },
-    async remove(id: number): Promise<{ ok: true } | LookupFailure> {
+    async remove(id: number): Promise<void> {
       const db = getDb()
-      if (await ops.inUse(db, id)) return inUse(ops.what)
+      if (await ops.inUse(db, id)) {
+        const message = `${ops.what} is still used by products`
+        throw appError('in_use', message, 'admin.lookups.remove', { what: ops.what, id })
+      }
       try {
-        return (await ops.remove(db, id)) ? { ok: true } : notFound(ops.what)
+        if (!(await ops.remove(db, id))) throw missing('remove', id)
       } catch (error) {
-        if (toConflict(error)?.kind === 'in_use') return inUse(ops.what)
-        throw error
+        throw writeError(error, 'remove', ops.what, { what: ops.what, id })
       }
     },
   }

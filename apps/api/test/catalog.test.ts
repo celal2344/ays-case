@@ -121,7 +121,11 @@ describe('GET /api/products/:id', () => {
   it('answers 404 for an unknown product and 422 for a bad id', async () => {
     const missing = await get('/api/products/99999')
     expect(missing.status).toBe(404)
-    expect(await missing.json()).toEqual({ code: 'not_found', message: 'Product not found' })
+    expect(await missing.json()).toEqual({
+      code: 'not_found',
+      message: 'Product not found',
+      requestId: missing.headers.get('x-request-id'),
+    })
     const invalid = await get('/api/products/abc')
     expect(invalid.status).toBe(422)
     expect(await invalid.json()).toMatchObject({ code: 'validation_error' })

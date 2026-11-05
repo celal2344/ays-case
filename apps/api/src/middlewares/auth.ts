@@ -3,14 +3,14 @@ import type { Context } from 'hono'
 import { createMiddleware } from 'hono/factory'
 
 import { getAuth, type Auth } from '../auth'
-import { AppError } from '../utils/errors'
+import { appError } from '../utils/errors'
 
 export type SessionUser = Auth['$Infer']['Session']['user']
 export type AuthEnv = { Variables: { user: SessionUser } }
 
 async function authenticate(c: Context) {
   const session = await getAuth().api.getSession({ headers: c.req.raw.headers })
-  if (!session) throw new AppError(401, 'unauthorized', 'Sign in required')
+  if (!session) throw appError('unauthorized', 'Sign in required', 'auth.authenticate')
   return session.user
 }
 
@@ -25,7 +25,11 @@ export const requireRole = (...roles: Role[]) =>
   createMiddleware<AuthEnv>(async (c, next) => {
     const user = await authenticate(c)
     if (!roles.includes((user.role ?? 'user') as Role)) {
-      throw new AppError(403, 'forbidden', 'You do not have access to this resource')
+      throw appError('forbidden', 'You do not have access to this resource', 'auth.requireRole', {
+        userId: user.id,
+        role: user.role,
+        required: roles,
+      })
     }
     c.set('user', user)
     await next()

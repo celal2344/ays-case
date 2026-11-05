@@ -1,12 +1,44 @@
+import { errorStatus, type ErrorCode } from '@ays/validators'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 
+/** Plain values for the logs only: never part of `message`, never sent to the client. */
+export type ErrorMeta = Record<string, unknown>
+
+/**
+ * A failure with a stable `code` and a client-safe `message`, plus where it happened (`op`) and
+ * the errored values (`meta`) for the logs. The client only sees code, message and
+ * request id.
+ */
 export class AppError extends Error {
   readonly status: ContentfulStatusCode
-  readonly code: string
+  readonly code: ErrorCode
+  readonly op: string
+  readonly meta: ErrorMeta
 
-  constructor(status: ContentfulStatusCode, code: string, message: string) {
-    super(message)
+  constructor(
+    status: ContentfulStatusCode,
+    code: ErrorCode,
+    message: string,
+    op: string,
+    meta: ErrorMeta = {},
+    cause?: unknown,
+  ) {
+    super(message, cause === undefined ? undefined : { cause })
+    this.name = 'AppError'
     this.status = status
     this.code = code
+    this.op = op
+    this.meta = meta
   }
+}
+
+/**
+ * The one way to fail on purpose; the status comes from the code:
+ *
+ *   throw appError('not_found', 'Product not found', 'catalog.getProduct', { id })
+ *
+ * `message` is for the client, so it never contains values; values go in `meta`.
+ */
+export function appError(code: ErrorCode, message: string, op: string, meta?: ErrorMeta) {
+  return new AppError(errorStatus[code], code, message, op, meta)
 }

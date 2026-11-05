@@ -15,6 +15,7 @@ import {
   user,
   warrantyPolicies,
 } from '../../db/schema'
+import { appError } from '../../utils/errors'
 import { reviewColumns } from '../reviews/repository'
 
 // Ratings, the histogram, availability and numeric casts are all computed here, in SQL.
@@ -96,6 +97,7 @@ export async function findProductDetail(db: Database, id: number, includeDeleted
       and(eq(productImages.productId, products.id), eq(productImages.isPrimary, true)),
     )
     .where(and(includeDeleted ? undefined : notDeleted, eq(products.id, id)))
+  if (!row) throw appError('not_found', 'Product not found', 'catalog.findProductDetail', { id })
   return row
 }
 

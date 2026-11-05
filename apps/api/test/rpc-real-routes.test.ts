@@ -23,9 +23,9 @@ describe('hc<AppType> on the real routes', () => {
     expectTypeOf<Extract<Res, { status: 200 }>>().toEqualTypeOf<
       ClientResponse<{ data: ProductDetail }, 200, 'json'>
     >()
-    expectTypeOf<Extract<Res, { status: 404 }>>().toEqualTypeOf<
-      ClientResponse<{ code: string; message: string }, 404, 'json'>
-    >()
+    // the 404 is thrown as an AppError by the repository, so it is documented in OpenAPI and
+    // typed as `ApiError` by the web, not inferred by hc
+    expectTypeOf<Extract<Res, { status: 404 }>>().toEqualTypeOf<never>()
   })
 
   it('types GET /categories', () => {
