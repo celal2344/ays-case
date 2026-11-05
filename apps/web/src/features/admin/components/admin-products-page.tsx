@@ -389,7 +389,7 @@ export function AdminProductsPage() {
           </EmptyState>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="overflow-x-auto rounded-lg border bg-card">
               <Table>
                 <TableHeader>
                   {table.getHeaderGroups().map((group) => (

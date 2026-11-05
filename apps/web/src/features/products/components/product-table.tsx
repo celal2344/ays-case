@@ -39,7 +39,7 @@ function AddToCartIcon({ product }: { product: Product }) {
 export function ProductTable({ products }: { products: Product[] }) {
   const { t } = useTranslation()
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="overflow-x-auto rounded-lg border bg-card">
       <Table>
         <TableHeader>
           <TableRow>
