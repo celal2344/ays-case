@@ -4,7 +4,7 @@ A full-stack online shop: catalog and search, accounts, cart, checkout, orders, 
 
 **Live:** https://ayscase.vercel.app · **API docs:** https://ayscase.vercel.app/api/docs
 
-## Yapay zekasız türkçe proje açıklaması:
+## Yapay zekasız (elle yazılmış) türkçe proje açıklaması:
 - Projede 3 farklı agent kullandım biri proje yöneticisi diğer ikisi ise frontend ve backend agentları. 
 - Project manager agentı issueları oluşturup diğer iki agent ı orkestre etmede ve aynı zamanda sorularımı ve aldığım kararları doğrulama amaçlı danışman olarak kullandım.
 - Proje yöneticisinin oluşturduğu issueları ise developer agentlara verdim, çalıştıkları alanlara göre paralel veya ardışık olarak çalıştırdım.
