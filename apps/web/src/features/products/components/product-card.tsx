@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router'
 import { Star, Truck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -11,28 +10,20 @@ import { qualifiesForFreeShipping } from '../pricing'
 import type { Product } from '../schemas'
 import { DiscountBadge, StockBadge } from './product-badges'
 import { ProductImage } from './product-image'
+import { ProductLink } from './product-link'
 import { ProductPrice } from './product-price'
 
 export function ProductCard({ product, isNew = false }: { product: Product; isNew?: boolean }) {
   const { t } = useTranslation()
   return (
-    <Card className="h-full gap-0 overflow-hidden p-0 transition-[transform,box-shadow] duration-(--motion-base) ease-(--ease-out) focus-within:-translate-y-0.5 focus-within:shadow-md hover:-translate-y-0.5 hover:shadow-md">
+    <Card className="card-surface card-lift h-full gap-0 overflow-hidden p-0">
       <div className="relative">
-        <Link
-          to="/products/$productId"
-          params={{ productId: String(product.id) }}
-          className="block"
-          // the title link below names this card for assistive tech; this one only repeats it
-          aria-hidden="true"
-          tabIndex={-1}
-        >
-          <ProductImage src={product.thumbnail} alt="" />
-          <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
-            {isNew ? <Badge variant="secondary">{t('home.badgeNew')}</Badge> : null}
-            <DiscountBadge product={product} />
-            <StockBadge product={product} />
-          </div>
-        </Link>
+        <ProductImage src={product.thumbnail} alt="" />
+        <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
+          {isNew ? <Badge variant="secondary">{t('home.badgeNew')}</Badge> : null}
+          <DiscountBadge product={product} />
+          <StockBadge product={product} />
+        </div>
         <FavoriteButton
           productId={product.id}
           title={product.title}
@@ -44,13 +35,9 @@ export function ProductCard({ product, isNew = false }: { product: Product; isNe
         {product.brand ? (
           <p className="truncate text-xs text-muted-foreground">{product.brand.name}</p>
         ) : null}
-        <Link
-          to="/products/$productId"
-          params={{ productId: String(product.id) }}
-          className="line-clamp-2 text-sm font-medium hover:underline"
-        >
+        <ProductLink productId={product.id} className="line-clamp-2 text-sm font-medium">
           {product.title}
-        </Link>
+        </ProductLink>
         {product.rating === null ? (
           <p className="text-xs text-muted-foreground">{t('reviews.none')}</p>
         ) : (
