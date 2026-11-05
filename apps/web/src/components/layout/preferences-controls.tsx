@@ -1,7 +1,14 @@
-import { Languages, Moon, Sun } from 'lucide-react'
+import { ChevronDown, Languages, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useTranslation } from 'react-i18next'
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { selectLanguage, usePreferencesStore } from '@/preferences/store'
 
@@ -31,31 +38,45 @@ export function ThemeToggle({ className }: { className?: string }) {
   )
 }
 
-/** One button that switches TR and EN and shows the current language. */
-export function LanguageToggle({ className }: { className?: string }) {
+const LANGUAGES = ['tr', 'en'] as const
+
+/** A small menu of the two languages, each named in its own language; the current one is checked. */
+export function LanguageMenu({ className }: { className?: string }) {
   const { t } = useTranslation()
   const language = usePreferencesStore(selectLanguage)
   const setLanguage = usePreferencesStore((s) => s.setLanguage)
   return (
-    <button
-      type="button"
-      className={cn(HEADER_BUTTON, 'px-3', className)}
-      aria-label={t('prefs.language.switch', {
-        code: language.toUpperCase(),
-        current: t(`prefs.language.${language}`),
-      })}
-      onClick={() => setLanguage(language === 'tr' ? 'en' : 'tr')}
-    >
-      <Languages aria-hidden="true" className="size-4" />
-      <span aria-hidden="true">{language.toUpperCase()}</span>
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(HEADER_BUTTON, 'px-3', className)}
+        aria-label={`${language.toUpperCase()} · ${t('prefs.language.label')}: ${t(`prefs.language.${language}`)}`}
+      >
+        <Languages aria-hidden="true" className="size-4" />
+        <span aria-hidden="true">{language.toUpperCase()}</span>
+        <ChevronDown aria-hidden="true" className="size-3.5 opacity-60" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-36">
+        <DropdownMenuRadioGroup
+          value={language}
+          onValueChange={(value) => {
+            if (value === 'tr' || value === 'en') setLanguage(value)
+          }}
+        >
+          {LANGUAGES.map((code) => (
+            <DropdownMenuRadioItem key={code} value={code} lang={code} closeOnClick>
+              {t(`prefs.language.${code}`)}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
 export function PreferencesControls() {
   return (
     <div className="flex items-center gap-2">
-      <LanguageToggle />
+      <LanguageMenu />
       <ThemeToggle />
     </div>
   )

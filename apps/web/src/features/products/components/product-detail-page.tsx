@@ -1,5 +1,5 @@
 import { getRouteApi, useLocation, useNavigate } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ErrorState, NotFound, PageSkeleton } from '@/components/feedback/feedback'
@@ -19,7 +19,6 @@ import { DetailSection, SECTION_SCROLL_MARGIN } from './detail/detail-section'
 import { Gallery } from './detail/gallery'
 import { ProductBreadcrumb } from './detail/product-breadcrumb'
 import { SectionBar } from './detail/section-bar'
-import { QuantityStepper } from '@/components/quantity-stepper'
 import { RecentlyViewedStrip } from '@/features/recently-viewed/components/recently-viewed-strip'
 import { useRecordView } from '@/features/recently-viewed/hooks/use-recently-viewed'
 import { SimilarProducts } from './detail/similar-products'
@@ -38,7 +37,6 @@ export function ProductDetailPage() {
   const id = Number(productId)
   const { product, notFound, isPending, query } = useProduct(id)
 
-  const [quantity, setQuantity] = useState(1)
   const actionsRef = useRef<HTMLDivElement>(null)
   const actionsVisible = useInView(actionsRef)
   useRecordView(id, product !== undefined)
@@ -138,12 +136,7 @@ export function ProductDetailPage() {
               <StockBadge product={product} />
             </div>
             <div className="flex flex-wrap items-center gap-3" ref={actionsRef}>
-              <QuantityStepper
-                value={quantity}
-                max={Math.max(1, product.stock)}
-                onChange={setQuantity}
-              />
-              <BuyActions product={product} quantity={quantity} />
+              <BuyActions product={product} />
             </div>
           </div>
           <DeliveryInfo product={product} />
@@ -158,7 +151,6 @@ export function ProductDetailPage() {
           onSelect={goToSection}
           product={product}
           showBuy={!actionsVisible}
-          quantity={quantity}
         />
         <DetailSection id="details" title={t('products.tabs.info')}>
           <Specs product={product} />
@@ -175,7 +167,7 @@ export function ProductDetailPage() {
       </div>
       <RecentlyViewedStrip excludeId={id} />
 
-      <StickyBar product={product} visible={!actionsVisible} quantity={quantity} />
+      <StickyBar product={product} visible={!actionsVisible} />
     </div>
   )
 }

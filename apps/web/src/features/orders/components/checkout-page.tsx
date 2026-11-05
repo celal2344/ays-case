@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { FieldError } from '@/features/admin/components/field-error'
 import { useCartView } from '@/features/cart/hooks/use-cart-view'
 import { ProductImage } from '@/features/products/components/product-image'
+import { ProductLink } from '@/features/products/components/product-link'
 import { errorCodeKey } from '@/lib/error-message'
 import { runExclusive } from '@/lib/in-flight'
 import { useFlatBackground } from '@/lib/use-flat-background'
@@ -141,7 +142,7 @@ export function CheckoutPage() {
             {cart.items.map((item) => (
               <li
                 key={item.product.id}
-                className="flex items-center gap-3 rounded-[14px] border bg-card p-2.5"
+                className="card-surface flex items-center gap-3 rounded-[14px] border bg-card p-2.5"
               >
                 <ProductImage
                   src={item.product.thumbnail}
@@ -149,7 +150,12 @@ export function CheckoutPage() {
                   className="size-14 shrink-0 rounded-lg [&_img]:object-contain"
                 />
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="line-clamp-1 text-sm font-semibold">{item.product.title}</span>
+                  <ProductLink
+                    productId={item.product.id}
+                    className="line-clamp-1 text-sm font-semibold"
+                  >
+                    {item.product.title}
+                  </ProductLink>
                   <span className="text-[13px] text-muted-foreground">
                     {t('checkout.quantity', { n: item.quantity })}
                   </span>

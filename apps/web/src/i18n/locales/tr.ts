@@ -78,9 +78,8 @@ export const tr = {
     },
     language: {
       label: 'Dil',
-      switch: '{{code}} · Dili değiştir (şu an {{current}})',
       tr: 'Türkçe',
-      en: 'İngilizce',
+      en: 'English',
     },
   },
   login: {
@@ -343,6 +342,9 @@ export const tr = {
     added: '{{title}} sepetine eklendi.',
     maxReached: '{{title}} için yalnızca {{max}} adet var, sepetinde o kadar var.',
     maxInCart: 'Sepette en fazla',
+    removeFromCart: 'Sepetten çıkar',
+    inCart: 'Sepette:',
+    goToCart: 'Sepete git',
     removedMissing: 'Bazı ürünler artık mevcut değil ve sepetinden çıkarıldı.',
     unavailable: 'Bu ürün tükendi. Devam etmek için kaldır.',
     remove: '{{title}} ürününü kaldır',

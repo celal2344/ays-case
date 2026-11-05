@@ -7,7 +7,9 @@ import { Money } from '@/components/money'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProductImage } from '@/features/products/components/product-image'
+import { ProductLink } from '@/features/products/components/product-link'
 import { formatDate } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { selectLanguage, usePreferencesStore } from '@/preferences/store'
 
 import { useOrder } from '../hooks/use-orders'
@@ -54,20 +56,22 @@ export function OrderDetailPage() {
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <ul className="space-y-3">
           {order.lines.map((line, index) => (
-            <li key={`${index}-${line.productId}`} className="flex gap-3 rounded-lg border p-3">
+            <li
+              key={`${index}-${line.productId}`}
+              className={cn(
+                'flex gap-3 rounded-lg border p-3',
+                line.productId !== null && 'card-surface',
+              )}
+            >
               <ProductImage src={line.thumbnail} alt="" className="size-16 shrink-0 rounded-md" />
               <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
                   {line.productId === null ? (
                     <p className="line-clamp-2 font-medium">{line.title}</p>
                   ) : (
-                    <Link
-                      to="/products/$productId"
-                      params={{ productId: String(line.productId) }}
-                      className="line-clamp-2 font-medium hover:underline"
-                    >
+                    <ProductLink productId={line.productId} className="line-clamp-2 font-medium">
                       {line.title}
-                    </Link>
+                    </ProductLink>
                   )}
                   <p className="text-sm text-muted-foreground">
                     {t('orders.line', { n: line.quantity })} · <Money cents={line.unitCents} />

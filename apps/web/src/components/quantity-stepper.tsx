@@ -1,19 +1,24 @@
-import { Minus, Plus } from 'lucide-react'
+import { Minus, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-/** Quantity between 1 and `max`; typed values are clamped, and the field may be empty while typing. */
+/**
+ * Quantity between 1 and `max`; typed values are clamped, and the field may be empty while typing.
+ * With `onRemove` (a line already in the cart) the "−" button turns into a trash button at quantity 1.
+ */
 export function QuantityStepper({
   value,
   max,
   onChange,
+  onRemove,
 }: {
   value: number
   max: number
   onChange: (value: number) => void
+  onRemove?: () => void
 }) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState<string | null>(null)
@@ -24,16 +29,28 @@ export function QuantityStepper({
       role="group"
       aria-label={t('products.quantity')}
     >
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        aria-label={t('products.quantityDecrease')}
-        disabled={value <= 1}
-        onClick={() => onChange(clamp(value - 1))}
-      >
-        <Minus className="size-4" />
-      </Button>
+      {onRemove && value <= 1 ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label={t('cart.removeFromCart')}
+          onClick={onRemove}
+        >
+          <Trash2 className="size-4" />
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label={t('products.quantityDecrease')}
+          disabled={value <= 1}
+          onClick={() => onChange(clamp(value - 1))}
+        >
+          <Minus className="size-4" />
+        </Button>
+      )}
       <Input
         inputMode="numeric"
         aria-label={t('products.quantity')}

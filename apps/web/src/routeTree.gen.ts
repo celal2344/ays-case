@@ -105,30 +105,26 @@ const AuthAdminAdminIndexRoute = AuthAdminAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthAdminAdminRoute,
 } as any)
-const AuthAdminAdminLookupsKindRoute =
-  AuthAdminAdminLookupsKindRouteImport.update({
-    id: '/lookups/$kind',
-    path: '/lookups/$kind',
-    getParentRoute: () => AuthAdminAdminRoute,
-  } as any)
-const AuthAdminAdminProductsIndexRoute =
-  AuthAdminAdminProductsIndexRouteImport.update({
-    id: '/products/',
-    path: '/products/',
-    getParentRoute: () => AuthAdminAdminRoute,
-  } as any)
-const AuthAdminAdminProductsNewRoute =
-  AuthAdminAdminProductsNewRouteImport.update({
-    id: '/products/new',
-    path: '/products/new',
-    getParentRoute: () => AuthAdminAdminRoute,
-  } as any)
-const AuthAdminAdminUsersIndexRoute =
-  AuthAdminAdminUsersIndexRouteImport.update({
-    id: '/users/',
-    path: '/users/',
-    getParentRoute: () => AuthAdminAdminRoute,
-  } as any)
+const AuthAdminAdminLookupsKindRoute = AuthAdminAdminLookupsKindRouteImport.update({
+  id: '/lookups/$kind',
+  path: '/lookups/$kind',
+  getParentRoute: () => AuthAdminAdminRoute,
+} as any)
+const AuthAdminAdminProductsIndexRoute = AuthAdminAdminProductsIndexRouteImport.update({
+  id: '/products/',
+  path: '/products/',
+  getParentRoute: () => AuthAdminAdminRoute,
+} as any)
+const AuthAdminAdminProductsNewRoute = AuthAdminAdminProductsNewRouteImport.update({
+  id: '/products/new',
+  path: '/products/new',
+  getParentRoute: () => AuthAdminAdminRoute,
+} as any)
+const AuthAdminAdminUsersIndexRoute = AuthAdminAdminUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => AuthAdminAdminRoute,
+} as any)
 const AuthAdminAdminUsersNewRoute = AuthAdminAdminUsersNewRouteImport.update({
   id: '/users/new',
   path: '/users/new',
@@ -140,12 +136,11 @@ const AuthAdminAdminProductsProductIdEditRoute =
     path: '/products/$productId/edit',
     getParentRoute: () => AuthAdminAdminRoute,
   } as any)
-const AuthAdminAdminUsersUserIdEditRoute =
-  AuthAdminAdminUsersUserIdEditRouteImport.update({
-    id: '/users/$userId/edit',
-    path: '/users/$userId/edit',
-    getParentRoute: () => AuthAdminAdminRoute,
-  } as any)
+const AuthAdminAdminUsersUserIdEditRoute = AuthAdminAdminUsersUserIdEditRouteImport.update({
+  id: '/users/$userId/edit',
+  path: '/users/$userId/edit',
+  getParentRoute: () => AuthAdminAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -472,8 +467,7 @@ const AuthAdminAdminRouteChildren: AuthAdminAdminRouteChildren = {
   AuthAdminAdminUsersNewRoute: AuthAdminAdminUsersNewRoute,
   AuthAdminAdminProductsIndexRoute: AuthAdminAdminProductsIndexRoute,
   AuthAdminAdminUsersIndexRoute: AuthAdminAdminUsersIndexRoute,
-  AuthAdminAdminProductsProductIdEditRoute:
-    AuthAdminAdminProductsProductIdEditRoute,
+  AuthAdminAdminProductsProductIdEditRoute: AuthAdminAdminProductsProductIdEditRoute,
   AuthAdminAdminUsersUserIdEditRoute: AuthAdminAdminUsersUserIdEditRoute,
 }
 
@@ -489,9 +483,7 @@ const AuthAdminRouteChildren: AuthAdminRouteChildren = {
   AuthAdminAdminRoute: AuthAdminAdminRouteWithChildren,
 }
 
-const AuthAdminRouteWithChildren = AuthAdminRoute._addFileChildren(
-  AuthAdminRouteChildren,
-)
+const AuthAdminRouteWithChildren = AuthAdminRoute._addFileChildren(AuthAdminRouteChildren)
 
 interface AuthRouteChildren {
   AuthAdminRoute: typeof AuthAdminRouteWithChildren

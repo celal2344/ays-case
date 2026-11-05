@@ -3,7 +3,6 @@ import { ShoppingBag, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/feedback/feedback'
-import { QuantityStepper } from '@/components/quantity-stepper'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,11 +19,13 @@ import { CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/
 import { Money } from '@/components/money'
 import { useInFlight } from '@/lib/in-flight'
 import { ProductImage } from '@/features/products/components/product-image'
+import { ProductLink } from '@/features/products/components/product-link'
 
 import { useFlatBackground } from '@/lib/use-flat-background'
 import { CheckoutSteps } from '@/features/orders/components/checkout-steps'
 import { useCartView } from '../hooks/use-cart-view'
 import type { CartItem, CartTotals } from '../selectors'
+import { CartLineStepper } from './cart-line-stepper'
 
 function Summary({
   totals,
@@ -78,49 +79,31 @@ function Summary({
   )
 }
 
-function CartRow({
-  item,
-  onQuantity,
-  onRemove,
-}: {
-  item: CartItem
-  onQuantity: (quantity: number) => void
-  onRemove: () => void
-}) {
+function CartRow({ item, onRemove }: { item: CartItem; onRemove: () => void }) {
   const { t } = useTranslation()
   const { product } = item
   return (
-    <li className="flex gap-3 rounded-lg border p-3 sm:gap-4">
-      <Link
-        to="/products/$productId"
-        params={{ productId: String(product.id) }}
-        className="shrink-0"
-        aria-hidden="true"
-        tabIndex={-1}
-      >
-        <ProductImage src={product.thumbnail} alt="" className="size-20 rounded-md" />
-      </Link>
+    <li className="card-surface flex gap-3 rounded-lg border p-3 sm:gap-4">
+      <ProductImage src={product.thumbnail} alt="" className="size-20 shrink-0 rounded-md" />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex items-start justify-between gap-2">
-          <Link
-            to="/products/$productId"
-            params={{ productId: String(product.id) }}
-            className="line-clamp-2 font-medium hover:underline"
-          >
+          <ProductLink productId={product.id} className="line-clamp-2 font-medium">
             {product.title}
-          </Link>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t('cart.remove', { title: product.title })}
-            onClick={onRemove}
-          >
-            <Trash2 className="size-4" />
-          </Button>
+          </ProductLink>
+          {item.available ? null : (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t('cart.remove', { title: product.title })}
+              onClick={onRemove}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          )}
         </div>
         {item.available ? (
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <QuantityStepper value={item.quantity} max={product.stock} onChange={onQuantity} />
+            <CartLineStepper product={product} />
             <div className="text-right">
               <p className="font-semibold">
                 <Money cents={item.lineCents} />
@@ -198,9 +181,6 @@ export function CartPage() {
             <CartRow
               key={item.product.id}
               item={item}
-              onQuantity={(quantity) =>
-                cart.setQuantity(item.product.id, quantity, item.product.stock)
-              }
               onRemove={() => void cart.remove(item.product.id)}
             />
           ))}

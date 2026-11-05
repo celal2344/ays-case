@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router'
 import { ShoppingCart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -17,6 +16,7 @@ import { FavoriteButton } from '@/features/favorites/components/favorite-button'
 import type { Product } from '../schemas'
 import { DiscountBadge, StockBadge } from './product-badges'
 import { ProductImage } from './product-image'
+import { ProductLink } from './product-link'
 import { ProductPrice } from './product-price'
 
 function AddToCartIcon({ product }: { product: Product }) {
@@ -58,18 +58,14 @@ export function ProductTable({ products }: { products: Product[] }) {
         </TableHeader>
         <TableBody>
           {products.map((product) => (
-            <TableRow key={product.id}>
+            <TableRow key={product.id} className="card-surface">
               <TableCell>
                 <ProductImage src={product.thumbnail} alt="" className="size-12 rounded-md" />
               </TableCell>
               <TableCell className="max-w-64">
-                <Link
-                  to="/products/$productId"
-                  params={{ productId: String(product.id) }}
-                  className="line-clamp-2 font-medium hover:underline"
-                >
+                <ProductLink productId={product.id} className="line-clamp-2 font-medium">
                   {product.title}
-                </Link>
+                </ProductLink>
                 {product.brand ? (
                   <span className="text-xs text-muted-foreground">{product.brand.name}</span>
                 ) : null}

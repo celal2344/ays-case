@@ -18,7 +18,7 @@ const seed = (userId: string, ...lines: [productId: number, quantity: number][])
   )
 
 describe('cart (CART-1..4)', () => {
-  it('CART-1: Add to cart on a card swaps the button for a quantity stepper and a remove button', async () => {
+  it('CART-1: Add to cart on a card swaps the button for the stepper, whose minus is a trash at 1', async () => {
     signInAs('averyp')
     await renderApp('/products')
     const card = async () => (await screen.findByText('beauty item 01')).closest('li')!
@@ -27,7 +27,7 @@ describe('cart (CART-1..4)', () => {
       expect(cartOf('user-16')).toEqual([expect.objectContaining({ productId: 1, quantity: 1 })]),
     )
 
-    // the Add to cart button is gone; the card now has the stepper and a remove button
+    // the Add to cart button is gone; the card now has the stepper
     expect(
       within(await card()).queryByRole('button', { name: 'Add to cart' }),
     ).not.toBeInTheDocument()
@@ -36,9 +36,9 @@ describe('cart (CART-1..4)', () => {
     expect(within(await card()).getByRole('textbox', { name: 'Quantity' })).toHaveValue('2')
     expect(await screen.findByRole('link', { name: 'Cart, 2 items' })).toBeInTheDocument()
 
-    await userEvent.click(
-      within(await card()).getByRole('button', { name: 'Remove beauty item 01' }),
-    )
+    await userEvent.click(within(await card()).getByRole('button', { name: 'Decrease quantity' }))
+    expect(within(await card()).queryByRole('button', { name: 'Decrease quantity' })).toBeNull()
+    await userEvent.click(within(await card()).getByRole('button', { name: 'Remove from cart' }))
     await waitFor(() => expect(cartOf('user-16')).toEqual([]))
     expect(within(await card()).getByRole('button', { name: 'Add to cart' })).toBeInTheDocument()
   })
@@ -56,30 +56,31 @@ describe('cart (CART-1..4)', () => {
     await waitFor(() => expect(cartOf('user-16')[0]?.quantity).toBe(4))
   })
 
-  it('CART-1: Add to cart on the detail page uses the chosen quantity', async () => {
+  it('CART-1: Add to cart on the detail page adds one and shows no quantity before that', async () => {
     signInAs('averyp')
     await renderApp('/products/2')
-    const quantity = await screen.findByRole('textbox', { name: 'Quantity' })
-    await userEvent.clear(quantity)
-    await userEvent.type(quantity, '3')
+    await screen.findAllByRole('button', { name: 'Add to cart' })
+    expect(screen.queryByRole('textbox', { name: 'Quantity' })).not.toBeInTheDocument()
     await userEvent.click(screen.getAllByRole('button', { name: 'Add to cart' })[0]!)
     await waitFor(() =>
-      expect(cartOf('user-16')).toEqual([expect.objectContaining({ productId: 2, quantity: 3 })]),
+      expect(cartOf('user-16')).toEqual([expect.objectContaining({ productId: 2, quantity: 1 })]),
     )
     expect(await screen.findByText('groceries item 02 was added to your cart.')).toBeInTheDocument()
   })
 
-  it('never lets the cart exceed stock and says so', async () => {
+  it('never lets the cart exceed stock: the in-cart stepper stops at the stock', async () => {
     signInAs('averyp')
     await renderApp('/products/6') // stock 4
     const add = (await screen.findAllByRole('button', { name: 'Add to cart' }))[0]!
-    const quantity = screen.getByRole('textbox', { name: 'Quantity' })
+    await userEvent.click(add)
+    await waitFor(() => expect(cartOf('user-16')[0]?.quantity).toBe(1))
+    const quantity = await screen.findByRole('textbox', { name: 'Quantity' }) // now the in-cart row
     await userEvent.clear(quantity)
-    await userEvent.type(quantity, '3')
-    await userEvent.click(add)
-    await userEvent.click(add)
+    await userEvent.type(quantity, '99')
+    expect(quantity).toHaveValue('4')
+    const plus = screen.getByRole('button', { name: 'Increase quantity' })
     await waitFor(() => expect(cartOf('user-16')[0]?.quantity).toBe(4))
-    expect(await screen.findByText(/Only 4 of smartphones item 06 available/)).toBeInTheDocument()
+    expect(plus).toBeDisabled()
   })
 
   it('Buy now adds the product and opens checkout', async () => {
@@ -162,7 +163,8 @@ describe('cart page', () => {
     seed('user-16', [2, 1], [4, 1])
     signInAs('averyp')
     await renderApp('/cart')
-    await userEvent.click(await screen.findByRole('button', { name: 'Remove groceries item 02' }))
+    const row = (await screen.findByText('groceries item 02')).closest('li')!
+    await userEvent.click(within(row).getByRole('button', { name: 'Remove from cart' }))
     await waitFor(() => expect(cartOf('user-16').map((l) => l.productId)).toEqual([4]))
 
     await userEvent.click(screen.getByRole('button', { name: 'Clear cart' }))

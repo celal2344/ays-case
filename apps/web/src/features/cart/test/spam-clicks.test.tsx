@@ -36,17 +36,18 @@ describe('cart: one click is one request (spam-click guards)', () => {
     fireEvent.click(button)
     expect(button).toHaveAttribute('aria-busy', 'true')
     expect(button).toBeDisabled()
-    await waitFor(() => expect(button).not.toHaveAttribute('aria-busy'))
+    expect(await screen.findByRole('link', { name: 'Go to cart' })).toBeInTheDocument() // now in the cart
   })
 
-  it('at the stock cap the button says so and sends nothing', async () => {
+  it('at the stock cap the stepper cannot go higher and sends nothing', async () => {
     seed([6, 4]) // product 6 has 4 in stock
     signInAs('averyp')
     const requests = recordRequests()
     await renderApp('/products/6')
-    const button = await screen.findByRole('button', { name: 'Max in cart' })
-    expect(button).toBeDisabled()
-    fireEvent.click(button)
+    await screen.findByText('In cart:') // the cart has loaded, so the page shows the in-cart row
+    const plus = screen.getByRole('button', { name: 'Increase quantity' })
+    expect(plus).toBeDisabled()
+    fireEvent.click(plus)
     expect(only(requests, 'POST /api/cart/items')).toEqual([])
     expect(screen.queryByText(/is what is in your cart/)).not.toBeInTheDocument()
   })
@@ -73,7 +74,8 @@ describe('cart: one click is one request (spam-click guards)', () => {
     signInAs('averyp')
     const requests = recordRequests()
     await renderApp('/cart')
-    const remove = await screen.findByRole('button', { name: 'Remove groceries item 02' })
+    const row = (await screen.findByText('groceries item 02')).closest('li')!
+    const remove = within(row).getByRole('button', { name: 'Remove from cart' })
     fireEvent.click(remove)
     fireEvent.click(remove)
 
