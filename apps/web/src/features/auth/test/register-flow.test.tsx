@@ -99,6 +99,18 @@ describe('registration', () => {
   })
 })
 
+describe('the way back', () => {
+  it.each(['/login', '/register'])('%s links back to the shop', async (path) => {
+    await renderApp(path)
+    expect(await screen.findByRole('link', { name: 'Back to the shop' })).toHaveAttribute(
+      'href',
+      '/',
+    )
+    // the brand panel logo and the phone logo are links home too
+    expect(screen.getAllByRole('link', { name: 'ays-case' }).length).toBeGreaterThan(0)
+  })
+})
+
 describe('sign-in with a username or an email', () => {
   it('signs in with the username', async () => {
     const { router } = await renderApp('/login')

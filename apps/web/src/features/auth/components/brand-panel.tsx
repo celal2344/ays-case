@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { Check, Star } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -84,7 +85,7 @@ export function BrandPanel({
       aria-label={t('app.name')}
       className="auth-panel relative hidden min-h-[640px] flex-[1_1_55%] flex-col gap-6 overflow-hidden rounded-[28px] p-10 lg:flex"
     >
-      <span className="flex items-center gap-2.5 self-start text-foreground">
+      <Link to="/" className="flex items-center gap-2.5 self-start text-foreground">
         <span
           aria-hidden="true"
           className="flex size-9 items-center justify-center rounded-[10px] bg-brand text-lg font-extrabold text-white"
@@ -92,7 +93,7 @@ export function BrandPanel({
           a
         </span>
         <span className="text-[19px] font-bold tracking-[-0.01em]">{t('app.name')}</span>
-      </span>
+      </Link>
       <div className="relative z-10 mt-6 flex max-w-[560px] flex-col gap-3">
         <h2 className="m-0 max-w-[460px] text-5xl leading-[1.05] font-extrabold tracking-[-0.035em]">
           {title}

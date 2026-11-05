@@ -128,6 +128,7 @@ export const tr = {
     },
   },
   auth: {
+    backToShop: 'Mağazaya dön',
     benefits: {
       cart: 'Sepetin her cihazda kayıtlı',
       favorites: 'Favori listen',

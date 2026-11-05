@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { DEFAULT_LANDING } from '@/features/auth/context'
+import { AuthSkeleton } from '@/features/auth/components/auth-skeleton'
 import { LoginPage } from '@/features/auth/components/login-page'
 import { safeRedirect } from '@/lib/safe-redirect'
 
@@ -16,5 +17,6 @@ export const Route = createFileRoute('/login')({
       throw redirect({ href: search.redirect ?? DEFAULT_LANDING })
     }
   },
+  pendingComponent: () => <AuthSkeleton fields={2} />,
   component: LoginPage,
 })

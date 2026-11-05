@@ -127,6 +127,7 @@ export const en = {
     },
   },
   auth: {
+    backToShop: 'Back to the shop',
     benefits: {
       cart: 'Your cart is saved on every device',
       favorites: 'Your favorites list',

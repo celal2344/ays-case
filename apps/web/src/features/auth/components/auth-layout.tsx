@@ -1,8 +1,9 @@
 import { Link } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { LanguageToggle, ThemeToggle } from '@/components/layout/preferences-controls'
+import { LanguageMenu, ThemeToggle } from '@/components/layout/preferences-controls'
 import { cn } from '@/lib/utils'
 
 import type { PanelCard } from '../panel-images'
@@ -34,7 +35,7 @@ export function AuthLayout({
       <BrandPanel title={title} text={text} cards={cards} />
       <div className="flex min-w-0 flex-[1_1_45%] flex-col gap-6 lg:px-2">
         <div className="flex items-center justify-between gap-3">
-          <Link to="/" className="flex items-center gap-2.5 lg:invisible">
+          <Link to="/" className="flex items-center gap-2.5 lg:hidden">
             <span
               aria-hidden="true"
               className="flex size-9 items-center justify-center rounded-[10px] bg-brand text-lg font-extrabold text-white"
@@ -43,8 +44,15 @@ export function AuthLayout({
             </span>
             <span className="text-[19px] font-bold tracking-[-0.01em]">{t('app.name')}</span>
           </Link>
+          <Link
+            to="/"
+            className="hidden items-center gap-1.5 text-sm font-semibold text-brand-text hover:underline lg:inline-flex"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            {t('auth.backToShop')}
+          </Link>
           <div className="flex items-center gap-2">
-            <LanguageToggle />
+            <LanguageMenu />
             <ThemeToggle />
           </div>
         </div>
