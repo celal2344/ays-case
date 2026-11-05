@@ -244,6 +244,7 @@ export const orderHandlers = [
 ]
 
 export const reviewHandlers = [
+  http.get(`${BASE}/reviews/mine`, () => needSession((id) => reply(shopping.myReviewedIds(id)))),
   http.post(`${BASE}/products/:id/reviews`, async ({ params, request }) => {
     const body = (await request.json()) as { rating: number; comment: string }
     return needSession((id) => reply(shopping.createReview(id, Number(params.id), body)))

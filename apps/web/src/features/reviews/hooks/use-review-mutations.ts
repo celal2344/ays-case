@@ -7,6 +7,7 @@ import { errorCodeKey } from '@/lib/error-message'
 import type { AppError } from '@/lib/http-error'
 
 import { createReview, deleteReview, updateReview } from '../api'
+import { myReviewsKey } from './use-my-reviews'
 import type { ReviewFormValues } from '../schemas'
 
 /**
@@ -20,6 +21,7 @@ export function useReviewMutations(productId: number) {
     Promise.all([
       queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) }),
       queryClient.invalidateQueries({ queryKey: productKeys.catalog() }),
+      queryClient.invalidateQueries({ queryKey: myReviewsKey }),
     ])
   const onError = (error: AppError) => toast.error(t(errorCodeKey(error)))
 

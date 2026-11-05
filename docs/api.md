@@ -25,6 +25,7 @@ Response and request types come from the API's routes (`AppType`) and the shared
 | `POST /api/orders` | session | body `{ shipping }` only; one transaction creates the order from the server cart (server prices), takes stock, empties the cart. 201; 422 `cart_empty`; 409 `insufficient_stock` or `product_unavailable` (nothing changes) |
 | `GET /api/orders`, `GET /api/orders/:id` | session | my orders, newest first, with frozen lines; another user's id is 404 |
 | `POST /api/products/:id/reviews`, `PATCH /api/reviews/:id`, `DELETE /api/reviews/:id` | session | one review per user and product (409 `review_exists`); edit is the author's; delete is the author's or an admin's; the product's rating, count and histogram update by themselves |
+| `GET /api/reviews/mine` | session | the product ids I have reviewed, newest review first (the orders page offers "Review" only for the others) |
 | `POST /api/auth/sign-in/username` | public | `{ username, password }`, sets the session cookie                                                                                                 |
 | `GET /api/auth/get-session`       | cookie | the session user, including `role`                                                                                                                |
 | `POST /api/auth/sign-out`         | cookie |                                                                                                                                                   |
