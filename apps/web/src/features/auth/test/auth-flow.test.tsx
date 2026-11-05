@@ -67,7 +67,8 @@ describe('auth flow (AUTH-1..7)', () => {
   it('AUTH-6: a session cookie survives a reload, and /login sends the user away', async () => {
     signInAs('user')
     const { router } = await renderApp('/login')
-    expect(pathname(router)).toBe('/products')
+    // the login page does not wait for the session; it leaves once the user is known
+    await waitFor(() => expect(pathname(router)).toBe('/products'))
     expect(useAuthStore.getState().user?.username).toBe('averyp')
   })
 

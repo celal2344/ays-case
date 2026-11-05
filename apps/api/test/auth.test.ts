@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { getDb } from '../src/db/client'
+import { session } from '../src/db/schema'
 import { root } from '../src/root'
 import { signIn, useSeededDatabase } from './helpers/test-db'
 
@@ -98,14 +100,39 @@ describe('GET /api/users (admin only)', () => {
     expect(data.filter((u) => u.role === 'moderator')).toHaveLength(10)
   })
 
-  it('stops working after sign-out', async () => {
+  it('stops working after sign-out: the browser drops both session cookies', async () => {
     const { cookie } = await signIn(request, 'emilys', 'emilyspass')
-    await request('/api/auth/sign-out', {
+    const out = await request('/api/auth/sign-out', {
       method: 'POST',
       headers: { cookie, origin: 'http://localhost:5173', 'content-type': 'application/json' },
       body: '{}',
     })
-    const res = await request('/api/users', { headers: { cookie } })
+    const cleared = out.headers.getSetCookie().filter((c) => c.includes('Max-Age=0'))
+    expect(cleared.some((c) => c.includes('session_token='))).toBe(true)
+    expect(cleared.some((c) => c.includes('session_data='))).toBe(true)
+    const res = await request('/api/users')
     expect(res.status).toBe(401)
+  })
+})
+
+describe('session cookie cache (5 minutes)', () => {
+  it('answers get-session from the signed cookie without reading the database', async () => {
+    const { cookie } = await signIn(request, 'averyp', 'averyppass')
+    expect(cookie).toContain('session_data')
+    // remove the session row: only the cookie cache can still know this user
+    await getDb().delete(session)
+    const res = await request('/api/auth/get-session', { headers: { cookie } })
+    expect(((await res.json()) as { user: { username: string } }).user.username).toBe('averyp')
+  })
+
+  it('without the cache cookie the removed session is gone', async () => {
+    const { cookie } = await signIn(request, 'averyp', 'averyppass')
+    await getDb().delete(session)
+    const tokenOnly = cookie
+      .split('; ')
+      .filter((c) => !c.includes('session_data'))
+      .join('; ')
+    const res = await request('/api/auth/get-session', { headers: { cookie: tokenOnly } })
+    expect(await res.json()).toBeNull()
   })
 })
