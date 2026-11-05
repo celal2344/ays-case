@@ -1,35 +1,38 @@
 import { useForm } from '@tanstack/react-form'
 import { Link, useRouter } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { PendingButton } from '@/components/pending-button'
-import { runExclusive } from '@/lib/in-flight'
 import { ErrorState, PageSkeleton } from '@/components/feedback/feedback'
 import { Money } from '@/components/money'
-import { buttonVariants } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PendingButton } from '@/components/pending-button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { FieldError } from '@/features/admin/components/field-error'
 import { useCartView } from '@/features/cart/hooks/use-cart-view'
 import { ProductImage } from '@/features/products/components/product-image'
 import { errorCodeKey } from '@/lib/error-message'
+import { runExclusive } from '@/lib/in-flight'
+import { useStrongGlow } from '@/lib/use-strong-glow'
 
 import { usePlaceOrder } from '../hooks/use-place-order'
 import { emptyShipping, shippingSchema, type Shipping } from '../schemas'
 import { CheckoutSteps } from './checkout-steps'
-import { TotalsList } from './order-totals'
 
-const FIELDS: { name: keyof Shipping; autoComplete: string; type?: string }[] = [
-  { name: 'fullName', autoComplete: 'name' },
-  { name: 'address', autoComplete: 'street-address' },
-  { name: 'city', autoComplete: 'address-level2' },
-  { name: 'phone', autoComplete: 'tel', type: 'tel' },
-]
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <>
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="m-0 text-right">{children}</dd>
+    </>
+  )
+}
 
 export function CheckoutPage() {
   const { t } = useTranslation()
   const router = useRouter()
+  useStrongGlow()
   const cart = useCartView()
   const placeOrder = usePlaceOrder()
 
@@ -59,103 +62,143 @@ export function CheckoutPage() {
   const errorText = !error ? null : t(errorCodeKey(error))
   const errorDetail = error?.code === 'insufficient_stock' ? error.message : null
   const canPlace = !cart.hasUnavailable && cart.totals.totalCents > 0 && !placeOrder.isPending
+  const count = cart.items.reduce((sum, item) => sum + item.quantity, 0)
+
+  const field = (name: keyof Shipping, autoComplete: string, type?: string) => (
+    <form.Field key={name} name={name}>
+      {(f) => (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={`shipping-${name}`} className="text-sm font-semibold">
+            {t(`checkout.fields.${name}`)}
+          </Label>
+          {name === 'address' ? (
+            <Textarea
+              id={`shipping-${name}`}
+              rows={3}
+              autoComplete={autoComplete}
+              value={f.state.value}
+              onBlur={f.handleBlur}
+              onChange={(e) => f.handleChange(e.target.value)}
+              aria-invalid={f.state.meta.errors.length > 0}
+              className="rounded-xl px-3.5 py-3"
+            />
+          ) : (
+            <Input
+              id={`shipping-${name}`}
+              type={type}
+              autoComplete={autoComplete}
+              value={f.state.value}
+              onBlur={f.handleBlur}
+              onChange={(e) => f.handleChange(e.target.value)}
+              aria-invalid={f.state.meta.errors.length > 0}
+              className="h-12 rounded-xl px-3.5"
+            />
+          )}
+          <FieldError errors={f.state.meta.errors} keyPrefix="checkout.errors." />
+        </div>
+      )}
+    </form.Field>
+  )
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-7">
       <CheckoutSteps current={2} />
-      <h1 className="text-2xl font-semibold">{t('checkout.title')}</h1>
-      <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+      <div className="flex flex-wrap items-start gap-6">
         <form
           id="checkout-form"
-          className="space-y-5"
+          className="flex min-w-0 flex-[999_1_560px] flex-col gap-5 rounded-[22px] border bg-card p-6 sm:p-8"
           noValidate
           onSubmit={(event) => {
             event.preventDefault()
             void form.handleSubmit()
           }}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('checkout.shipping')}</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              {FIELDS.map(({ name, autoComplete, type }) => (
-                <form.Field key={name} name={name}>
-                  {(field) => (
-                    <div
-                      className={name === 'address' ? 'space-y-1.5 sm:col-span-2' : 'space-y-1.5'}
-                    >
-                      <Label htmlFor={`shipping-${name}`}>{t(`checkout.fields.${name}`)}</Label>
-                      <Input
-                        id={`shipping-${name}`}
-                        type={type}
-                        autoComplete={autoComplete}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        aria-invalid={field.state.meta.errors.length > 0}
-                      />
-                      <FieldError errors={field.state.meta.errors} keyPrefix="checkout.errors." />
-                    </div>
-                  )}
-                </form.Field>
-              ))}
-            </CardContent>
-          </Card>
+          <div className="flex flex-col gap-1">
+            <h1 className="m-0 text-[26px] font-extrabold tracking-[-0.02em]">
+              {t('checkout.shipping')}
+            </h1>
+            <span className="text-muted-foreground">{t('checkout.shippingHint')}</span>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {field('fullName', 'name')}
+            {field('phone', 'tel', 'tel')}
+          </div>
+          {field('address', 'street-address')}
+          <div className="max-w-xs">{field('city', 'address-level2')}</div>
+          <div className="flex items-center justify-between gap-3 border-t pt-4">
+            <Link to="/cart" className="font-semibold text-brand-text hover:underline">
+              ← {t('checkout.backToCart')}
+            </Link>
+          </div>
         </form>
 
-        <div>
-          <Card className="lg:sticky lg:top-[calc(var(--header-h)+1rem)]">
-            <CardHeader>
-              <CardTitle>{t('checkout.summary')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ul className="space-y-3">
-                {cart.items.map((item) => (
-                  <li key={item.product.id} className="flex items-center gap-3 text-sm">
-                    <ProductImage
-                      src={item.product.thumbnail}
-                      alt=""
-                      className="size-12 shrink-0 rounded-md"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="line-clamp-1 font-medium">{item.product.title}</p>
-                      <p className="text-muted-foreground">
-                        {t('checkout.quantity', { n: item.quantity })}
-                      </p>
-                    </div>
-                    <p className="font-medium">
-                      <Money cents={item.lineCents} />
-                    </p>
-                  </li>
-                ))}
-              </ul>
-              <TotalsList totals={cart.totals} testId="checkout-total" />
-              {errorText ? (
-                <p role="alert" className="text-sm text-destructive">
-                  {errorText}
-                  {errorDetail ? <span className="block text-xs">{errorDetail}</span> : null}
-                </p>
-              ) : null}
-              <PendingButton
-                type="submit"
-                form="checkout-form"
-                size="lg"
-                className="w-full"
-                pending={placeOrder.isPending}
-                disabled={!canPlace}
+        <aside
+          aria-label={t('checkout.summary')}
+          className="glass-strong flex min-w-0 flex-[1_1_360px] flex-col gap-4 rounded-[22px] p-6 lg:sticky lg:top-[calc(var(--header-h)+1rem)]"
+        >
+          <h2 className="m-0 text-lg font-bold">{t('checkout.summary')}</h2>
+          <ul className="flex flex-col gap-3">
+            {cart.items.map((item) => (
+              <li
+                key={item.product.id}
+                className="flex items-center gap-3 rounded-[14px] border bg-card p-2.5"
               >
-                {t('checkout.place')}
-              </PendingButton>
-              <Link
-                to="/cart"
-                className={buttonVariants({ variant: 'ghost', className: 'w-full' })}
-              >
-                {t('checkout.backToCart')}
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
+                <ProductImage
+                  src={item.product.thumbnail}
+                  alt=""
+                  className="size-14 shrink-0 rounded-lg [&_img]:object-contain"
+                />
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="line-clamp-1 text-sm font-semibold">{item.product.title}</span>
+                  <span className="text-[13px] text-muted-foreground">
+                    {t('checkout.quantity', { n: item.quantity })}
+                  </span>
+                </div>
+                <strong className="text-sm">
+                  <Money cents={item.lineCents} />
+                </strong>
+              </li>
+            ))}
+          </ul>
+          <dl className="m-0 grid grid-cols-[1fr_auto] gap-2 text-sm">
+            <Row label={`${t('cart.summary.subtotal')} (${t('orders.items', { n: count })})`}>
+              <Money cents={cart.totals.subtotalCents} />
+            </Row>
+            <Row label={t('cart.summary.discount')}>
+              <span className="font-semibold text-success">
+                −<Money cents={cart.totals.discountCents} />
+              </span>
+            </Row>
+          </dl>
+          <div className="flex items-baseline justify-between border-t pt-3.5">
+            <span className="font-bold">{t('cart.summary.total')}</span>
+            <strong
+              data-testid="checkout-total"
+              className="text-[26px] tracking-[-0.02em] text-brand-text"
+            >
+              <Money cents={cart.totals.totalCents} />
+            </strong>
+          </div>
+          {errorText ? (
+            <p role="alert" className="text-sm text-destructive">
+              {errorText}
+              {errorDetail ? <span className="block text-xs">{errorDetail}</span> : null}
+            </p>
+          ) : null}
+          <PendingButton
+            type="submit"
+            form="checkout-form"
+            size="lg"
+            className="h-[52px] w-full rounded-[14px] text-base font-semibold"
+            pending={placeOrder.isPending}
+            disabled={!canPlace}
+          >
+            {t('checkout.place')}
+          </PendingButton>
+          <p className="m-0 text-center text-xs text-muted-foreground">
+            {t('checkout.serverNote')}
+          </p>
+        </aside>
       </div>
     </div>
   )

@@ -16,11 +16,12 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Money } from '@/components/money'
 import { useInFlight } from '@/lib/in-flight'
 import { ProductImage } from '@/features/products/components/product-image'
 
+import { useStrongGlow } from '@/lib/use-strong-glow'
 import { CheckoutSteps } from '@/features/orders/components/checkout-steps'
 import { useCartView } from '../hooks/use-cart-view'
 import type { CartItem, CartTotals } from '../selectors'
@@ -38,7 +39,7 @@ function Summary({
 }) {
   const { t } = useTranslation()
   return (
-    <Card>
+    <div className="glass-strong flex flex-col gap-4 rounded-[22px] py-4 text-card-foreground">
       <CardHeader>
         <CardTitle>{t('cart.summary.title')}</CardTitle>
       </CardHeader>
@@ -73,7 +74,7 @@ function Summary({
           {t('cart.checkout')}
         </Button>
       </CardFooter>
-    </Card>
+    </div>
   )
 }
 
@@ -138,6 +139,7 @@ function CartRow({
 
 export function CartPage() {
   const { t } = useTranslation()
+  useStrongGlow()
   const cart = useCartView()
   const router = useRouter()
   const clearing = useInFlight('cart:clear')
