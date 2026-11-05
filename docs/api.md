@@ -58,6 +58,7 @@ User rules, all `409`: `cannot_delete_self`, `cannot_demote_self`, `last_admin`,
 3. **Derived figures stay on the server.** Rating, review count, histogram and availability are computed in SQL; the browser only formats them.
 4. **One type, cents everywhere.** The UI, the cart and the tests use the types from `@ays/validators` directly. Money stays in integer cents and is formatted at render time (`formatMoney`); grams and millimetres are formatted by `formatWeight` and `formatDimensions`. The admin form collects dollars and converts once with `toCents` on submit.
 5. **Admin writes are server-side.** Every admin route answers 401 without a session and 403 for a non-admin. The server validates the limits shared in `@ays/validators` (`LIMITS`) and enforces uniqueness, the user guards and soft delete ([data-and-state.md](data-and-state.md)).
+6. **Session cookie cache, 5 minutes.** Better Auth answers `get-session` from a signed `session_data` cookie (`session.cookieCache`, `maxAge: 5 * 60`), so repeated checks do not query the database. Trade-off, accepted: after a demotion, a user deletion or a sign-out, an old session cookie that is replayed can stay valid for up to 5 minutes. Sign-out clears both cookies in the browser, and requests made in that window must still fail cleanly (a deleted user's write maps to a proper error, not a 500).
 
 ## Errors
 
