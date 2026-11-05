@@ -83,3 +83,34 @@ export function groupCategories(
     return [{ id, categories: list, count: list.reduce((sum, c) => sum + c.count, 0) }]
   })
 }
+
+export interface FeaturedProduct {
+  product: Product
+  /** Why it is featured: a top rating, or the group's biggest discount. */
+  reason: 'rating' | 'discount'
+}
+
+const byRating = (a: Product, b: Product) =>
+  (b.rating ?? 0) - (a.rating ?? 0) || b.reviewCount - a.reviewCount || a.id - b.id
+const byDiscount = (a: Product, b: Product) =>
+  b.discountPercentage - a.discountPercentage || byRating(a, b)
+
+/**
+ * The mega menu's "featured" cards for one group: its two best rated products and the one with the
+ * biggest discount. Deterministic, and only products that have an image.
+ */
+export function featuredOf(groupId: GroupId, products: Product[]): FeaturedProduct[] {
+  const inGroup = products.filter(
+    (p) => p.thumbnail !== null && groupOf(p.category.slug) === groupId,
+  )
+  const rated = inGroup.filter((p) => p.rating !== null).sort(byRating)
+  const picked: FeaturedProduct[] = rated
+    .slice(0, 2)
+    .map((product) => ({ product, reason: 'rating' }))
+  const taken = new Set(picked.map((f) => f.product.id))
+  const deal = inGroup
+    .filter((p) => !taken.has(p.id) && p.discountPercentage > 0)
+    .sort(byDiscount)[0]
+  if (deal) picked.push({ product: deal, reason: 'discount' })
+  return picked
+}
