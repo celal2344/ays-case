@@ -53,8 +53,7 @@ export async function createUser(body: UserCreateBody, headers: Headers): Promis
         email: body.email.toLowerCase(),
         password: body.password,
         name: `${body.firstName} ${body.lastName}`,
-        // the plugin knows user and admin; a moderator is set right after
-        role: body.role === 'admin' ? 'admin' : 'user',
+        role: body.role,
         data: {
           username,
           displayUsername: body.username,
@@ -64,9 +63,6 @@ export async function createUser(body: UserCreateBody, headers: Headers): Promis
         },
       },
     })
-    if (body.role === 'moderator') {
-      await repository.setRole(getDb(), created.user.id, 'moderator')
-    }
     return (await find(created.user.id))!
   } catch (error) {
     const conflict = toConflict(error)

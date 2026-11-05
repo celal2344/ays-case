@@ -110,7 +110,7 @@ TanStack Table: avatar, name, username, email, role badge, actions (Edit, Delete
 | password             | initial password: required on create (8–72), not on the edit form |
 | firstName / lastName | required, 1–50                             |
 | email                | valid email                                |
-| role                 | `admin`                                    | `user` | `moderator` (select; moderator has no special behaviour) |
+| role                 | `admin`                                    | `user` |
 
 ### Admin create / edit (products)
 

@@ -1,9 +1,10 @@
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { getDb } from '../src/db/client'
-import { session } from '../src/db/schema'
+import { session, user } from '../src/db/schema'
 import { root } from '../src/root'
-import { signIn, useSeededDatabase } from './helpers/test-db'
+import { freshIp, signIn, signInWithEmail, signUp, useSeededDatabase } from './helpers/test-db'
 
 const request = (path: string, init?: RequestInit) => root.request(path, init)
 
@@ -50,21 +51,6 @@ describe('sign-in and session', () => {
     const session = await request('/api/auth/get-session')
     expect(await session.json()).toBeNull()
   })
-
-  it('does not allow self sign-up', async () => {
-    const res = await request('/api/auth/sign-up/email', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', origin: 'http://localhost:5173' },
-      body: JSON.stringify({
-        email: 'new@example.com',
-        password: 'password-12345',
-        name: 'New User',
-        firstName: 'New',
-        lastName: 'User',
-      }),
-    })
-    expect(res.status).toBeGreaterThanOrEqual(400)
-  })
 })
 
 describe('GET /api/users (admin only)', () => {
@@ -97,7 +83,7 @@ describe('GET /api/users (admin only)', () => {
       'username',
     ])
     expect(data.filter((u) => u.role === 'admin')).toHaveLength(5)
-    expect(data.filter((u) => u.role === 'moderator')).toHaveLength(10)
+    expect(data.filter((u) => u.role === 'user')).toHaveLength(25)
   })
 
   it('stops working after sign-out: the browser drops both session cookies', async () => {
@@ -134,5 +120,126 @@ describe('session cookie cache (5 minutes)', () => {
       .join('; ')
     const res = await request('/api/auth/get-session', { headers: { cookie: tokenOnly } })
     expect(await res.json()).toBeNull()
+  })
+})
+
+const newcomer = {
+  email: 'newcomer@example.com',
+  password: 'a-long-password-1',
+  name: 'New Comer',
+  firstName: 'New',
+  lastName: 'Comer',
+  username: 'NewComer',
+}
+
+describe('registration', () => {
+  it('creates a user, signs them in and keeps the username as typed for display', async () => {
+    const { res, cookie } = await signUp(request, newcomer)
+    expect(res.status).toBe(200)
+    expect(cookie).toContain('session_token')
+    const session = await request('/api/auth/get-session', { headers: { cookie } })
+    const body = (await session.json()) as {
+      user: { role: string; username: string; displayUsername: string; email: string }
+    }
+    expect(body.user).toMatchObject({
+      role: 'user',
+      username: 'newcomer',
+      displayUsername: 'NewComer',
+      email: 'newcomer@example.com',
+    })
+  })
+
+  it('never lets a client choose its role', async () => {
+    const { res } = await signUp(request, {
+      ...newcomer,
+      email: 'sneaky@example.com',
+      username: 'sneaky',
+      role: 'admin',
+    })
+    const row = (
+      await getDb()
+        .select({ role: user.role })
+        .from(user)
+        .where(eq(user.email, 'sneaky@example.com'))
+    )[0]
+    // either refused, or created as a plain user: never an admin
+    expect(res.status === 200 ? row?.role : 'user').toBe('user')
+    expect(row?.role === 'admin').toBe(false)
+  })
+
+  it('rejects a duplicate username and a duplicate email', async () => {
+    const sameName = await signUp(request, { ...newcomer, email: 'other@example.com' })
+    expect(sameName.res.status).toBeGreaterThanOrEqual(400)
+    expect(await sameName.res.text()).toMatch(/USERNAME_IS_ALREADY_TAKEN|username/i)
+    const sameEmail = await signUp(request, { ...newcomer, username: 'another_one' })
+    expect(sameEmail.res.status).toBeGreaterThanOrEqual(400)
+    expect(await sameEmail.res.text()).toMatch(/USER_ALREADY_EXISTS|already/i)
+  })
+
+  it('lets the new user sign in with the username and with the email', async () => {
+    expect((await signIn(request, 'newcomer', newcomer.password)).res.status).toBe(200)
+    expect((await signIn(request, 'NewComer', newcomer.password)).res.status).toBe(200)
+    expect(
+      (await signInWithEmail(request, 'newcomer@example.com', newcomer.password)).res.status,
+    ).toBe(200)
+    expect(
+      (await signInWithEmail(request, 'newcomer@example.com', 'wrong-password')).res.status,
+    ).toBe(401)
+  })
+
+  it('answers 429 on the 4th sign-up from one address within ten minutes', async () => {
+    const ip = freshIp()
+    for (let i = 0; i < 3; i++) {
+      const { res } = await signUp(
+        request,
+        { ...newcomer, email: `limit${i}@example.com`, username: `limit_${i}` },
+        ip,
+      )
+      expect(res.status).toBe(200)
+    }
+    const { res } = await signUp(
+      request,
+      { ...newcomer, email: 'limit3@example.com', username: 'limit_3' },
+      ip,
+    )
+    expect(res.status).toBe(429)
+  })
+
+  it('rate limits sign-in by email like sign-in by username', async () => {
+    const ip = freshIp()
+    const attempt = () =>
+      request('/api/auth/sign-in/email', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          origin: 'http://localhost:5173',
+          'x-forwarded-for': ip,
+        },
+        body: JSON.stringify({ email: 'nobody@example.com', password: 'wrong-password' }),
+      })
+    for (let i = 0; i < 5; i++) expect((await attempt()).status).toBe(401)
+    expect((await attempt()).status).toBe(429)
+  })
+})
+
+describe('roles', () => {
+  it('the database refuses any role but admin and user', async () => {
+    await expect(
+      getDb().update(user).set({ role: 'boss' }).where(eq(user.username, 'averyp')),
+    ).rejects.toThrow()
+  })
+
+  it('a demoted admin is refused on the very next admin request, with the cookie cache on', async () => {
+    await signUp(request, {
+      ...newcomer,
+      email: 'boss@example.com',
+      username: 'boss',
+    })
+    const { cookie } = await signIn(request, 'boss', newcomer.password)
+    await getDb().update(user).set({ role: 'admin' }).where(eq(user.username, 'boss'))
+    // the signed session cookie still says "user" for up to 5 minutes; the guard reads the live role
+    expect((await request('/api/users', { headers: { cookie } })).status).toBe(200)
+    await getDb().update(user).set({ role: 'user' }).where(eq(user.username, 'boss'))
+    expect((await request('/api/users', { headers: { cookie } })).status).toBe(403)
   })
 })

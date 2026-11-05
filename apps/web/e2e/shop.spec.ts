@@ -66,7 +66,7 @@ test('adding while signed out asks to sign in and adds after logging in', async 
   await page.goto('/products/2')
   await page.getByRole('button', { name: 'Add to cart' }).first().click()
   await expect(page).toHaveURL(/\/login/)
-  await page.getByRole('button', { name: 'Fill user' }).click()
+  await page.getByRole('button', { name: 'Customer' }).click()
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/products\/2$/)
   await expect(page.getByRole('link', { name: 'Cart, 1 items' })).toBeVisible()

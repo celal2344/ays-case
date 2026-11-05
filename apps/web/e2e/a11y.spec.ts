@@ -14,7 +14,7 @@ async function violations(page: Page) {
   }))
 }
 
-const PUBLIC = ['/login', '/products', '/products/2']
+const PUBLIC = ['/login', '/register', '/products', '/products/2']
 
 for (const theme of ['light', 'dark'] as const) {
   test.describe(`${theme} theme`, () => {

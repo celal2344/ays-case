@@ -37,12 +37,20 @@ export function UserMenu() {
 
   if (!user) {
     return (
-      <Link
-        to="/login"
-        className={cn(buttonVariants({ variant: 'outline' }), 'h-11 rounded-xl px-4')}
-      >
-        {t('nav.login')}
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link
+          to="/register"
+          className="hidden h-11 items-center rounded-xl px-3 text-sm font-semibold text-foreground hover:bg-muted sm:inline-flex"
+        >
+          {t('nav.register')}
+        </Link>
+        <Link
+          to="/login"
+          className={cn(buttonVariants({ variant: 'outline' }), 'h-11 rounded-xl px-4')}
+        >
+          {t('nav.login')}
+        </Link>
+      </div>
     )
   }
 

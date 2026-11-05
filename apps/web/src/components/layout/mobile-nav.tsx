@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Heart, LayoutDashboard, Store, LogIn, Menu, Package } from 'lucide-react'
+import { Heart, LayoutDashboard, Store, LogIn, Menu, Package, UserPlus } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -19,7 +19,7 @@ function NavLink({
   onNavigate,
   children,
 }: {
-  to: '/products' | '/orders' | '/favorites' | '/admin' | '/login'
+  to: '/products' | '/orders' | '/favorites' | '/admin' | '/login' | '/register'
   onNavigate: () => void
   children: ReactNode
 }) {
@@ -91,10 +91,16 @@ export function MobileNav() {
               ) : null}
             </>
           ) : (
-            <NavLink to="/login" onNavigate={close}>
-              <LogIn aria-hidden="true" />
-              {t('nav.login')}
-            </NavLink>
+            <>
+              <NavLink to="/login" onNavigate={close}>
+                <LogIn aria-hidden="true" />
+                {t('nav.login')}
+              </NavLink>
+              <NavLink to="/register" onNavigate={close}>
+                <UserPlus aria-hidden="true" />
+                {t('nav.register')}
+              </NavLink>
+            </>
           )}
           <NavLink to="/products" onNavigate={close}>
             <Store aria-hidden="true" />

@@ -24,7 +24,7 @@ describe('auth flow (AUTH-1..7)', () => {
 
   it('AUTH-1/3: filling the demo admin and submitting lands on the redirect target', async () => {
     const { router } = await renderApp('/login?redirect=%2Forders')
-    await userEvent.click(screen.getByRole('button', { name: 'Fill admin' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Admin' }))
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     await waitFor(() => expect(pathname(router)).toBe('/orders'))
     expect(useAuthStore.getState().user?.role).toBe('admin')
@@ -33,7 +33,7 @@ describe('auth flow (AUTH-1..7)', () => {
   it('an external ?redirect= is dropped: signing in lands on the default page', async () => {
     const { router } = await renderApp('/login?redirect=%2F%2Fevil.com')
     expect(router.state.location.search).toEqual({})
-    await userEvent.click(screen.getByRole('button', { name: 'Fill user' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Customer' }))
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     await waitFor(() => expect(pathname(router)).toBe('/products'))
   })
@@ -52,7 +52,7 @@ describe('auth flow (AUTH-1..7)', () => {
 
   it('AUTH-1: shows the server error for invalid credentials', async () => {
     await renderApp('/login')
-    await userEvent.type(screen.getByLabelText('Username'), 'emilys')
+    await userEvent.type(screen.getByLabelText('Username or email'), 'emilys')
     await userEvent.type(screen.getByLabelText('Password'), 'wrong')
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Invalid username or password')

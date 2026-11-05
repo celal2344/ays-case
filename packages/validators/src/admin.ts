@@ -116,22 +116,39 @@ export const adminSluggedListResponseSchema = envelope(z.array(adminSluggedSchem
 export const adminPolicyResponseSchema = envelope(adminPolicySchema)
 export const adminPolicyListResponseSchema = envelope(z.array(adminPolicySchema))
 
+const usernameField = z
+  .string()
+  .trim()
+  .min(LIMITS.username.min)
+  .max(LIMITS.username.max)
+  .regex(/^[a-zA-Z0-9_.]+$/, 'username')
+const personNameField = z.string().trim().min(LIMITS.personName.min).max(LIMITS.personName.max)
+const passwordField = z.string().min(LIMITS.password.min).max(LIMITS.password.max)
+
 /** Users are created with an initial password, which Better Auth hashes. */
 export const userBodySchema = z.object({
-  username: z
-    .string()
-    .trim()
-    .min(LIMITS.username.min)
-    .max(LIMITS.username.max)
-    .regex(/^[a-zA-Z0-9_.]+$/, 'username'),
-  firstName: z.string().trim().min(LIMITS.personName.min).max(LIMITS.personName.max),
-  lastName: z.string().trim().min(LIMITS.personName.min).max(LIMITS.personName.max),
+  username: usernameField,
+  firstName: personNameField,
+  lastName: personNameField,
   email: z.email(),
   role: roleSchema,
 })
-export const userCreateBodySchema = userBodySchema.extend({
-  password: z.string().min(LIMITS.password.min).max(LIMITS.password.max),
-})
+export const userCreateBodySchema = userBodySchema.extend({ password: passwordField })
+
+/** What a visitor types on the register page; the same limits as the admin's new-user form. */
+export const registerSchema = z
+  .object({
+    firstName: personNameField,
+    lastName: personNameField,
+    username: usernameField,
+    email: z.email(),
+    password: passwordField,
+    passwordConfirm: z.string(),
+  })
+  .refine((value) => value.password === value.passwordConfirm, {
+    path: ['passwordConfirm'],
+    message: 'mismatch',
+  })
 export const userPatchBodySchema = userBodySchema.partial()
 
 export const userResponseSchema = envelope(userSchema)
@@ -140,5 +157,6 @@ export type ProductBody = z.infer<typeof productBodySchema>
 export type ProductPatchBody = z.infer<typeof productPatchBodySchema>
 export type CategoryBody = z.infer<typeof categoryBodySchema>
 export type UserCreateBody = z.infer<typeof userCreateBodySchema>
+export type RegisterInput = z.infer<typeof registerSchema>
 export type UserPatchBody = z.infer<typeof userPatchBodySchema>
 export type AdminProduct = z.infer<typeof adminProductSchema>

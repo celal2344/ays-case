@@ -23,8 +23,9 @@ export function createAuth(db: Database) {
     baseURL,
     trustedOrigins,
     database: drizzleAdapter(db, { provider: 'pg', schema }),
-    // Accounts are seeded or created by admins; nobody can sign themselves up.
-    emailAndPassword: { enabled: true, disableSignUp: true },
+    // Anyone can register (no email verification: there is no email service). The admin plugin's
+    // `defaultRole` gives every new account the `user` role; a client cannot choose its role.
+    emailAndPassword: { enabled: true },
     user: {
       additionalFields: {
         firstName: { type: 'string', required: true },
@@ -36,12 +37,17 @@ export function createAuth(db: Database) {
       enabled: true,
       storage: 'database',
       modelName: 'rate_limit',
-      customRules: { '/sign-in/username': { window: 60, max: 5 } },
+      customRules: {
+        '/sign-in/username': { window: 60, max: 5 },
+        '/sign-in/email': { window: 60, max: 5 },
+        '/sign-up/email': { window: 10 * 60, max: 3 },
+      },
     },
-    // The session is answered from a signed cookie for 5 minutes, without a database call. Accepted
-    // trade-off: a demoted or deleted user's old session data can stay valid for up to 5 minutes.
+    // `get-session` and read-only routes are answered from a signed cookie for 5 minutes, without a
+    // database call. Admin routes and every write read the live session instead (see
+    // `middlewares/auth.ts`), so a demotion or a deleted user takes effect on the next such request.
     session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
-    plugins: [username(), admin({ adminRoles: ['admin'] })],
+    plugins: [username(), admin({ adminRoles: ['admin'], defaultRole: 'user' })],
   })
 }
 

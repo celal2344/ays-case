@@ -427,16 +427,6 @@ describe('users', () => {
     expect(dupEmail.status).toBe(409)
   })
 
-  it('creates a moderator', async () => {
-    const res = await call(
-      admin,
-      'POST',
-      '/api/users',
-      body({ username: 'mod', email: 'mod@example.com', role: 'moderator' }),
-    )
-    expect(await data(res)).toMatchObject({ role: 'moderator' })
-  })
-
   it("changes names, email and role; a demoted user's sessions stop working", async () => {
     const login = await signIn(request, 'nina', 'initial-pass-1')
     expect((await call(login.cookie, 'GET', '/api/users')).status).toBe(200)
@@ -452,8 +442,8 @@ describe('users', () => {
 
     const demoted = await call(admin, 'PATCH', `/api/users/${id}`, { role: 'user' })
     expect(await data(demoted)).toMatchObject({ role: 'user' })
-    // the 5 minute cookie cache may still vouch for the old role; the stored session is gone
-    expect((await call(withoutCache(login.cookie), 'GET', '/api/users')).status).toBe(401)
+    // admin routes read the live session: the demoted user's sessions are gone, so the cached cookie is refused at once
+    expect((await call(login.cookie, 'GET', '/api/users')).status).toBe(401)
     expect((await call(admin, 'PATCH', '/api/users/nobody', { firstName: 'X' })).status).toBe(404)
     expect((await call(admin, 'PATCH', `/api/users/${id}`, { username: 'emilys' })).status).toBe(
       409,
@@ -496,9 +486,9 @@ describe('users', () => {
     await call(login.cookie, 'POST', '/api/cart/items', { productId: 1, quantity: 1 })
     expect((await call(admin, 'DELETE', `/api/users/${victim.id}`)).status).toBe(204)
     expect((await call(withoutCache(login.cookie), 'GET', '/api/cart')).status).toBe(401)
-    // inside the cache window the old cookie is still accepted, but a write must fail cleanly
+    // a write reads the live session, so the deleted user's cached cookie fails at once and cleanly
     const stale = await call(login.cookie, 'POST', '/api/cart/items', { productId: 1, quantity: 1 })
-    expect(stale.status).toBeLessThan(500)
+    expect(stale.status).toBe(401)
     expect(await getDb().select().from(cartItems).where(eq(cartItems.userId, victim.id))).toEqual(
       [],
     )
